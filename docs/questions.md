@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-027 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako syöttölinja tai luistelureitti kulkea maalisolmun kautta (esim. maalin takaa (10, 1) slottiin (8, 3), linjan solmut (10, 1), (9, 2), (8, 3))?
+**Konteksti:** `docs/data-schema.md`, Määritelmät M-1 (luonnos). E-002:n hyväksyntä jätti "maali esteenä" -säännön erillisen päätöksen varaan. Oikeassa kiekossa maalin takaa syötetään slottiin maalin ohi, ei läpi, mutta 22 jalan verkossa ero ei näy solmuina.
+**Ehdotettu oletus:** sallitaan. Maalisolmu kuuluu linjaan, mutta siellä ei ole puolustajaa, joten se ei vaikuta riskiin. Laukauslinjasta maalisolmu jätetään pois (M-5).
+
+### Q-026 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** lisätäänkö laukaustapahtumaan kenttä "paineen alla (kyllä/ei)"?
+**Konteksti:** tavoitearvoissa on mittari "Laukaukset paineen alla (osuus)" (analyysi 68 % / 76 %), mutta tapahtumaskeeman Laukaus-tapahtumassa ei ole paine-kenttää (vain Syötössä). Raportti ei voi laskea mittaria ilman sitä. D-045 kieltää uudet tapahtumatyypit, mutta tämä on kenttä olemassa olevaan tapahtumaan, joten se vaatii `stats-and-checks.md`:n tapahtumaskeeman päivityksen.
+**Ehdotettu oletus:** kyllä, kenttä lisätään. Määritelmä sama kuin syötöllä (`data-schema.md`, M-7). Virstanpylväässä 2 se vain kirjataan, eikä se muuta laukauksen todennäköisyyksiä.
+
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
 **Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.
