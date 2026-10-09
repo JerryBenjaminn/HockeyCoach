@@ -152,27 +152,27 @@ Maalivahtiroolit (esim. torjuva vs. kiekkoa pelaava) lisätään veljen vastaust
 
 ## Tavoitearvot
 
-Simulaation pitää osua oikean kiekon haarukkaan. Alla on yhden esimerkkiottelun (5.9.2026) luvut molemmilta joukkueilta. Tavoitehaarukat täytetään, kun 3–5 ottelun analyysit on käyty läpi. Analyysit ovat sisäistä materiaalia, joten repoon kirjataan vain keskiarvot.
+Simulaation pitää osua oikean kiekon haarukkaan. Alla on otteluanalyysien luvut molemmilta joukkueilta. Tavoitehaarukat ovat vain tiedostossa `data/targets.json` (D-016), eikä niitä toisteta tässä. Haarukat täytetään, kun 3–5 ottelun analyysit on käyty läpi. Analyysit ovat sisäistä materiaalia, joten repoon kirjataan vain keskiarvot.
 
-| Mittari | Ottelu 1, 5.9.2026 (A / B) | Ottelu 2, 8.10.2026 (A / B) | Tavoitehaarukka |
+| Mittari | Ottelu 1, 5.9.2026 (A / B) | Ottelu 2, 8.10.2026 (A / B) | Käyttö |
 | --- | --- | --- | --- |
-| Syöttöjen onnistuminen, kaikki | 84,8 % / 84,6 % | 84 % / 81 % | Täytetään |
-| Syöttöjen onnistuminen, 5v5 | – | 83 % / 78 % | Täytetään |
-| Syöttöjen onnistuminen paineen alla | – | 69 % / 68 % | Täytetään |
-| Laukaukset paineen alla (osuus) | – | 68 % / 76 % | Täytetään |
-| Kiekkokamppailut (voitto / ei voittajaa / häviö) | 36 % / 22 % / 41 % | Kirjataan | Täytetään |
-| Laukaukset 5v5 | – | 45 / 18 | Täytetään |
-| Laukaukset 5v5: suorahyökkäys / päätypeli / riisto | – | 12 / 26 / 9 ja 9 / 8 / 3 | Täytetään |
-| Maalipaikat 5v5: huippu / hyvä / kohtalainen | – | 7 / 3 / 12 ja 0 / 0 / 3 | Täytetään |
-| Maalipaikat per joukkue, kaikki | 14 / 13 | – | Täytetään |
-| xG per joukkue | 3,75 / 3,09 | n. 5,0 / 1,2 (erien summa) | Täytetään |
-| Tasakentällisen xG:n osuus: suorahyökkäys | n. 67 % / 45 % | – | Täytetään |
-| Tasakentällisen xG:n osuus: kiekonriisto | n. 23 % / 33 % | – | Täytetään |
-| Tasakentällisen xG:n osuus: alueella pelaaminen | n. 10 % / 22 % | – | Täytetään |
-| Yksittäisen laukauksen xG, tyypillinen | – | 0,003–0,05 | Täytetään |
-| Hyökkäysalueaika 5v5 | – | 4:56 / 2:18 | Täytetään |
+| Syöttöjen onnistuminen, kaikki | 84,8 % / 84,6 % | 84 % / 81 % | Kalibrointi (`targets.json`) |
+| Syöttöjen onnistuminen, 5v5 | – | 83 % / 78 % | Kalibrointi (`targets.json`) |
+| Syöttöjen onnistuminen paineen alla | – | 69 % / 68 % | Kalibrointi (`targets.json`) |
+| Laukaukset paineen alla (osuus) | – | 68 % / 76 % | Kalibrointi (`targets.json`) |
+| Kiekkokamppailut (voitto / ei voittajaa / häviö) | 36 % / 22 % / 41 % | Kirjataan | Kalibrointi (`targets.json`) |
+| Laukaukset 5v5 | – | 45 / 18 | Kalibrointi (`targets.json`) |
+| Laukaukset 5v5: suorahyökkäys / päätypeli / riisto | – | 12 / 26 / 9 ja 9 / 8 / 3 | Kalibrointi (`targets.json`) |
+| Maalipaikat 5v5: huippu / hyvä / kohtalainen | – | 7 / 3 / 12 ja 0 / 0 / 3 | Kalibrointi (`targets.json`) |
+| Maalipaikat per joukkue, kaikki | 14 / 13 | – | Kalibrointi (`targets.json`) |
+| xG per joukkue | 3,75 / 3,09 | n. 5,0 / 1,2 (erien summa) | Kalibrointi (`targets.json`) |
+| Tasakentällisen xG:n osuus: suorahyökkäys | n. 67 % / 45 % | – | Kalibrointi (`targets.json`) |
+| Tasakentällisen xG:n osuus: kiekonriisto | n. 23 % / 33 % | – | Kalibrointi (`targets.json`) |
+| Tasakentällisen xG:n osuus: alueella pelaaminen | n. 10 % / 22 % | – | Kalibrointi (`targets.json`) |
+| Yksittäisen laukauksen xG, tyypillinen | – | 0,003–0,05 | Kalibrointi (`targets.json`) |
+| Hyökkäysalueaika 5v5 | – | 4:56 / 2:18 | Kalibrointi (`targets.json`) |
 | Aloitusten voitot | 41 % / 59 % | 47 % / 53 % | Ei kalibrointiin, kertoo hajonnasta |
-| Alueelle tulojen onnistuminen tavoittain | Kirjataan | Kirjataan | Täytetään |
+| Alueelle tulojen onnistuminen tavoittain | Kirjataan | Kirjataan | Kalibrointi (`targets.json`) |
 | Ykkösketjun jääaika | – | n. 21,5 min (nelosketju 0 min) | Väsymysmekaniikan vertailukohta |
 
 Ottelun 1 xG-osuudet on laskettu tasakentällisen kokonais-xG:stä (A 2,41, B 2,33). Ottelu 2 päättyi jatkoajalla, ja sen laukausjakauma painottui päätypeliin, joten paikkojen määrä ja vaarallisuus pitää raportoida erikseen.

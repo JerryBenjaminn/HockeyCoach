@@ -10,7 +10,7 @@ Simulaatio rakennetaan puhtaana C#-kirjastona ilman Unity-riippuvuuksia, jotta s
 | --- | --- | --- |
 | Kieli | C# | Sama kieli kuin Unityssä |
 | Simulaatiokirjasto | netstandard2.1, kieliversio C# 9 | Unity 6 tukee tätä tasoa, joten kirjasto siirtyy Unityyn ilman muutoksia |
-| Testiympäristö ja testit | net8.0 | Nopea ajaa, ei Unity-rajoitteita |
+| Testiympäristö ja testit | net10.0 | Nopea ajaa, ei Unity-rajoitteita (D-010) |
 | Testikehys | xUnit | Vakio .NET-maailmassa |
 | Data | JSON-tiedostot | Pelaajat, kuviot, järjestelmät ja tasapainoarvot muokattavissa ilman koodia |
 | Kieli koodissa | Englanti (nimet, kommentit) | Vakiokäytäntö, agentit toimivat parhaiten näin |
@@ -32,10 +32,12 @@ HockeyCoach/
 │   ├── stats-and-checks.md
 │   ├── tech-spec.md
 │   ├── decisions-log.md          # Lukitut päätökset ja muutosehdotukset
-│   └── questions.md              # Agenttien avoimet kysymykset Jerrylle
+│   ├── questions.md              # Agenttien avoimet kysymykset Jerrylle
+│   └── data-schema.md            # Datatiedostojen skeemat (designer omistaa)
 ├── data/
 │   ├── tuning.json               # Kaikki tasapainoarvot
 │   ├── rink.json                 # Kaukalon solmuverkko
+│   ├── targets.json              # Tavoitehaarukat (ainoa totuus)
 │   ├── roles.json                # Roolien generointipohjat
 │   ├── plays/*.json              # Pelikirjan kuviot
 │   └── systems/*.json            # Puolustusjärjestelmät
@@ -43,9 +45,9 @@ HockeyCoach/
 │   ├── HockeyCoach.Sim/          # netstandard2.1, ei riippuvuuksia
 │   └── HockeyCoach.AI/           # netstandard2.1, viittaa Simiin
 ├── tools/
-│   └── HockeyCoach.Harness/      # net8.0 konsolisovellus
+│   └── HockeyCoach.Harness/      # net10.0 konsolisovellus
 └── tests/
-    └── HockeyCoach.Sim.Tests/    # net8.0, xUnit
+    └── HockeyCoach.Sim.Tests/    # net10.0, xUnit
 ```
 
 ## Simulaation moduulit
@@ -61,6 +63,7 @@ Riippuvuudet kulkevat ylhäältä alas: ylempi moduuli saa käyttää alempia, e
 | `Sim.Tactics` | Kuviot (tahdit, toiminnot), puolustusjärjestelmien säännöt, järjestelmätilan ohjeet |
 | `Sim.Model` | Pelaaja, maalivahti, statsit, rooli, ketju, joukkue, kaukalon solmut |
 | `Sim.Events` | Tapahtumatyypit statsidokumentin tapahtumaskeeman mukaan, tapahtumaloki |
+| `Sim.Config` | Tasapainoarvojen ja kaukalon mallit sekä niiden validointi (data saapuu olioina) |
 | `Sim.Random` | Deterministinen satunnaislukugeneraattori |
 | `AI` | Valmentaja-AI:t: kokoonpano, pelikirja ja järjestelmä vaihdon alussa, reagointi vastustajaan |
 
@@ -69,6 +72,8 @@ Riippuvuudet kulkevat ylhäältä alas: ylempi moduuli saa käyttää alempia, e
 ## Data ja konfiguraatio
 
 Koodissa ei ole maagisia numeroita: jokainen painokerroin, perustaso ja aikakustannus luetaan tiedostosta `tuning.json`. Näin designer-agentti ja Jerry voivat tasapainottaa koskematta koodiin.
+
+Datatiedostojen tarkat skeemat, yksiköt ja validointisäännöt ovat dokumentissa `docs/data-schema.md`. Tavoitehaarukat ovat tiedostossa `data/targets.json`.
 
 **Kaukalon solmuverkko (`rink.json`).** Kaukalo on 9 × 5 solmun verkko (pituus × leveys). Jokaisella solmulla on koordinaatti, alue (oma pää, keskialue, hyökkäysalue), vyöhyke laukauksen perus-xG:tä varten ja tieto, onko se slotissa. Kuviot, puolustusjärjestelmät ja pelaajien sijainnit käyttävät samoja solmuja. Verkon koko on alustava ja voi tihentyä.
 
@@ -85,8 +90,9 @@ Sama siemenluku ja samat päätökset tuottavat aina täsmälleen saman tapahtum
 - **Oma satunnaislukugeneraattori** (esim. PCG32 tai xoshiro128), ei `System.Random`, koska sen tulokset voivat vaihdella .NET-versioiden ja Unityn välillä.
 - **Kaikki satunnaisuus kulkee yhden generaattori-instanssin kautta**, joka annetaan ottelulle parametrina. Ei staattisia generaattoreita, ei `DateTime.Now`-siemeniä.
 - **Ei liukulukujen järjestysriippuvuutta:** sanakirjojen läpikäynti tehdään aina järjestettynä, jotta tulokset eivät riipu hajautusjärjestyksestä.
+- **Determinismi samassa ajoympäristössä riittää** (D-012). Bittitarkkuutta .NETin ja Unityn välillä ei vaadita. Kaikki matematiikka (exp, log, logit) kulkee `CheckMath`-luokan kautta, jotta sen voi myöhemmin vaihtaa yhdessä paikassa.
 
-**Miksi:** testit voidaan kirjoittaa tarkkoina, bugit voidaan toistaa siemenluvulla, ja asynkronisessa PvP:ssä riittää myöhemmin tallentaa siemen ja suunnitelmat. Toisto lasketaan uudelleen eikä sitä tarvitse tallentaa.
+**Miksi:** testit voidaan kirjoittaa tarkkoina ja bugit voidaan toistaa siemenluvulla. Asynkronisessa PvP:ssä palvelin laskee ottelun ja lähettää tapahtumalokin, jota asiakas vain toistaa.
 
 ## Testiympäristö ja raportit
 
