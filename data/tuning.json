@@ -1,8 +1,7 @@
 {
   "schemaVersion": 1,
-  "_notes": "All balance values. Keys starting with _ are ignored by the loader. Paths in _placeholders are not from the docs and will be calibrated by simulation. Modifiers are logit units unless the key name says otherwise. Schema: docs/data-schema.md.",
+  "_notes": "All balance values. Keys starting with _ are ignored by the loader. Paths in _placeholders are not from the docs and will be calibrated by simulation. Modifiers are logit units unless the key name says otherwise. Every check declares kind: twoSided (D-017), oneSided (D-019, side names the present side) or noCheck. Schema: docs/data-schema.md.",
   "_placeholders": [
-    "stats.neutralValue",
     "checks.faceoff.modifiers.homeAdvantage",
     "checks.pass.modifiers.laneDefenderDistance",
     "checks.pass.modifiers.crossIce",
@@ -38,6 +37,8 @@
     "checks.shot.modifiers.screen",
     "checks.shot.modifiers.pressure",
     "checks.shot.modifiers.organization",
+    "checks.shot.minProbability",
+    "checks.shot.maxProbability",
     "checks.block.p0",
     "checks.block.modifiers.distancePerNode",
     "checks.rebound.p0",
@@ -50,6 +51,7 @@
     "checks.hit.penaltyBaseProbability",
     "checks.hit.penaltyChangePerDisciplinePoint",
     "time.periodSeconds",
+    "time.defenceShiftSeconds",
     "time.secondsPerAction.faceoff",
     "time.secondsPerAction.skate",
     "time.secondsPerAction.pass",
@@ -69,6 +71,7 @@
     "energy.enduranceCostReductionPerPoint",
     "energy.benchRecoveryPerSecond",
     "energy.checkModifierAtZero",
+    "positions.offSideCheckModifier",
     "organization.dropOnTurnover.defensive",
     "organization.dropOnTurnover.neutral",
     "organization.dropOnTurnover.offensive",
@@ -97,7 +100,6 @@
   "stats": {
     "min": 1,
     "max": 20,
-    "neutralValue": 10.5,
     "grades": {
       "A": [
         17,
@@ -122,13 +124,16 @@
     }
   },
   "checkFormula": {
+    "_notes": "minProbability/maxProbability clamp every check except the shot's goal probability and xG, which use checks.shot.minProbability/maxProbability (D-014, Q-009). referenceValue replaces the missing side in oneSided checks (D-019) and is the zero point of ...PerPoint modifiers.",
     "k": 0.15,
     "minProbability": 0.02,
-    "maxProbability": 0.98
+    "maxProbability": 0.98,
+    "referenceValue": 10.5
   },
   "checks": {
     "faceoff": {
       "_notes": "Success = attacker-side centre wins the draw. Values: stats-and-checks.md, Tarkistukset.",
+      "kind": "twoSided",
       "p0": 0.5,
       "attacker": {
         "centre": {
@@ -148,6 +153,7 @@
     },
     "pass": {
       "_notes": "Success = pass reaches the receiver. laneDefenderDistance is indexed by the nearest defender's node distance from the passing lane (0, 1, 2+). pressure placeholder derived from analysis (85 % -> about 70 % under pressure = about -0.9 logit).",
+      "kind": "twoSided",
       "p0": 0.85,
       "attacker": {
         "passer": {
@@ -176,6 +182,7 @@
     },
     "zoneEntryCarry": {
       "_notes": "Success = carrier enters the offensive zone with possession.",
+      "kind": "twoSided",
       "p0": 0.6,
       "attacker": {
         "carrier": {
@@ -194,11 +201,13 @@
       }
     },
     "dumpIn": {
-      "_notes": "No check (stats-and-checks.md). Leads to a loose puck; goaliePuckHandlingPerPoint (logit per goalie puckHandling point above stats.neutralValue) favours the defending team in that loose-puck check.",
+      "_notes": "No check (stats-and-checks.md). Leads to a loose puck; goaliePuckHandlingPerPoint (logit per goalie puckHandling point above checkFormula.referenceValue) favours the defending team in that loose-puck check.",
+      "kind": "noCheck",
       "goaliePuckHandlingPerPoint": 0.03
     },
     "deke": {
       "_notes": "1v1 deke. Success = attacker beats the defender. Energy applies via energy.checkModifierAtZero.",
+      "kind": "twoSided",
       "p0": 0.45,
       "attacker": {
         "carrier": {
@@ -216,6 +225,7 @@
     },
     "breakout": {
       "_notes": "Breakout from own zone. Success = puck leaves the defensive zone with possession. forecheckers = mean of the forechecking players' stats. Defensive system effect is a later modifier (Q-003).",
+      "kind": "twoSided",
       "p0": 0.7,
       "attacker": {
         "carrier": {
@@ -232,7 +242,8 @@
       "modifiers": {}
     },
     "shot": {
-      "_notes": "Order: block -> onTargetShare -> goal check (Q-010). Success = goal. p0 = baseXg[xgZone] of the shooting node in the shooter's view. Shooter weights slide with distance (attackerByXgZone): slot accuracy 0.8, blue line power 0.7 from docs, others interpolated placeholders.",
+      "_notes": "Order: block -> onTargetShare -> goal check (Q-010). Success = goal. p0 = baseXg[xgZone] of the shooting node in the shooter's view. Shooter weights slide with distance (attackerByXgZone): slot accuracy 0.8, blue line power 0.7 from docs, others interpolated placeholders. Goal probability and xG are clamped to minProbability..maxProbability here, not checkFormula (D-014, Q-009).",
+      "kind": "twoSided",
       "attackerByXgZone": {
         "crease": {
           "shooter": {
@@ -305,12 +316,15 @@
         "screen": 0.3,
         "pressure": 0.3,
         "organization": 0.7
-      }
+      },
+      "minProbability": 0.001,
+      "maxProbability": 0.6
     },
     "block": {
-      "_notes": "Success = shot gets through (not blocked). Attacker side is empty and uses stats.neutralValue (Q-013). distancePerNode: logit in the shooter's favour per node between shooter and blocker.",
+      "_notes": "One-sided (D-019): H = checkFormula.referenceValue, D = defender side. Success = shot gets through (not blocked). distancePerNode: logit in the shooter's favour per node between shooter and blocker. Clamped with checkFormula bounds (block is a check).",
+      "kind": "oneSided",
+      "side": "defender",
       "p0": 0.75,
-      "attacker": {},
       "defender": {
         "nearestDefender": {
           "positioning": 1.0
@@ -321,9 +335,10 @@
       }
     },
     "rebound": {
-      "_notes": "After a save. Success = rebound to the slot (attacker outcome). Otherwise the goalie controls it: controlledHoldShare of those are held (stoppage), the rest go to the corner. Attacker side is empty and uses stats.neutralValue (Q-013).",
+      "_notes": "One-sided (D-019): H = checkFormula.referenceValue, D = goalie side. After a save. Success = rebound to the slot (attacker outcome). Otherwise the goalie controls it: controlledHoldShare of those are held (stoppage), the rest go to the corner.",
+      "kind": "oneSided",
+      "side": "defender",
       "p0": 0.15,
-      "attacker": {},
       "defender": {
         "goalie": {
           "reboundControl": 1.0
@@ -337,6 +352,7 @@
     },
     "loosePuck": {
       "_notes": "Three outcomes. noWinnerShare from analysis (22 %). The remaining share is split by the logistic check (p0 0.5 -> 39 / 22 / 39 for equal players, Q-007). Who reaches the puck: speed and system-mode instructions.",
+      "kind": "twoSided",
       "noWinnerShare": 0.22,
       "p0": 0.5,
       "attacker": {
@@ -359,6 +375,7 @@
     },
     "hit": {
       "_notes": "Success = hitter separates the opponent from the puck. Penalty risk from discipline (probability, not logit).",
+      "kind": "twoSided",
       "p0": 0.4,
       "attacker": {
         "hitter": {
@@ -378,10 +395,11 @@
     }
   },
   "time": {
-    "_notes": "Game seconds.",
+    "_notes": "Game seconds. Forward trios and defence pairs rotate separately (D-023): forwardShiftSeconds / defenceShiftSeconds are target shift lengths.",
     "periods": 3,
     "periodSeconds": 1200,
-    "shiftSeconds": 45,
+    "forwardShiftSeconds": 45,
+    "defenceShiftSeconds": 50,
     "secondsPerAction": {
       "faceoff": 2,
       "skate": 3,
@@ -406,6 +424,10 @@
     "enduranceCostReductionPerPoint": 0.03,
     "benchRecoveryPerSecond": 0.01,
     "checkModifierAtZero": -0.8
+  },
+  "positions": {
+    "_notes": "Positions C, LW, RW, LD, RD (D-024). offSideCheckModifier (logit, negative) applies to every check a player takes part in while playing the opposite side of his primary position (LW<->RW, LD<->RD). Added to M when the player is on the attacker side, subtracted when on the defender side, so it always hurts his own side. Applied once per check side, even if several players on that side are off-side.",
+    "offSideCheckModifier": -0.3
   },
   "organization": {
     "_notes": "0..1. dropOnTurnover is indexed by the zone where the puck was lost (losing team view). Each check lists its own organization modifier (logit for the attacker at defender organization 0, linear).",
