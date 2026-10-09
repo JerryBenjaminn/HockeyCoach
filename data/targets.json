@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "_notes": "Only source of target ranges (D-016). Only ranges, never raw match data (CLAUDE.md rule 5). status: approved = range set by Jerry; placeholder = range not yet known (min/max null), filled after 3-5 match analyses. Observations behind each metric: docs/stats-and-checks.md, Tavoitearvot. Faceoff win rate and first-line ice time are deliberately not here: they are not calibration targets. Schema: docs/data-schema.md.",
+  "metrics": {
+    "smartVsRandomWinRate": {"unit": "share", "scope": "perMatchup", "min": 0.75, "max": 0.85, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
+    "goalsPerMatch": {"unit": "count", "scope": "perMatch", "min": 4, "max": 7, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
+
+    "passSuccessAll": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "passSuccess5v5": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "passSuccessUnderPressure": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "shotsUnderPressureShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "puckBattleWinShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "puckBattleNoWinnerShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "puckBattleLossShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "shots5v5": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "shots5v5Rush": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "shots5v5ZonePlay": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "shots5v5Turnover": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "chances5v5Top": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (classes: Q-004)"},
+    "chances5v5Good": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (classes: Q-004)"},
+    "chances5v5Moderate": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (classes: Q-004)"},
+    "chancesAll": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "xg": {"unit": "xg", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareRush": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareTurnover": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareZonePlay": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "shotXgTypical": {"unit": "xg", "scope": "perShot", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "offensiveZoneTime5v5": {"unit": "seconds", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "zoneEntrySuccessCarry": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "zoneEntrySuccessPass": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"}
+  }
+}
