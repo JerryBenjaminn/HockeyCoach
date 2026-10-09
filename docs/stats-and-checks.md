@@ -77,7 +77,7 @@ Laukauksessa Tarkkuuden ja Voiman paino liukuu etäisyyden mukaan: slotista Tark
 
 ## Tapahtumaskeema
 
-Simulaation tapahtumaloki noudattaa oikean otteluanalyysin aikajanan rakennetta, jotta tuloksia voi verrata suoraan. Jokaisella tapahtumalla on aika, erä, voimasuhteet kentällä (esim. 5 vs 5) ja pelaajien sijainnit toistoa varten.
+Simulaation tapahtumaloki noudattaa oikean otteluanalyysin aikajanan rakennetta, jotta tuloksia voi verrata suoraan. Jokaisella tapahtumalla on aika, erä, voimasuhteet kentällä (esim. 5 vs 5) ja pelaajien sijainnit toistoa varten. Lisäksi jokaiseen tapahtumaan tallennetaan pelattavan kuvion ja puolustusjärjestelmän id taktiikkaraporttia varten (D-045). Kuljetus ja harhautus näkyvät lokissa alueelle tulona tai kiekonmenetyksenä, rebound kamppailuna; uusia tapahtumatyyppejä ei lisätä.
 
 | Tapahtuma | Kentät |
 | --- | --- |

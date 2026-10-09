@@ -43,6 +43,19 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-033 | 2026-10-09 | Maalisolmu | Kenttäpelaajan kohde ei saa olla maalisolmu. `driveNet` vie maalin eteen tai slotin solmuun, maalisolmu on vain laukauksen kohde. Poikkeus: maalivahti (Q-025) | lukittu |
 | D-034 | 2026-10-09 | Kuvio- ja järjestelmäskeema | Hyväksytty ehdoin: (1) toiminnot skate, pass, shoot, driveNet, dump; (2) kuviot viittaavat pelipaikkoihin LW, C, RW, LD, RD, eivät pelaajiin; (3) saman kuvion voi pelata peilattuna kummallakin laidalla; (4) järjestelmien säännöt ovat deterministisiä ja viimeinen sääntö on aina varasääntö (Q-001) | lukittu |
 | D-035 | 2026-10-09 | Pushaus | Kun `dotnet test` menee läpi ja `validate` hyväksyy datan, valmiit commitit saa pushata kysymättä | lukittu |
+| D-036 | 2026-10-09 | Kuvion valinta | Kun joukkue saa kiekon, valitaan prioriteettilistan ensimmäinen kuvio, joka sopii kiekon alueeseen ja jonka kiekollinen pelipaikka on sama kuin nykyisen kiekonhaltijan. Jos sellaista ei ole, kuvio alkaa tavallisella, tarkistettavalla syötöllä kuvion kiekolliselle pelipaikalle (kiekko ei siirry ilman tarkistusta, kuten D-032). Jos alueeseen ei sovi yhtään kuviota, joukkue pitää kiekon järjestelmätilassa | lukittu |
+| D-037 | 2026-10-09 | Peilauksen valinta | Simulaatio valitsee peilatun version `data-schema.md`:n säännön mukaan (kuvio peilataan, jos kiekko on eri laidalla kuin kiekollisen lähtösolmu) | lukittu |
+| D-038 | 2026-10-09 | Setup | Pelaajat siirtyvät kuvion lähtöpaikoille `setupSeconds`-ajan jälkeen, ja puolustajat siirtyvät samalla järjestelmänsä paikoille. Setup-aika kuluttaa vaihdon kelloa | lukittu |
+| D-039 | 2026-10-09 | Kuljetuksen tarkistus | Kuljetus hyökkäysalueelle = alueelle tulo, omalta alueelta ulos = avaus, muuten harhautus lähimmän puolustajan etäisyyden mukaan. Avaus koskee myös syöttöä ulos omalta alueelta | lukittu |
+| D-040 | 2026-10-09 | Epäonnistunut tarkistus | Epäonnistunut syöttö on joko syötönkatko (puolustaja saa kiekon) tai irtokiekko syöttölinjalle lähimmän puolustajan solmuun; jako `tuning.json`-arvolla (paikkamerkki). Epäonnistunut kuljetus tai harhautus: puolustaja riistää kiekon | lukittu |
+| D-041 | 2026-10-09 | Tahdin järjestys | Hyökkääjien siirrot → puolustajat liikkuvat järjestelmän mukaan → toiminto. Puolustus liikkuu jokaisessa tahdissa | lukittu |
+| D-042 | 2026-10-09 | Aloitukset | Ensimmäinen aloitus keskeltä. Maalin jälkeen keskeltä, maalivahdin pidon jälkeen lähimmästä oman pään pisteestä. Joukkueella, jolla ei ole aloituskuviota pisteelle, on oletusasettelu | lukittu |
+| D-043 | 2026-10-09 | Vaihdon loppu (virstanpylväs 2) | Vain katko (maali tai maalivahdin pito). Jumiutumisen estävä tapahtumaraja on kutsujan parametri, ei tasapainoarvo | lukittu |
+| D-044 | 2026-10-09 | Irtokiekon paikat | Määritellään `tuning.json`:ssa: rebound slottiin `netFront`-solmuun, rebound kulmaan laukaisijan puolen kulmaan, ohilaukaus päätyriville, blokattu laukaus blokkaajan solmuun | lukittu |
+| D-045 | 2026-10-09 | Tapahtumaskeeman käyttö | Ei uusia tapahtumatyyppejä. Kuljetus ja harhautus näkyvät alueelle tulona tai kiekonmenetyksenä, rebound kamppailuna. Jokaiseen tapahtumaan tallennetaan kuvion ja järjestelmän id (taktiikkaraportti) | lukittu |
+| D-046 | 2026-10-09 | Virstanpylvään 2 rajaus | Järjestäytyneisyys, energia ja paine ovat vakioita virstanpylvääseen 3 asti (suorahyökkäyspaikat vasta silloin). Järjestelmätilan ohjeet (`netFrontAfterShot`, `looseChasers`, `pinch`) virstanpylväässä 3, virstanpylväässä 2 kiinteät oletukset. Taklaukset ja jäähyt myöhemmin. Avoimissa kysymyksissä Q-006, Q-007, Q-008, Q-010, Q-011, Q-014 ja Q-020 edetään ehdotetuilla oletuksilla | lukittu |
+| D-047 | 2026-10-09 | Maskin xG | `netFront`-solmun laukaukset (reboundit ja ohjaukset) käyttävät maskin (`crease`) xG-arvoa (E-003) | lukittu |
+| D-048 | 2026-10-09 | Määritelmät | Syöttölinjan etäisyys, poikittaissyöttö, Royal Road, blokkaaja ja irtokiekon kamppailijat kirjoitetaan `data-schema.md`:hen, ja Jerry hyväksyy ne ennen toteutusta | lukittu |
 
 ## Muutosehdotukset
 
@@ -56,11 +69,11 @@ Kirjaa uusin ylimmäksi.
 **Päätös:** (Jerry täyttää) hyväksytty / hylätty + lyhyt syy.
 -->
 
-### E-003 · 2026-10-09 · ehdotettu
+### E-003 · 2026-10-09 · hyväksytty
 **Ehdotus:** maalin edustan tilannelaukaukset saavat `crease`-xG:n. Laukaus solmusta `netFront` (8, 2) käyttää vyöhykettä `crease` (nyt `baseXg` 0,25) eikä `slot` (0,15), kun laukaisija on reboundin saanut pelaaja tai `driveNet`-toiminnolla maskiin ajanut pelaaja, joka saa syötön. Muut laukaukset solmusta (8, 2) käyttävät `slot`-vyöhykettä.
 **Perustelu:** D-033 kieltää kenttäpelaajan maalisolmussa (9, 2), joka oli ainoa `crease`-solmu, joten `crease`-xG ei ole enää käytössä yhdessäkään laukauksessa. 22 jalan verkossa solmu (8, 2) kattaa sekä maalin edustan että matalan slotin. Ilman tätä reboundit ja ohjaukset maskista saavat saman xG:n kuin slotin vapaa laukaus, vaikka oikeassa kiekossa ne ovat vaarallisimpia paikkoja, ja `driveNet` (D-020) jää palkitsematta. Raporttilukuja ei vielä ole (virstanpylväs 2), joten arvo kalibroidaan simulaatiolla.
 **Vaikutus:** `docs/data-schema.md` (Maalisolmu ja `crease`, kuvioiden `shoot`), `Sim.Shift` (laukauksen xG-vyöhykkeen valinta). `tuning.json` ei muutu. Uusi mekaniikka, vaatii hyväksynnän.
-**Päätös:** (Jerry täyttää)
+**Päätös:** hyväksytty (Jerry, 2026-10-09). Kirjattu: D-047.
 
 ### E-002 · 2026-10-09 · hyväksytty
 **Ehdotus:** pidennetään kaukalon solmuverkko 9 × 5:stä 11 × 5:een niin, että kummankin maalin taakse tulee oma solmurivi.
