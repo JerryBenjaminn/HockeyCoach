@@ -36,6 +36,39 @@ public class RepositoryTacticsTests
     }
 
     [Fact]
+    public void EverySystem_GivesNonGoalTargets_ForEveryPuckNodeAndState()
+    {
+        Rink rink = Data.Rink;
+        var skaters = new Dictionary<Position, GridPoint>
+        {
+            [Position.Center] = new GridPoint(5, 2),
+            [Position.LeftWing] = new GridPoint(5, 0),
+            [Position.RightWing] = new GridPoint(5, 4),
+            [Position.LeftDefence] = new GridPoint(3, 1),
+            [Position.RightDefence] = new GridPoint(3, 3),
+        };
+
+        foreach (DefensiveSystem system in Data.Systems)
+        {
+            for (int id = 0; id < rink.NodeCount; id++)
+            {
+                var puck = new GridPoint(rink.XOf(id), rink.YOf(id));
+                if (rink.IsGoalNode(puck))
+                {
+                    continue;
+                }
+
+                foreach (PuckState state in new[] { PuckState.Controlled, PuckState.Loose })
+                {
+                    SystemTargets targets = SystemTargetResolver.Resolve(system, rink, puck, state, skaters);
+                    Assert.Equal(5, targets.Targets.Count);
+                    Assert.All(targets.Targets.Values, t => Assert.True(rink.Contains(t) && !rink.IsGoalNode(t), system.Id + " " + puck + " → " + t));
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void FirstSystems_Exist()
     {
         // D-021: the first two systems.
