@@ -86,6 +86,8 @@ Delegoi tehtävät näin:
 
 Pienet commitit, yksi asia kerrallaan, Conventional Commits -muoto (`feat:`, `fix:`, `test:`, `docs:`, `data:`, `refactor:`). Älä committaa, jos testit eivät mene läpi.
 
+**Pushaus:** kun `dotnet test` menee läpi ja `validate` hyväksyy datan, valmiit commitit saa pushata kysymättä (D-035). Tällä koneella: `git -c http.sslBackend=schannel push origin main`.
+
 ## Ei tässä vaiheessa
 
 Unity, grafiikka, käyttöliittymä, kuvioeditori, verkko ja PvP-palvelin, draft- ja kausijärjestelmä. Erikoistilanteet (ylivoima, alivoima) vasta, kun virstanpylväät 1–5 ovat valmiit.

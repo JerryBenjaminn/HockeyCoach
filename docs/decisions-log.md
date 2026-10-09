@@ -38,6 +38,11 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-028 | 2026-10-09 | Solmun alue | Solmun alue (oma pää, keskialue, hyökkäysalue) johdetaan `zones`-osion x-väleistä eikä sitä tallenneta solmuun (Q-022) | lukittu |
 | D-029 | 2026-10-09 | baseXg-validointi | `baseXg` hylätään, jos se on välin 0–1 ulkopuolella tai yli laukausten ylärajan (Q-023) | lukittu |
 | D-030 | 2026-10-09 | tuning.json-osiot | Lataaja hylkää tuntemattomat pääosiot. Sallitut osiot ja uuden osion lisäysprosessi dokumentoidaan `data-schema.md`:hen | lukittu |
+| D-031 | 2026-10-09 | Kiekkotoiminnot | Viisi toimintoa: skate, pass, shoot, driveNet ja dump (E-001) | lukittu |
+| D-032 | 2026-10-09 | Kiekollisen liike | Kiekollinen pelaaja liikkuu vain tahdin toiminnolla `skate`, ei siirroilla. Muut pelaajat liikkuvat siirroilla. Jokaisessa tahdissa on tasan yksi kiekkotoiminto, ja kuljetus on aina tarkistus (Q-024) | lukittu |
+| D-033 | 2026-10-09 | Maalisolmu | Kenttäpelaajan kohde ei saa olla maalisolmu. `driveNet` vie maalin eteen tai slotin solmuun, maalisolmu on vain laukauksen kohde. Poikkeus: maalivahti (Q-025) | lukittu |
+| D-034 | 2026-10-09 | Kuvio- ja järjestelmäskeema | Hyväksytty ehdoin: (1) toiminnot skate, pass, shoot, driveNet, dump; (2) kuviot viittaavat pelipaikkoihin LW, C, RW, LD, RD, eivät pelaajiin; (3) saman kuvion voi pelata peilattuna kummallakin laidalla; (4) järjestelmien säännöt ovat deterministisiä ja viimeinen sääntö on aina varasääntö (Q-001) | lukittu |
+| D-035 | 2026-10-09 | Pushaus | Kun `dotnet test` menee läpi ja `validate` hyväksyy datan, valmiit commitit saa pushata kysymättä | lukittu |
 
 ## Muutosehdotukset
 
@@ -74,11 +79,11 @@ Alueet: `defensive` 0–3, `neutral` 4–6, `offensive` 7–10 (symmetrinen kier
 **Vaikutus:** `data/rink.json` (uusi verkko, id = x × 5 + y, ids 0–54), `tuning.json` (`baseXg` ja `attackerByXgZone` uudelle vyöhykkeelle), `docs/data-schema.md` (koko ja taulukot), tech-spec.md ("9 × 5" → "11 × 5"), D-017:n esimerkki (9 × 5 → 11 × 5, kaava ei muutu). Q-002 ratkeaa tällä pituuden osalta. Programmer: verkon koko on datavetoinen, joten koodimuutoksia ei pitäisi tarvita. Testit, joissa on kovakoodattu 9 × 5 tai id 44, päivitetään. Mahdollinen lisäsääntö: maalin solmu ja sen takana oleva solmu eivät ole luistelureitillä läpi kuljettavia (maali on esteenä), mikä on uusi mekaniikka ja vaatii erillisen päätöksen.
 **Päätös:** hyväksytty (Jerry, 2026-10-09). Kirjattu: D-027. Lisäsääntö maalin läpi kulkemisesta ei sisälly hyväksyntään, vaan vaatii erillisen päätöksen.
 
-### E-001 · 2026-10-09 · ehdotettu
+### E-001 · 2026-10-09 · hyväksytty
 **Ehdotus:** lisätään kuvioihin viides kiekkotoiminto `dump` ("kiekko päätyyn"): kiekollinen ampuu kiekon kohdesolmuun (kulma tai maalin taakse), ja siitä seuraa irtokiekkokamppailu.
 **Perustelu:** "Kiekko päätyyn" on oma tapahtumansa tapahtumaskeemassa ja tarkistustaulukossa (ei tarkistusta, johtaa irtokiekkoon, maalivahdin kiekonkäsittely vaikuttaa), mutta kuvion neljällä toiminnolla (luistele, syötä, laukaise, aja maalille) sitä ei voi kirjoittaa. Oikeassa kiekossa dump and chase on peruskeino tulla alueelle järjestäytynyttä puolustusta vastaan (esim. trapia vastaan, vision.md: "suora rynnistys ei toimi"). Analyysin alueelle tulojen onnistuminen tavoittain (`docs/stats-and-checks.md`) vaatii, että tavat ovat erillisiä. Vaihtoehto: `dump` vain järjestelmätilan ja siirtymäohjeen toimintona eikä kuvioissa, mutta silloin pelaaja ei voi rakentaa dump and chase -kuviota.
 **Vaikutus:** kuvion skeema (`docs/data-schema.md`: `{"type": "dump", "by": .., "to": [x, y]}`), vision.md ja tech-spec.md ("neljä toimintoa" → viisi), `tuning.json` (`time.secondsPerAction.dumpIn` ja `checks.dumpIn` ovat jo olemassa), simulaatio (`Sim.Tactics`: uusi toiminto, joka laukaisee `loosePuck`-tarkistuksen kohdesolmussa). Parhaiten toimii yhdessä E-002:n kanssa, jotta kiekon voi ampua maalin taakse.
-**Päätös:** (Jerry täyttää)
+**Päätös:** hyväksytty (Jerry, 2026-10-09). `dump` on viides toiminto. Kirjattu: D-031.
 
 ## Tasapainomuutokset
 

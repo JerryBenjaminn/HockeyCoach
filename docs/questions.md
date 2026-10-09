@@ -5,24 +5,7 @@ Agentit kirjaavat tänne kysymykset, joihin dokumentit eivät vastaa. Jerry vast
 Kirjaa uusin ylimmäksi. Muoto:
 
 <!--
-### Q-001 · YYYY-MM-DD · kirjaaja: programmer / game-designer
-**Kysymys:** mitä pitää päättää.
-**Konteksti:** mihin tehtävään liittyy, mikä dokumentin kohta on epäselvä.
-**Ehdotettu oletus:** mitä käytetään sillä välin (jos jotain).
-**Vastaus:** (Jerry täyttää)
--->
-
 ## Avoimet
-
-### Q-025 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** saako kenttäpelaajan kohde (kuviossa tai järjestelmässä) olla maalisolmussa (1,2) tai (9,2)?
-**Konteksti:** 11 × 5 -verkossa maalisolmu on myös crease-solmu, johon `driveNet` vie pelaajan. Esimerkkijärjestelmässä trap122 kaksi kohdetta osuu omaan maalisolmuun. Liittyy E-002:n mainitsemaan "maali esteenä" -lisäsääntöön, joka on uusi mekaniikka.
-**Ehdotettu oletus:** sallitaan, kunnes päätetään.
-
-### Q-024 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** saako kuvion `moves` siirtää kiekollista pelaajaa, vai liikkuuko kiekollinen vain `skate`-toiminnolla?
-**Konteksti:** Q-001, kuvioskeema (`docs/data-schema.md`).
-**Ehdotettu oletus:** kiekollinen liikkuu vain `skate`-toiminnolla.
 
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
@@ -97,6 +80,26 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (game-designer, 2026-10-09):** luonnosvastaus on `docs/data-schema.md`:ssä, osiot "Kuviot" ja "Puolustusjärjestelmät" (tila: luonnos – odottaa Jerryn hyväksyntää). Kysymys pysyy auki, kunnes Jerry on katsonut skeeman.
 
 ## Ratkaistut
+
+### Q-025 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako kenttäpelaajan kohde (kuviossa tai järjestelmässä) olla maalisolmussa (1,2) tai (9,2)?
+**Konteksti:** 11 × 5 -verkossa maalisolmu on myös crease-solmu, johon `driveNet` vie pelaajan. Esimerkkijärjestelmässä trap122 kaksi kohdetta osuu omaan maalisolmuun. Liittyy E-002:n mainitsemaan "maali esteenä" -lisäsääntöön, joka on uusi mekaniikka.
+**Ehdotettu oletus:** sallitaan, kunnes päätetään.
+**Vastaus (Jerry, 2026-10-09):** ei. Kenttäpelaajan kohde ei saa olla maalisolmu. `driveNet` vie maalin eteen tai slotin solmuun, maalisolmu on vain laukauksen kohde. Poikkeus: maalivahti. Kirjattu: D-033.
+
+### Q-024 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako kuvion `moves` siirtää kiekollista pelaajaa, vai liikkuuko kiekollinen vain `skate`-toiminnolla?
+**Konteksti:** Q-001, kuvioskeema (`docs/data-schema.md`).
+**Ehdotettu oletus:** kiekollinen liikkuu vain `skate`-toiminnolla.
+**Vastaus (Jerry, 2026-10-09):** kiekollinen pelaaja liikkuu vain tahdin toiminnolla `skate`, ei siirroilla. Muut liikkuvat siirroilla. Kirjattu: D-032.
+
+### Q-001 · YYYY-MM-DD · kirjaaja: programmer / game-designer
+**Kysymys:** mitä pitää päättää.
+**Konteksti:** mihin tehtävään liittyy, mikä dokumentin kohta on epäselvä.
+**Ehdotettu oletus:** mitä käytetään sillä välin (jos jotain).
+**Vastaus:** (Jerry täyttää)
+-->
+**Vastaus (Jerry, 2026-10-09):** hyväksytty ehdoin (D-034): toiminnot skate, pass, shoot, driveNet, dump; kuviot viittaavat pelipaikkoihin; saman kuvion voi pelata peilattuna kummallakin laidalla; järjestelmien säännöt deterministisiä ja viimeinen sääntö varasääntö. Skeema korjataan ehtojen mukaiseksi ennen virstanpylvästä 2.
 
 ### Q-023 · 2026-10-09 · kirjaaja: programmer
 **Kysymys:** pitääkö lataajan hylätä `checks.shot.baseXg`-arvo, joka on laukauksen omien rajojen (`checks.shot.minProbability`–`maxProbability`) ulkopuolella?
