@@ -9,8 +9,8 @@ Tämä dokumentti on datatiedostojen skeemojen ainoa totuus (D-013). Designer om
 | `data/rink.json` | käytössä | Sim (`Sim.Config`), Harness |
 | `data/tuning.json` | käytössä | Sim (`Sim.Config`), Harness |
 | `data/targets.json` | käytössä | Harness (raportin tavoitevertailu) |
-| `data/plays/*.json` | luonnos – odottaa Jerryn hyväksyntää | Sim (`Sim.Tactics`) |
-| `data/systems/*.json` | luonnos – odottaa Jerryn hyväksyntää | Sim (`Sim.Tactics`) |
+| `data/plays/*.json` | skeema hyväksytty (D-034), tiedostoja ei vielä | Sim (`Sim.Tactics`) |
+| `data/systems/*.json` | skeema hyväksytty (D-034), tiedostoja ei vielä | Sim (`Sim.Tactics`) |
 | `data/roles.json` | myöhemmin (D-018) | – |
 
 ## Yleiset käytännöt
@@ -55,6 +55,11 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 - **Solmun id** johdetaan, sitä ei tallenneta: `id = x * width + y` (11 × 5 -verkossa `x * 5 + y`, ids 0–54).
 - **Solmun alue** johdetaan `zones`-osion x-väleistä, sitä ei tallenneta solmuun (Q-022).
 - **Etäisyys** solmujen välillä on Chebyshev-etäisyys max(|dx|, |dy|), ellei toisin mainita. Syöttölinja on suora jana solmujen välillä.
+- **Keskiviiva** on x = (length − 1) / 2 (11 × 5 -verkossa x = 5). **Keskikaista** on y = (width − 1) / 2 (y = 2): vasen puoli y < 2, oikea y > 2.
+- **Maalisolmut** (D-033): `ownGoal` ja `opponentGoal` ovat vain laukauksen kohteita. Kenttäpelaaja ei koskaan seiso maalisolmussa, joten mikään kenttäpelaajan kohde (kuvion lähtösolmu, siirto, `skate`, `driveNet`, `dump`-kohde, järjestelmän kohde) ei saa olla maalisolmu, eikä laukaus lähde maalisolmusta. Irtokiekko ei jää maalisolmuun. Poikkeus: maalivahti, jonka paikka on maalisolmu.
+- **Maalin edusta** (`netFront`) on solmu, joka on yhden askeleen maalisolmusta keskiviivaa kohti x-suunnassa: oman joukkueen näkökulmasta vastustajan maalin edusta (8, 2) ja oman maalin edusta (2, 2). Se johdetaan, sitä ei tallenneta. `driveNet` vie tänne, ja maalisolmuun osuva järjestelmän kohde siirretään tänne.
+- **Lähin pelaaja, tasatilanne.** Kun sääntö valitsee lähimmän pelaajan (esim. `nearestDefender`, irtokiekon kamppailija), etäisyytenä on Chebyshev-etäisyys, sitten Manhattan-etäisyys |dx| + |dy|, ja jos sekin on tasan, pelipaikkajärjestys `C`, `LW`, `RW`, `LD`, `RD`. Sama sääntö kaikkialla, jotta tulos on deterministinen.
+- **Peilaus** (y-suunnassa, D-034): (x, y) → (x, width − 1 − y), 11 × 5 -verkossa (x, 4 − y). Pelipaikat vaihtuvat `LW` ↔ `RW` ja `LD` ↔ `RD` (`C` pysyy), aloituspisteiden id:t `...Left` ↔ `...Right` (`center` pysyy). Maalisolmut, maalin edustat ja keskikaista kuvautuvat itselleen. Peilaus edellyttää, että kaukalo on symmetrinen y-suunnassa (ks. rink.json, Validointi).
 - Koordinaatit kirjoitetaan kuvioissa ja järjestelmissä taulukkona `[x, y]`, kaukalotiedostossa objektina `{"x": .., "y": ..}`.
 
 ## rink.json
@@ -63,7 +68,7 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 | --- | --- | --- |
 | `schemaVersion` | int | 1 |
 | `length`, `width` | int | Verkon koko. Nyt 11 ja 5 |
-| `ownGoal`, `opponentGoal` | `{x, y}` | Maalien solmut. Nyt (1, 2) ja (9, 2), molemmat maaliviivalla. Kierrossa toistensa kuvat |
+| `ownGoal`, `opponentGoal` | `{x, y}` | Maalien solmut. Nyt (1, 2) ja (9, 2), molemmat maaliviivalla keskikaistalla. Kierrossa toistensa kuvat. Vain laukauksen kohteita (D-033) |
 | `zones` | lista `{id, xMin, xMax}` | Alueet x-väleinä (mukaan lukien): `defensive` 0–3, `neutral` 4–6, `offensive` 7–10. Jokainen x välillä 0 … length − 1 kuuluu tasan yhteen alueeseen. Solmun alue johdetaan tästä (Q-022) |
 | `xgZones` | lista merkkijonoja | Laukaisuvyöhykkeiden nimet. Jokaisella on `tuning.json`:ssa `checks.shot.baseXg`- ja `checks.shot.attackerByXgZone`-arvo |
 | `faceoffSpots` | lista `{id, x, y}` | Aloituspisteet, nimet oman joukkueen näkökulmasta |
@@ -78,15 +83,19 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 | x | y = 0 | y = 1 | y = 2 | y = 3 | y = 4 |
 | --- | --- | --- | --- | --- | --- |
 | 10 (maalin takana) | boards | behindNet | behindNet | behindNet | boards |
-| 9 (maaliviiva) | boards | lowAngle | crease | lowAngle | boards |
+| 9 (maaliviiva) | boards | lowAngle | maalisolmu (`crease`, ei käytössä) | lowAngle | boards |
 | 8 (aloituspisteet) | boards | circle | slot | circle | boards |
 | 7 (ympyröiden yläreuna) | boards | point | highSlot | point | boards |
 
-x ≤ 6 on `longRange`. `behindNet` = laukaus maaliviivan takaa (wraparound), hyvin pieni xG (`checks.shot.baseXg.behindNet`). `isSlot` on tosi solmuissa (7, 2), (8, 2) ja (9, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 7:llä (siniviiva on x ≈ 6,1) ovat 5-leveän verkon kompromisseja, ks. Q-015.
+x ≤ 6 on `longRange`. `behindNet` = laukaus maaliviivan takaa (wraparound), hyvin pieni xG (`checks.shot.baseXg.behindNet`). `isSlot` on tosi solmuissa (7, 2) ja (8, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 7:llä (siniviiva on x ≈ 6,1) ovat 5-leveän verkon kompromisseja, ks. Q-015.
+
+**Maalisolmu ja `crease`** (D-033). (9, 2) on vastustajan maalisolmu: kukaan ei laukaise sieltä, joten se ei ole slottisolmu (`isSlot: false`), ja sen `xgZone`-arvo `crease` on vain nimilappu, jota laukaus ei koskaan käytä. Maalin edustan laukaukset lähtevät solmusta (8, 2) ja käyttävät `slot`-vyöhykettä. Solmu (8, 2) kattaa 22 jalan verkossa sekä maalin edustan että matalan slotin, eikä niitä voi erottaa sijainnilla. `checks.shot.baseXg.crease` ja `attackerByXgZone.crease` pysyvät datassa, mutta niitä ei käytetä, ennen kuin Jerry päättää, saavatko maalin edustan tilannelaukaukset (rebound, ohjaus maskista) `crease`-xG:n (ehdotus E-003).
 
 **Aloituspisteet.** `center` (5, 2), `defensiveLeft` (2, 1), `defensiveRight` (2, 3), `neutralDefensiveLeft` (4, 1), `neutralDefensiveRight` (4, 3), `neutralOffensiveLeft` (6, 1), `neutralOffensiveRight` (6, 3), `offensiveLeft` (8, 1), `offensiveRight` (8, 3). Kierrossa `offensiveLeft` ↔ `defensiveRight`, `neutralOffensiveLeft` ↔ `neutralDefensiveRight` jne., `center` kiertyy itsekseen.
 
 **Validointi.** Lataaja hylkää tiedoston, jos: solmuja ei ole tasan `length × width` tai ne eivät ole id-järjestyksessä; solmulla on tuntematon kenttä (myös vanha `zone`, Q-022); `zones`-välit eivät kata jokaista x:ää 0 … length − 1 tasan kerran tai alueen id on tuntematon (`defensive`, `neutral`, `offensive`); `xgZone` ei löydy `xgZones`-listasta; `ownGoal`, `opponentGoal` tai aloituspiste on verkon ulkopuolella; aloituspisteiden id:t eivät ole yksilöllisiä.
+
+Uudet säännöt peilausta ja maalisolmuja varten (D-033, D-034; lataaja ei vielä tarkista, programmer lisää ennen kuvioiden lataajaa): maalisolmut ovat keskikaistalla (y = (width − 1) / 2) ja toistensa kuvat kierrossa; maalisolmun `isSlot` on epätosi; maalisolmu ei ole aloituspiste; kaukalo on symmetrinen y-suunnassa (solmuilla (x, y) ja (x, width − 1 − y) on sama `xgZone` ja `isSlot`); jokaisella `...Left`-aloituspisteellä on `...Right`-pari peilikuvasolmussa ja päinvastoin, ja keskikaistan aloituspisteen id ei pääty `Left` tai `Right`.
 
 ## tuning.json
 
@@ -148,7 +157,10 @@ Ylimmän tason osiot:
 
 **Statsien nimet.** Kenttäpelaajat: `speed`, `agility`, `endurance`, `hands`, `passing`, `shotAccuracy`, `shotPower`, `positioning`, `awareness`, `strength`, `discipline`, `faceoffs`. Maalivahdit: `reflexes`, `positioning`, `mobility`, `reboundControl`, `puckHandling`, `mentalToughness`.
 
-**Tarkistukset nyt:** kaksipuoliset `faceoff`, `pass`, `zoneEntryCarry`, `deke`, `breakout`, `shot`, `loosePuck`, `hit`; yksipuoliset (`side: "defender"`) `block` ja `rebound`; `dumpIn` (`noCheck`, vain muokkaaja irtokiekkoon). Erikoisrakenteet:
+**Tarkistukset nyt:** kaksipuoliset `faceoff`, `pass`, `zoneEntryCarry`, `deke`, `breakout`, `shot`, `loosePuck`, `hit`; yksipuoliset (`side: "defender"`) `block` ja `rebound`; `dumpIn` (`noCheck`, vain arvoja irtokiekkoon). Erikoisrakenteet:
+
+- `dumpIn` (kuvion `dump`, D-031): `goaliePuckHandlingPerPoint` (logit per maalivahdin kiekonkäsittelypiste yli `referenceValue`:n, puolustavan joukkueen hyväksi) ja `goalieReachNodes` (kuinka lähellä maalisolmua, Chebyshev, kohteen pitää olla, jotta maalivahti ehtii kiekkoon). Ks. Kuviot, `dump`.
+- `deke`: myös `skate`-toiminnon kuljetustarkistus, kun kuljetus ei ylitä alueen rajaa (D-032). `modifiers.defenderDistance` on taulukko lähimmän puolustajan etäisyydelle luistelureitistä (0, 1, 2+), sama janasääntö kuin `pass.modifiers.laneDefenderDistance`.
 
 - `shot`: ei `p0`- eikä `attacker`-kenttää. Perustaso on `baseXg[xgZone]` ja hyökkääjän painot `attackerByXgZone[xgZone]` (laukaisijan solmu hänen näkökulmastaan). Järjestys: blokki → `onTargetShare` (maalia kohti vai ohi) → maalitarkistus (Q-010). Omat todennäköisyysrajat `minProbability` ja `maxProbability` (D-014, Q-009).
 - `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007).
@@ -183,9 +195,9 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 
 Haarukoita muuttaa vain Jerry. Aloitusten voittoprosentti ja ykkösketjun jääaika eivät ole tavoitteita (ne kertovat hajonnasta ja väsymyksestä), joten ne eivät ole tiedostossa.
 
-## Kuviot (`data/plays/*.json`) – luonnos – odottaa Jerryn hyväksyntää
+## Kuviot (`data/plays/*.json`) – hyväksytty (D-034)
 
-Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nimi = `id`.
+Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nimi = `id`. Jerryn ehdot (D-034): viisi toimintoa (D-031), kuviot viittaavat pelipaikkoihin, jokaisen kuvion voi pelata peilattuna kummallakin laidalla.
 
 ```json
 {
@@ -193,15 +205,18 @@ Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nim
   "id": "pointShotScreen",
   "name": "Point shot with screen",
   "type": "offensiveZone",
-  "mirrorable": true,
   "start": {
     "puckCarrier": "LW",
-    "positions": { "LW": [8, 0], "C": [8, 3], "RW": [10, 3], "LD": [7, 1], "RD": [7, 3] }
+    "positions": { "LW": [8, 0], "C": [8, 3], "RW": [9, 4], "LD": [7, 1], "RD": [7, 3] }
   },
   "beats": [
     {
-      "moves": { "C": [8, 2], "RW": [9, 2] },
+      "moves": { "C": [9, 3] },
       "action": { "type": "pass", "from": "LW", "to": "LD" }
+    },
+    {
+      "moves": { "LW": [9, 1] },
+      "action": { "type": "driveNet", "by": "RW" }
     },
     {
       "moves": {},
@@ -211,37 +226,74 @@ Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nim
 }
 ```
 
+Idea: laituri syöttää laidasta siniviivalle, oikea laituri ajaa maalin eteen maskiin (8, 2), pakki laukoo maskin läpi.
+
 | Kenttä | Kuvaus |
 | --- | --- |
 | `id` | camelCase, yksilöllinen, sama kuin tiedostonimi |
 | `name` | Näyttönimi (lokalisointi myöhemmin) |
 | `type` | `breakout` (avaus), `zoneEntry` (alueelle tulo), `offensiveZone` (alueella pelaaminen), `faceoff` (aloitus), `powerPlay` (ylivoima, myöhemmin) |
 | `faceoffSpot` | Vain `faceoff`-tyypillä: `rink.json`:n aloituspisteen id |
-| `mirrorable` | Jos tosi, simulaatio voi käyttää peilikuvaa: y → width − 1 − y, LW ↔ RW, LD ↔ RD, `...Left` ↔ `...Right` |
 | `start.positions` | Viiden kenttäpelaajan lähtösolmut paikoittain `LW`, `C`, `RW`, `LD`, `RD` |
-| `start.puckCarrier` | Kuka pitää kiekkoa kuvion alussa |
+| `start.puckCarrier` | Pelipaikka, jolla kiekko on kuvion alussa |
 | `beats` | 1–`plays.maxBeats` (4) tahtia |
-| `beats[].moves` | Paikka → kohdesolmu. Puuttuva paikka pysyy paikallaan. Siirto enintään `plays.maxNodesPerBeat` solmua |
-| `beats[].action` | Tasan yksi kiekkotoiminto, suoritetaan siirtojen jälkeen |
+| `beats[].moves` | Pelipaikka → kohdesolmu. Puuttuva paikka pysyy paikallaan. Siirto enintään `plays.maxNodesPerBeat` solmua. Ei koskaan kiekollista (D-032) |
+| `beats[].action` | Tasan yksi kiekkotoiminto, suoritetaan siirtojen jälkeen (D-032) |
 
-**Kiekkotoiminnot** (vision.md: luistele, syötä, laukaise, aja maalille):
+Peilauslippua ei ole: aiempi `mirrorable`-kenttä on poistettu, ja lataaja hylkää sen tuntemattomana kenttänä. Ks. Peilaus.
 
-| `type` | Kentät | Tarkistus |
-| --- | --- | --- |
-| `skate` | `by`, `to` | Kiekollinen luistelee kiekon kanssa. Alueen rajan ylitys hyökkäysalueelle = `zoneEntryCarry`, puolustaja reitillä voi laukaista `deke`-tarkistuksen |
-| `pass` | `from`, `to` | `pass`; vastaanottajan solmu on hänen sijaintinsa siirtojen jälkeen |
-| `shoot` | `by` | `block` → `shot`; päättää kuvion |
-| `driveNet` | `by` | Kiekoton pelaaja ajaa maalin eteen (vastustajan `crease`-solmu) maskiin ja reboundille (D-020). Ei tarkistusta eikä kiekon siirtoa. Kiekollinen maalille ajo kirjoitetaan `skate`-toimintona |
+**Pelipaikat, ei pelaajia** (D-034, ehto 2). Kaikki viittaukset (`start.positions`, `start.puckCarrier`, `moves`, toimintojen `by`, `from`, `to`) ovat pelipaikkoja `LW`, `C`, `RW`, `LD`, `RD`. Kuviossa ei ole pelaajien id:itä, nimiä eikä rooleja. Paikka tarkoittaa sitä jäällä olevaa pelaajaa, joka pelaa paikkaa (kolmikko ja pari, D-023), myös jos se ei ole hänen ensisijainen paikkansa (silloin väärän puolen miinus, D-024).
 
-Jos E-001 hyväksytään, listaan tulee viides toiminto `dump`.
+**Kiekkotoiminnot** (D-031):
 
-**Kulku.** Kun kuvio valitaan, pelaajat siirtyvät lähtösolmuihin (aika `time.setupSeconds`, Q-006). Tahdit suoritetaan järjestyksessä. Epäonnistunut tarkistus päättää kuvion (kiekonmenetys tai irtokiekko), ja peli siirtyy järjestelmätilaan. Jos viimeinen tahti ei ole laukaus, peli siirtyy järjestelmätilaan kiekko tallessa.
+| `type` | Kentät | Mitä tapahtuu | Tarkistus | Aika (`time.secondsPerAction.*`) |
+| --- | --- | --- | --- | --- |
+| `skate` | `by`, `to` (solmu) | Kiekollinen luistelee kiekon kanssa kohdesolmuun, enintään `plays.maxNodesPerBeat` solmua. Ainoa tapa liikuttaa kiekollista (D-032) | Aina tarkistus (D-032), yksi per toiminto: kohde hyökkäysalueella ja lähtö ei = `zoneEntryCarry`; lähtö omalla alueella ja kohde ei = `breakout`; muuten `deke` lähintä puolustajaa vastaan, `deke.modifiers.defenderDistance` reitin etäisyyden mukaan. Epäonnistuminen = kiekonmenetys | `skate` |
+| `pass` | `from`, `to` (pelipaikka) | Kiekko siirtyy vastaanottajalle, jonka solmu on hänen sijaintinsa tahdin siirtojen jälkeen | `pass` | `pass` |
+| `shoot` | `by` | Laukaus vastustajan maalisolmua kohti laukaisijan solmusta. Päättää kuvion | `block` → `onTargetShare` → `shot` (Q-010) | `shoot` |
+| `driveNet` | `by` | Kiekoton pelaaja ajaa vastustajan maalin eteen (`netFront`, (8, 2)) maskiin ja reboundille (D-020, D-033). Kiekko ei liiku, kiekollinen pitää kiekon. Ainoa tapa päästä kuviossa maalin eteen | Ei tarkistusta | `driveNet` |
+| `dump` | `by`, `to` (solmu) | Kiekollinen ampuu kiekon päätyyn kohdesolmuun, ja siellä seuraa irtokiekkokamppailu (E-001, D-031). Päättää kuvion | Ei omaa tarkistusta (`checks.dumpIn`, `noCheck`), sitten `loosePuck` kohdesolmussa | `dumpIn`, sitten `loosePuck` |
 
-**Validointi.** `schemaVersion` tunnettu, `id` yksilöllinen, 1–4 tahtia, kaikki solmut verkon sisällä, viisi eri paikkaa eri solmuissa lähdössä, siirtojen pituus sallittu, `pass.from` on tahdin alussa kiekollinen ja `to` eri pelaaja, `skate.by` ja `shoot.by` ovat kiekollisia, `driveNet.by` ei ole kiekollinen, `shoot`-tahdin jälkeen ei tahteja, `faceoff`-tyypillä `faceoffSpot` löytyy kaukalosta.
+**`dump` tarkemmin.**
 
-## Puolustusjärjestelmät (`data/systems/*.json`) – luonnos – odottaa Jerryn hyväksyntää
+- Kiekko lentää suoraan kohdesolmuun. Matkalla ei ole katkoa eikä tarkistusta (`checks.dumpIn` on `noCheck`).
+- Kohdesolmussa ratkaistaan `loosePuck`. Kamppailijat ja `extraPlayer`-muokkaaja määräytyvät irtokiekon yleisellä säännöllä (järjestelmätila, virstanpylväs 2). Jahtaaja asetetaan saman tahdin siirroilla, koska siirrot suoritetaan ennen toimintoa.
+- **Maalivahti:** jos kohteen Chebyshev-etäisyys puolustavan joukkueen maalisolmuun (hyökkääjän näkökulmasta `opponentGoal`) on enintään `checks.dumpIn.goalieReachNodes` (1), kamppailun summaan M lisätään −`goaliePuckHandlingPerPoint` × (maalivahdin `puckHandling` − `checkFormula.referenceValue`). Hyvä kiekkoa pelaava maalivahti katkaisee maalin taakse ammutut kiekot, joten kulmaan ampuminen on eri valinta kuin maalin taakse ampuminen.
+- Tapahtumaloki: "Kiekko päätyyn" (ampuja, kamppailun lopputulos).
+- Kuvio päättyy, ja peli jatkuu järjestelmätilassa kamppailun lopputuloksen mukaan.
 
-Vastaa kysymykseen Q-001 (järjestelmän osalta). Säännöt ovat deterministisiä, jotta editori voi näyttää puolustajien haamut (tech-spec.md). Järjestelmä kirjoitetaan **puolustavan joukkueen omasta näkökulmasta** (oma maali x = 0).
+**Kulku.** Kun kuvio valitaan, pelaajat siirtyvät lähtösolmuihin (aika `time.setupSeconds`, Q-006). Tahdit suoritetaan järjestyksessä: ensin tahdin siirrot, sitten toiminto. Kiekollinen on tahdin alussa se, jolla kiekko on edellisen tahdin jälkeen (ensimmäisessä tahdissa `start.puckCarrier`). Epäonnistunut tarkistus päättää kuvion (kiekonmenetys tai irtokiekko), ja peli siirtyy järjestelmätilaan. `shoot` ja `dump` päättävät kuvion aina. Jos viimeinen tahti ei ole `shoot` tai `dump`, peli siirtyy järjestelmätilaan kiekko tallessa.
+
+**Maski.** `checks.shot.modifiers.screen` pätee, kun laukaus menee maalia kohti ja joku laukaisijan joukkuetoveri on vastustajan maalin edustalla (`netFront`). Kuviossa sinne pääsee vain `driveNet`-toiminnolla.
+
+**Peilaus** (D-034, ehto 3). Jokaisen kuvion voi pelata peilattuna, eikä kuvio voi kieltää sitä. Peilattu kuvio saadaan muunnoksella (ks. Koordinaatit, Peilaus): solmut y → width − 1 − y, pelipaikat `LW` ↔ `RW` ja `LD` ↔ `RD`, `faceoffSpot` `...Left` ↔ `...Right`. Pelipaikat vaihtuvat, jotta vasen laituri pelaa peilikuvassakin vasenta laitaa eikä saa väärän puolen miinusta. Koska kaukalo on symmetrinen y-suunnassa, validin kuvion peilikuva on aina validi, eikä sitä validoida erikseen. Simulaatio valitsee puolen deterministisesti:
+
+- Kuvion **kirjoituspuoli** on kiekollisen lähtösolmun puoli (`start.positions[start.puckCarrier]`): vasen (y < 2), oikea (y > 2) tai keskikaista.
+- `faceoff`-kuvio peilataan, kun aloitus on `faceoffSpot`-pisteen peilikuvapisteessä. Kuviota käytetään vain sen omassa ja peilikuvan pisteessä.
+- Muu kuvio peilataan, kun kiekon solmu kuvion alkaessa on eri puolella kuin kirjoituspuoli. Jos kumpikaan on keskikaistalla, kuvio pelataan kirjoitetulla puolella.
+- Valmentajan oma puolivalinta (esim. "aina oikealta") on myöhempi editorin ominaisuus, ei osa tätä skeemaa.
+
+**Validointi.** Lataaja hylkää kuvion, jos:
+
+- `schemaVersion` on tuntematon, `id` ei ole yksilöllinen tai ei vastaa tiedostonimeä, tai kuviossa on tuntematon kenttä (myös `mirrorable`);
+- `type` on tuntematon, `faceoff`-tyypiltä puuttuu `faceoffSpot` tai se ei löydy kaukalosta, tai muulla tyypillä on `faceoffSpot`;
+- pelipaikka on jokin muu kuin `LW`, `C`, `RW`, `LD`, `RD`, tai `start.positions` ei sisällä täsmälleen näitä viittä;
+- tahteja on 0 tai yli `plays.maxBeats`;
+- jokin solmu on verkon ulkopuolella;
+- **kenttäpelaajan solmu on maalisolmu** (D-033): lähtösolmut, siirtojen kohteet, `skate.to` ja `dump.to`;
+- kaksi pelaajaa on samassa solmussa lähdössä tai tahdin siirtojen ja toiminnon jälkeen;
+- siirto tai `skate` on pidempi kuin `plays.maxNodesPerBeat`;
+- **`moves` sisältää tahdin alun kiekollisen** (D-032) tai saman tahdin `driveNet`-toiminnon tekijän;
+- siirto päättyy vastustajan maalin edustalle (`netFront`); sinne mennään `driveNet`-toiminnolla;
+- tahdissa ei ole tasan yhtä `action`-kenttää tai toiminnon tyyppi on tuntematon;
+- `skate.by`, `shoot.by`, `dump.by` tai `pass.from` ei ole tahdin alun kiekollinen; `pass.to` on sama kuin `pass.from`;
+- `driveNet.by` on kiekollinen, on jo maalin edustalla tai on siitä yli `plays.maxNodesPerBeat` solmun päässä;
+- `dump.to` ei ole hyökkäysalueella, tai `dump.by` on keskiviivan takana (x < keskiviiva: pitkä kiekko, jota ei kirjoiteta kuvioon);
+- `shoot`- tai `dump`-tahdin jälkeen on tahteja.
+
+## Puolustusjärjestelmät (`data/systems/*.json`) – hyväksytty (D-034)
+
+Vastaa kysymykseen Q-001 (järjestelmän osalta). Säännöt ovat deterministisiä, jotta editori voi näyttää puolustajien haamut (tech-spec.md), ja viimeinen sääntö on aina varasääntö (D-034, ehto 4). Järjestelmä kirjoitetaan **puolustavan joukkueen omasta näkökulmasta** (oma maali (1, 2)).
 
 ```json
 {
@@ -267,7 +319,7 @@ Vastaa kysymykseen Q-001 (järjestelmän osalta). Säännöt ovat deterministisi
         "F2": { "node": [3, 1] },
         "F3": { "node": [3, 3] },
         "D1": { "node": [2, 1] },
-        "D2": { "node": [1, 2] }
+        "D2": { "node": [2, 2] }
       }
     }
   ]
@@ -281,22 +333,43 @@ Esimerkin sijainnit ovat havainnollistus. Ensimmäiset järjestelmät (D-021) ov
 | `forecheck212` | 2-1-2 aggressiivinen karvaus | Kaksi hyökkääjää painostaa kiekollista hyökkäyspäässä, kolmas tukee ylempänä, pakit pitävät siniviivaa |
 | `trap122` | 1-2-2 passiivinen / trap | Yksi karvaaja ohjaa kiekon laitaan, kaksi hyökkääjää ja pakit odottavat keskialueella ja oman siniviivan tuntumassa |
 
-Järjestelmätiedostot kirjoitetaan, kun Q-001 (skeema) ja Q-003 on vastattu.
+Järjestelmätiedostot kirjoitetaan virstanpylväässä 2. Alueella puolustamisen tarkemmat säännöt odottavat Q-003:a.
 
 | Kenttä | Kuvaus |
 | --- | --- |
 | `id`, `name` | Kuten kuvioissa |
-| `mirrorY` | Jos tosi, säännöt kirjoitetaan kanoniselle puolelle: kiekko vasemmalla tai keskellä (y ≤ (width − 1) / 2, 11 × 5 -verkossa y ≤ 2). Kun kiekko on oikealla (y > 2), kiekon solmu peilataan y → width − 1 − y, sääntö valitaan peilatulla kiekolla ja valitun säännön kohteet peilataan takaisin (`node` [x, y] → [x, width − 1 − y], `puckOffset` [dx, dy] → [dx, −dy]). Kohteet saavat olla kummalla puolella tahansa |
-| `rules` | Järjestetty lista. Ensimmäinen sääntö, jonka `when` täsmää, ratkaisee. Viimeisen säännön `when` on `{}` (aina tosi) |
-| `when.puckZones` | Lista alueita, joissa kiekko on (puolustajan näkökulmasta). Puuttuu = mikä tahansa |
-| `when.puckX`, `when.puckY` | Valinnaiset `[min, max]`-välit kiekon koordinaateille |
-| `when.puckState` | Valinnainen: `controlled` tai `loose` |
+| `mirrorY` | Jos tosi, säännöt kirjoitetaan kanoniselle puolelle: kiekko vasemmalla tai keskikaistalla (y ≤ 2). Kun kiekko on oikealla (y > 2), kiekon solmu peilataan, sääntö valitaan peilatulla kiekolla ja valitun säännön kohteet peilataan takaisin (`node` [x, y] → [x, width − 1 − y], `puckOffset` [dx, dy] → [dx, −dy]). Kohteet saavat olla kummalla puolella tahansa. Jos epätosi, säännöt kattavat koko leveyden |
+| `rules` | Järjestetty lista. Ensimmäinen sääntö, jonka `when` täsmää, ratkaisee |
+| `when` | Ehdot, joiden kaikkien pitää täsmätä (JA). Tyhjä `{}` = aina tosi. Vain viimeisellä säännöllä on tyhjä `when` |
+| `when.puckZones` | Lista alueita, joissa kiekko on (puolustajan näkökulmasta) |
+| `when.puckX`, `when.puckY` | `[min, max]`-välit (mukaan lukien) kiekon koordinaateille |
+| `when.puckState` | `controlled` (jollakin on kiekko) tai `loose` (irtokiekko) |
 | `targets` | Rooli → kohde. Kaikille viidelle roolille `F1`, `F2`, `F3` (jäällä oleva hyökkäyskolmikko), `D1`, `D2` (jäällä oleva pakkipari) |
 | kohde `node` | Kiinteä solmu `[x, y]` |
-| kohde `puckOffset` | Kiekon solmu + `[dx, dy]`, rajattuna verkon sisälle. `[0, 0]` = painostaa kiekollista |
+| kohde `puckOffset` | Kiekon solmu + `[dx, dy]`. `[0, 0]` = painostaa kiekollista |
 
-**Roolien jako** (Q-011). Joka tapahtuman jälkeen hyökkääjät järjestetään etäisyyden mukaan kiekkoon: lähin on F1, sitten F2 ja F3. Tasatilanteessa järjestys C, LW, RW. Pakeista lähin on D1. Rooli ei ole pelipaikka, joten sentteri voi olla F2.
+**Arviointi.** Järjestelmä arvioidaan jokaisen tapahtuman jälkeen, kun puolustavalla joukkueella ei ole kiekkoa. Arviointi ei käytä satunnaisuutta, joten samasta tilanteesta tulee aina samat kohteet.
 
-**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` solmua kohti kohdettaan. Järjestäytyneisyys johdetaan siitä, kuinka moni puolustaja on kohteessaan tai kiekon takana (stats-and-checks.md), ja sen tarkka kaava kuuluu virstanpylvääseen 3.
+1. Kiekon solmu muunnetaan puolustajan näkökulmaan (kierto 180°, jos puolustaja on vierasjoukkue). Kiekko ei ole koskaan maalisolmussa (D-033).
+2. `mirrorY`: jos kiekon y > 2, kiekko peilataan.
+3. Valitaan ensimmäinen sääntö, jonka `when` täsmää. Viimeinen sääntö täsmää aina.
+4. Roolit jaetaan (alla).
+5. Kohteet lasketaan (alla) ja peilataan takaisin, jos kiekko peilattiin.
 
-**Validointi.** Kaikki viisi roolia jokaisessa säännössä, solmut verkon sisällä, viimeinen sääntö kattaa kaiken, `mirrorY`-järjestelmässä `when.puckY`-välit eivät ulotu oikealle puoliskolle (y > (width − 1) / 2). Kohdesolmut saavat olla oikealla puolella.
+**Roolien jako** (Q-011). Hyökkääjät järjestetään etäisyyden mukaan kiekon solmuun: lähin on F1, sitten F2 ja F3. Pakeista lähin on D1. Etäisyys on Chebyshev, tasatilanteessa Manhattan |dx| + |dy|, ja jos sekin on tasan, kiinteä järjestys: hyökkääjistä `C`, sitten kiekon puolen laituri, sitten toinen laituri; pakeista ensin kiekon puolen pakki. Kiekon puoli: vasen tai keskikaista → `LW` ja `LD`, oikea → `RW` ja `RD` (puolustajan näkökulmasta). Näin järjestys on sama peilikuvassa. Rooli ei ole pelipaikka, joten sentteri voi olla F2.
+
+**Kohteen laskenta.**
+
+- `node`: solmu sellaisenaan.
+- `puckOffset`: (kiekon x + dx, kiekon y + dy), jonka jälkeen x rajataan välille 0 … length − 1 ja y välille 0 … width − 1 erikseen. Jos tulos on maalisolmu (kumpi tahansa), se siirretään yhden askeleen keskiviivaa kohti x-suunnassa eli maalin edustalle (oma maali (1, 2) → (2, 2), vastustajan maali (9, 2) → (8, 2)).
+
+**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` askelta kohti kohdettaan. Askel on (sign(dx), sign(dy)), eli vinottain, kunnes toinen koordinaatti täsmää. Jos askel osuisi maalisolmuun: kun sign(dy) ≠ 0, otetaan askel (sign(dx), 0); kun sign(dy) = 0, otetaan askel (sign(dx), s), jossa s = +1, jos kiekko on oikealla (y > 2), muuten −1. Kaksi puolustajaa saa päätyä samaan solmuun. Järjestäytyneisyys johdetaan siitä, kuinka moni puolustaja on kohteessaan tai kiekon takana (stats-and-checks.md), ja sen tarkka kaava kuuluu virstanpylvääseen 3.
+
+**Validointi.** Lataaja hylkää järjestelmän, jos:
+
+- `schemaVersion` on tuntematon, `id` ei ole yksilöllinen tai tiedostossa on tuntematon kenttä;
+- `rules` on tyhjä, **viimeisen säännön `when` ei ole tyhjä `{}`**, tai jonkin muun säännön `when` on tyhjä (sitä seuraavat säännöt eivät koskaan täsmäisi);
+- `when`-avain on tuntematon, `puckZones` on tyhjä tai sisältää tuntemattoman alueen, väli on `min > max` tai verkon ulkopuolella, tai `puckState` on tuntematon;
+- `mirrorY`-järjestelmässä `when.puckY`-väli ulottuu oikealle puoliskolle (y > 2);
+- säännöltä puuttuu jokin viidestä roolista tai siinä on tuntematon rooli, tai kohteella on muu kuin tasan yksi kentistä `node` ja `puckOffset`;
+- `node` on verkon ulkopuolella tai **maalisolmu** (kumpi tahansa, D-033). Kohdesolmut saavat olla oikealla puolella.

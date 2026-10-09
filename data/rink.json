@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "_notes": "Own-team view: own goal at x = 1, opponent goal at x = length - 2; x = 0 and x = length - 1 are the end rows behind the goal lines (E-002). y = 0 is the left boards when facing the opponent goal. Node id is derived: id = x * width + y. Nodes are listed in id order. A node's zone is derived from the zones x-ranges and is not stored on the node (Q-022). See docs/data-schema.md.",
+  "_notes": "Own-team view: own goal at x = 1, opponent goal at x = length - 2; x = 0 and x = length - 1 are the end rows behind the goal lines (E-002). y = 0 is the left boards when facing the opponent goal. Node id is derived: id = x * width + y. Nodes are listed in id order. A node's zone is derived from the zones x-ranges and is not stored on the node (Q-022). Goal nodes (ownGoal, opponentGoal) are shot targets only: no skater stands there and no shot starts there (D-033), so the opponent goal node is not a slot node and its crease label is unused as a shot origin. The net-front node is one step from the goal node toward the centre line, here (8, 2) and (2, 2). See docs/data-schema.md.",
   "length": 11,
   "width": 5,
   "ownGoal": {"x": 1, "y": 2},
@@ -70,7 +70,7 @@
     {"x": 8, "y": 4, "xgZone": "boards", "isSlot": false},
     {"x": 9, "y": 0, "xgZone": "boards", "isSlot": false},
     {"x": 9, "y": 1, "xgZone": "lowAngle", "isSlot": false},
-    {"x": 9, "y": 2, "xgZone": "crease", "isSlot": true},
+    {"x": 9, "y": 2, "xgZone": "crease", "isSlot": false},
     {"x": 9, "y": 3, "xgZone": "lowAngle", "isSlot": false},
     {"x": 9, "y": 4, "xgZone": "boards", "isSlot": false},
     {"x": 10, "y": 0, "xgZone": "boards", "isSlot": false},

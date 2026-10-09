@@ -10,7 +10,9 @@
     "checks.zoneEntryCarry.p0",
     "checks.zoneEntryCarry.modifiers.organization",
     "checks.dumpIn.goaliePuckHandlingPerPoint",
+    "checks.dumpIn.goalieReachNodes",
     "checks.deke.p0",
+    "checks.deke.modifiers.defenderDistance",
     "checks.breakout.p0",
     "checks.shot.attackerByXgZone.crease.shooter.shotAccuracy",
     "checks.shot.attackerByXgZone.crease.shooter.shotPower",
@@ -204,12 +206,13 @@
       }
     },
     "dumpIn": {
-      "_notes": "No check (stats-and-checks.md). Leads to a loose puck; goaliePuckHandlingPerPoint (logit per goalie puckHandling point above checkFormula.referenceValue) favours the defending team in that loose-puck check.",
+      "_notes": "No check (stats-and-checks.md). Play action dump (D-031): the puck goes to the target node and a loose-puck check follows there. If the target is within goalieReachNodes (Chebyshev) of the goal node, goaliePuckHandlingPerPoint (logit per goalie puckHandling point above checkFormula.referenceValue) favours the defending team in that loose-puck check. Time cost: time.secondsPerAction.dumpIn.",
       "kind": "noCheck",
-      "goaliePuckHandlingPerPoint": 0.03
+      "goaliePuckHandlingPerPoint": 0.03,
+      "goalieReachNodes": 1
     },
     "deke": {
-      "_notes": "1v1 deke. Success = attacker beats the defender. Energy applies via energy.checkModifierAtZero.",
+      "_notes": "1v1 deke, also the carry check of a skate action that neither leaves the defensive zone nor enters the offensive zone (D-032: every carry is a check). Success = carrier keeps the puck. defenderDistance is indexed by the nearest defender's node distance from the skating path (0, 1, 2+), same lane rule as pass.laneDefenderDistance. Energy applies via energy.checkModifierAtZero.",
       "kind": "twoSided",
       "p0": 0.45,
       "attacker": {
@@ -224,7 +227,13 @@
           "agility": 0.4
         }
       },
-      "modifiers": {}
+      "modifiers": {
+        "defenderDistance": [
+          0.0,
+          1.0,
+          3.5
+        ]
+      }
     },
     "breakout": {
       "_notes": "Breakout from own zone. Success = puck leaves the defensive zone with possession. forecheckers = mean of the forechecking players' stats. Defensive system effect is a later modifier (Q-003).",
