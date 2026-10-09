@@ -38,7 +38,7 @@ Tämä dokumentti on datatiedostojen skeemojen ainoa totuus (D-013). Designer om
 | --- | --- |
 | `pressure`, `organization`, `goalieEnergy` (tilaan sidottu) | Logit täydellä vaikutuksella, lineaarisesti välissä. Järjestäytyneisyys: arvo × (1 − puolustuksen järjestäytyneisyys). Paine: arvo × paine. Energia: arvo × (1 − energia) |
 | `crossIce`, `royalRoad`, `screen`, `homeAdvantage` (ehto) | Logit, kun ehto on tosi, muuten 0 |
-| `...PerPoint` | Logit per stat-piste suhteessa `stats.neutralValue`-arvoon |
+| `...PerPoint` | Logit per stat-piste suhteessa `checkFormula.referenceValue`-arvoon |
 | `...PerNode` | Logit per solmu |
 | Taulukko, esim. `laneDefenderDistance` | Indeksi on etäisyys solmuina, viimeinen arvo pätee kaikkiin suurempiin |
 
@@ -80,7 +80,7 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 | 7 (aloituspisteet) | boards | circle | slot | circle | boards |
 | 6 (ympyröiden yläreuna) | boards | point | highSlot | point | boards |
 
-x ≤ 5 on `longRange`. `isSlot` on tosi solmuissa (6, 2), (7, 2) ja (8, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 6:lla (siniviiva on x ≈ 5,1) ovat kompromisseja 9 × 5 -verkossa, ks. Q-012 ja E-002.
+x ≤ 5 on `longRange`. `isSlot` on tosi solmuissa (6, 2), (7, 2) ja (8, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 6:lla (siniviiva on x ≈ 5,1) ovat kompromisseja 9 × 5 -verkossa, ks. Q-015 ja E-002.
 
 **Aloituspisteet.** `center` (4, 2), `defensiveLeft` (1, 1), `defensiveRight` (1, 3), `neutralDefensiveLeft` (3, 1), `neutralDefensiveRight` (3, 3), `neutralOffensiveLeft` (5, 1), `neutralOffensiveRight` (5, 3), `offensiveLeft` (7, 1), `offensiveRight` (7, 3). Kierrossa `offensiveLeft` ↔ `defensiveRight` jne.
 
@@ -92,11 +92,12 @@ Kaikki tasapainoarvot (CLAUDE.md, sääntö 2). Ylimmän tason osiot:
 
 | Osio | Virstanpylväs | Sisältö |
 | --- | --- | --- |
-| `stats` | 1 | `min`, `max` (1, 20), `neutralValue` (tyhjän puolen arvo, Q-013), `grades` (A–E-rajat, `[min, max]`) |
-| `checkFormula` | 1 | `k` (0,15), `minProbability` (0,02), `maxProbability` (0,98) (D-014) |
+| `stats` | 1 | `min`, `max` (1, 20), `grades` (A–E-rajat, `[min, max]`) |
+| `checkFormula` | 1 | `k` (0,15), `minProbability` (0,02), `maxProbability` (0,98) (D-014: koskee vain tarkistuksia, ei laukauksen maalintodennäköisyyttä eikä xG:tä), `referenceValue` (10,5: yksipuolisen tarkistuksen puuttuva puoli ja `...PerPoint`-muokkaajien nollakohta, D-019) |
 | `checks` | 1 | Tarkistukset, ks. alla |
-| `time` | 2 | `periods`, `periodSeconds`, `shiftSeconds`, `secondsPerAction`, `setupSeconds`, `regroupSeconds` (Q-006) |
+| `time` | 2 | `periods`, `periodSeconds`, `forwardShiftSeconds`, `defenceShiftSeconds` (kolmikot ja pakkiparit vaihtuvat erikseen, D-023), `secondsPerAction`, `setupSeconds`, `regroupSeconds` (Q-006) |
 | `energy` | 3 | Kulutus, palautuminen penkillä, `checkModifierAtZero` (kaikkiin tarkistuksiin) |
+| `positions` | 2 | `offSideCheckModifier`: väärän puolen miinus (D-024), ks. Pelaajat, pelipaikat ja ketjut |
 | `organization` | 3 | Pudotus kiekonmenetyksessä alueittain, palautuminen, `organizedThreshold` |
 | `pressure` | 3 | Kasvu, säilyminen katkolla, energian kulutus, henkisen kestävyyden vaimennus |
 | `form`, `chemistry`, `familiarity` | 3+ | Vire (±`maxStatDelta`), ketjukemia, tuttuus |
@@ -108,6 +109,7 @@ Kaikki tasapainoarvot (CLAUDE.md, sääntö 2). Ylimmän tason osiot:
 
 ```json
 "pass": {
+  "kind": "twoSided",
   "p0": 0.85,
   "attacker": { "passer": { "passing": 0.6 }, "receiver": { "hands": 0.4 } },
   "defender": { "nearestDefender": { "awareness": 0.5, "positioning": 0.5 } },
@@ -117,24 +119,38 @@ Kaikki tasapainoarvot (CLAUDE.md, sääntö 2). Ylimmän tason osiot:
 
 | Kenttä | Kuvaus |
 | --- | --- |
-| `p0` | Perustaso 0 < p0 < 1: onnistumisen todennäköisyys, kun H = D ja M = 0. Onnistuminen = hyökkääjäpuolen lopputulos (kerrottu `_notes`-kentässä) |
-| `attacker`, `defender` | Puoli → osallistujarooli → stat → paino. **Painot summautuvat 1:een kummallakin puolella** (D-017), ei osallistujittain |
+| `kind` | Pakollinen. `twoSided` (kaksipuolinen, D-017), `oneSided` (yksipuolinen, D-019) tai `noCheck` (ei tarkistusta, vain arvoja muille tarkistuksille, nyt `dumpIn`) |
+| `side` | Vain `oneSided`: läsnä oleva puoli, `attacker` tai `defender`. Toista puolta ei kirjoiteta |
+| `p0` | Perustaso 0 < p0 < 1: onnistumisen todennäköisyys, kun H = D ja M = 0. Onnistuminen = hyökkääjäpuolen lopputulos (kerrottu `_notes`-kentässä), myös yksipuolisissa |
+| `attacker`, `defender` | Puoli → osallistujarooli → stat → paino. **Painot summautuvat 1:een puolta kohden**: kaksipuolisessa molemmilla puolilla (D-017), yksipuolisessa läsnä olevalla puolella (D-019). Ei osallistujittain |
 | `modifiers` | Nimi → logit-arvo (ks. Yleiset käytännöt). Tarkistuskohtaiset tilamuokkaajat (paine, järjestäytyneisyys) ovat täällä, kaikkia tarkistuksia koskevat (energia) omissa osioissaan |
 | muut | Tarkistuskohtaiset lisäkentät, esim. `noWinnerShare`, `onTargetShare`, `baseXg` |
 
-**Laskenta.** H = Σ paino × stat. Jos rooliin kuuluu useampi pelaaja (esim. `forecheckers`), statsina käytetään heidän keskiarvoaan. Tyhjä puoli (`{}`) saa arvon `stats.neutralValue` (Q-013). P = clamp(logistic(logit(p0) + k (H − D) + M), minProbability, maxProbability).
+**Laskenta.** H = hyökkääjäpuolen Σ paino × stat, D = puolustajapuolen vastaava. P = clamp(logistic(logit(p0) + k (H − D) + M), `checkFormula.minProbability`, `checkFormula.maxProbability`).
 
-**Osallistujaroolit:** `centre` (aloittava sentteri), `passer`, `receiver`, `carrier` (kiekollinen), `shooter`, `hitter`, `participant` (kamppailija), `nearestDefender`, `forecheckers` (karvaavat pelaajat, keskiarvo), `goalie`.
+- **Usean pelaajan rooli** (esim. `forecheckers`): jokaisen statin arvona käytetään roolin pelaajien statsien aritmeettista keskiarvoa, ja paino kerrotaan sillä (D-026). Keskiarvo lasketaan ennen painotusta, joten roolin osuus ei kasva pelaajamäärän mukana.
+- **Yksipuolinen tarkistus** (`kind: "oneSided"`, D-019): puuttuva puoli korvataan arvolla `checkFormula.referenceValue` (10,5). Kaava ja etumerkki pysyvät samoina: kun `side` on `defender`, H = `referenceValue` ja D = puolustajapuolen painotettu arvo; kun `side` on `attacker`, D = `referenceValue`. Esimerkki: `block` onnistuu (laukaus menee läpi) todennäköisyydellä p0, kun blokkaajan Sijoittuminen on 10,5, ja parempi blokkaaja laskee todennäköisyyttä. `rebound` vastaavasti: parempi maalivahdin Rebound-kontrolli vähentää reboundeja slottiin.
+- **Laukaus** (`shot`): maalintodennäköisyys ja xG rajataan arvoilla `checks.shot.minProbability` ja `checks.shot.maxProbability`, ei `checkFormula`-rajoilla (D-014, Q-009). Laukaukseen liittyvä `block` on tavallinen tarkistus ja käyttää `checkFormula`-rajoja.
+
+**Osallistujaroolit:** `centre` (aloittava sentteri), `passer`, `receiver`, `carrier` (kiekollinen), `shooter`, `hitter`, `participant` (kamppailija), `nearestDefender`, `forecheckers` (karvaavat pelaajat, keskiarvo), `goalie`. Osallistujarooli ei ole pelipaikka.
 
 **Statsien nimet.** Kenttäpelaajat: `speed`, `agility`, `endurance`, `hands`, `passing`, `shotAccuracy`, `shotPower`, `positioning`, `awareness`, `strength`, `discipline`, `faceoffs`. Maalivahdit: `reflexes`, `positioning`, `mobility`, `reboundControl`, `puckHandling`, `mentalToughness`.
 
-**Tarkistukset nyt:** `faceoff`, `pass`, `zoneEntryCarry`, `dumpIn` (ei tarkistusta, vain muokkaaja irtokiekkoon), `deke`, `breakout`, `shot`, `block`, `rebound`, `loosePuck`, `hit`. Erikoisrakenteet:
+**Tarkistukset nyt:** kaksipuoliset `faceoff`, `pass`, `zoneEntryCarry`, `deke`, `breakout`, `shot`, `loosePuck`, `hit`; yksipuoliset (`side: "defender"`) `block` ja `rebound`; `dumpIn` (`noCheck`, vain muokkaaja irtokiekkoon). Erikoisrakenteet:
 
-- `shot`: ei `p0`- eikä `attacker`-kenttää. Perustaso on `baseXg[xgZone]` ja hyökkääjän painot `attackerByXgZone[xgZone]` (laukaisijan solmu hänen näkökulmastaan). Järjestys: blokki → `onTargetShare` (maalia kohti vai ohi) → maalitarkistus (Q-010). xG-mittakaava: Q-009.
+- `shot`: ei `p0`- eikä `attacker`-kenttää. Perustaso on `baseXg[xgZone]` ja hyökkääjän painot `attackerByXgZone[xgZone]` (laukaisijan solmu hänen näkökulmastaan). Järjestys: blokki → `onTargetShare` (maalia kohti vai ohi) → maalitarkistus (Q-010). Omat todennäköisyysrajat `minProbability` ja `maxProbability` (D-014, Q-009).
 - `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007).
 - `rebound`: onnistuminen = rebound slottiin. Muuten maalivahti hallitsee kiekon: `controlledHoldShare` pitää (katko), loput kulmaan.
 
-**Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: puolen painojen summa poikkeaa 1:stä yli 1e-6 (tyhjä puoli sallitaan vain tarkistuksissa `block` ja `rebound`), stat- tai roolinimi on tuntematon, p0 tai osuus on välin (0, 1) ulkopuolella, `minProbability` ≥ `maxProbability`, `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa, tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti.
+**Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: `kind` puuttuu tai on tuntematon; `twoSided`-tarkistukselta puuttuu jompikumpi puoli (`shot`: `attackerByXgZone` korvaa `attacker`-puolen) tai sillä on `side`; `oneSided`-tarkistukselta puuttuu `side`, `side`-puoli puuttuu tai toinen puoli on kirjoitettu; `noCheck`-tarkistuksella on `p0`, `attacker` tai `defender`; läsnä olevan puolen painojen summa poikkeaa 1:stä yli 1e-6; stat- tai roolinimi on tuntematon; p0 tai osuus on välin (0, 1) ulkopuolella; `checkFormula`:n tai `checks.shot`:n `minProbability` ≥ `maxProbability` tai jompikumpi on välin (0, 1) ulkopuolella; `referenceValue` on välin `stats.min`–`stats.max` ulkopuolella; `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa, tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti.
+
+## Pelaajat, pelipaikat ja ketjut
+
+Pelaajadatan skeema tulee myöhemmin (`roles.json`, D-018). Tämä osio kertoo sopimukset, joihin muu data jo nojaa.
+
+**Pelipaikat** (D-024): `C`, `LW`, `RW`, `LD`, `RD`. Jokaisella kenttäpelaajalla on yksi ensisijainen pelipaikka. Jos pelaaja pelaa ensisijaisen paikkansa vastakkaisella puolella (`LW` ↔ `RW`, `LD` ↔ `RD`), jokaiseen tarkistukseen, johon hän osallistuu, lisätään `positions.offSideCheckModifier` (logit, negatiivinen) hänen oman puolensa vahingoksi: hyökkääjäpuolella se lisätään summaan M, puolustajapuolella vähennetään. Muokkaaja lasketaan kerran puolta kohden, vaikka puolella olisi useampi väärän puolen pelaaja. Sentterillä ei ole puolta. Muut paikkavaihdot (esim. sentteri laidassa, hyökkääjä pakkina) eivät ole vielä määriteltyjä.
+
+**Ketjut** (D-023): hyökkäyskolmikot (`LW`, `C`, `RW`) ja pakkiparit (`LD`, `RD`) ovat erillisiä yksiköitä, jotka vaihtuvat eri tahtiin (`time.forwardShiftSeconds`, `time.defenceShiftSeconds`). Jäällä olevat viisi kenttäpelaajaa ovat aina yksi kolmikko ja yksi pari, ja mikä tahansa kolmikko voi pelata minkä tahansa parin kanssa. Kuvioiden paikat `LW`, `C`, `RW` viittaavat jäällä olevaan kolmikkoon ja `LD`, `RD` jäällä olevaan pariin. Järjestelmän roolit `F1`–`F3` jaetaan kolmikon ja `D1`–`D2` parin pelaajille. Ketjukemia (`chemistry`) kertyy yksikön sisällä; kolmikon ja parin välinen kemia on avoin virstanpylväälle 3.
 
 ## targets.json
 
@@ -203,13 +219,13 @@ Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nim
 | `skate` | `by`, `to` | Kiekollinen luistelee kiekon kanssa. Alueen rajan ylitys hyökkäysalueelle = `zoneEntryCarry`, puolustaja reitillä voi laukaista `deke`-tarkistuksen |
 | `pass` | `from`, `to` | `pass`; vastaanottajan solmu on hänen sijaintinsa siirtojen jälkeen |
 | `shoot` | `by` | `block` → `shot`; päättää kuvion |
-| `driveNet` | `by` | Pelaaja ajaa maalin eteen (vastustajan `crease`-solmu). Kiekollisena vai ilman: Q-005 |
+| `driveNet` | `by` | Kiekoton pelaaja ajaa maalin eteen (vastustajan `crease`-solmu) maskiin ja reboundille (D-020). Ei tarkistusta eikä kiekon siirtoa. Kiekollinen maalille ajo kirjoitetaan `skate`-toimintona |
 
 Jos E-001 hyväksytään, listaan tulee viides toiminto `dump`.
 
 **Kulku.** Kun kuvio valitaan, pelaajat siirtyvät lähtösolmuihin (aika `time.setupSeconds`, Q-006). Tahdit suoritetaan järjestyksessä. Epäonnistunut tarkistus päättää kuvion (kiekonmenetys tai irtokiekko), ja peli siirtyy järjestelmätilaan. Jos viimeinen tahti ei ole laukaus, peli siirtyy järjestelmätilaan kiekko tallessa.
 
-**Validointi.** `schemaVersion` tunnettu, `id` yksilöllinen, 1–4 tahtia, kaikki solmut verkon sisällä, viisi eri paikkaa eri solmuissa lähdössä, siirtojen pituus sallittu, `pass.from` on tahdin alussa kiekollinen ja `to` eri pelaaja, `skate.by` ja `shoot.by` ovat kiekollisia, `shoot`-tahdin jälkeen ei tahteja, `faceoff`-tyypillä `faceoffSpot` löytyy kaukalosta.
+**Validointi.** `schemaVersion` tunnettu, `id` yksilöllinen, 1–4 tahtia, kaikki solmut verkon sisällä, viisi eri paikkaa eri solmuissa lähdössä, siirtojen pituus sallittu, `pass.from` on tahdin alussa kiekollinen ja `to` eri pelaaja, `skate.by` ja `shoot.by` ovat kiekollisia, `driveNet.by` ei ole kiekollinen, `shoot`-tahdin jälkeen ei tahteja, `faceoff`-tyypillä `faceoffSpot` löytyy kaukalosta.
 
 ## Puolustusjärjestelmät (`data/systems/*.json`) – luonnos – odottaa Jerryn hyväksyntää
 
@@ -246,7 +262,14 @@ Vastaa kysymykseen Q-001 (järjestelmän osalta). Säännöt ovat deterministisi
 }
 ```
 
-Esimerkin sijainnit ovat havainnollistus. Oikeat järjestelmät kirjoitetaan, kun Q-003 ja Q-012 on vastattu.
+Esimerkin sijainnit ovat havainnollistus. Ensimmäiset järjestelmät (D-021) ovat selvästi erilaiset:
+
+| `id` | Nimi | Idea |
+| --- | --- | --- |
+| `forecheck212` | 2-1-2 aggressiivinen karvaus | Kaksi hyökkääjää painostaa kiekollista hyökkäyspäässä, kolmas tukee ylempänä, pakit pitävät siniviivaa |
+| `trap122` | 1-2-2 passiivinen / trap | Yksi karvaaja ohjaa kiekon laitaan, kaksi hyökkääjää ja pakit odottavat keskialueella ja oman siniviivan tuntumassa |
+
+Järjestelmätiedostot kirjoitetaan, kun Q-001 (skeema) ja Q-003 on vastattu.
 
 | Kenttä | Kuvaus |
 | --- | --- |
@@ -256,7 +279,7 @@ Esimerkin sijainnit ovat havainnollistus. Oikeat järjestelmät kirjoitetaan, ku
 | `when.puckZones` | Lista alueita, joissa kiekko on (puolustajan näkökulmasta). Puuttuu = mikä tahansa |
 | `when.puckX`, `when.puckY` | Valinnaiset `[min, max]`-välit kiekon koordinaateille |
 | `when.puckState` | Valinnainen: `controlled` tai `loose` |
-| `targets` | Rooli → kohde. Kaikille viidelle roolille `F1`, `F2`, `F3`, `D1`, `D2` |
+| `targets` | Rooli → kohde. Kaikille viidelle roolille `F1`, `F2`, `F3` (jäällä oleva hyökkäyskolmikko), `D1`, `D2` (jäällä oleva pakkipari) |
 | kohde `node` | Kiinteä solmu `[x, y]` |
 | kohde `puckOffset` | Kiekon solmu + `[dx, dy]`, rajattuna verkon sisälle. `[0, 0]` = painostaa kiekollista |
 
