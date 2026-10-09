@@ -16,7 +16,7 @@ internal static class Program
             return Validate(OptionValue(args, "--data") ?? DefaultDataDirectory);
         }
 
-        Console.Error.WriteLine("Usage: validate [--data <dir>]   Load and validate rink.json, tuning.json and targets.json.");
+        Console.Error.WriteLine("Usage: validate [--data <dir>]   Load and validate rink, tuning, targets, plays and systems.");
         Console.Error.WriteLine("match, batch and compare are not implemented yet.");
         return 1;
     }
@@ -29,7 +29,8 @@ internal static class Program
             Console.WriteLine(
                 "OK: rink " + data.Rink.Length + "x" + data.Rink.Width
                 + ", " + (data.Tuning.Checks.Count + 1) + " checks, "
-                + data.Targets.Metrics.Count + " target metrics (" + Path.GetFullPath(dataDirectory) + ")");
+                + data.Targets.Metrics.Count + " target metrics, "
+                + data.Plays.Count + " plays, " + data.Systems.Count + " systems (" + Path.GetFullPath(dataDirectory) + ")");
             return 0;
         }
         catch (DataLoadException ex)

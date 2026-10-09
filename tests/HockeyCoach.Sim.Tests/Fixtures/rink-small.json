@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "_notes": "Test fixture: 3 x 2 grid.",
+  "_notes": "Test fixture: 3 x 3 grid, goals on the middle lane.",
   "length": 3,
-  "width": 2,
+  "width": 3,
   "ownGoal": {"x": 0, "y": 1},
   "opponentGoal": {"x": 2, "y": 1},
   "zones": [
@@ -12,14 +12,17 @@
   ],
   "xgZones": ["slot", "longRange"],
   "faceoffSpots": [
-    {"id": "center", "x": 1, "y": 0}
+    {"id": "center", "x": 1, "y": 1}
   ],
   "nodes": [
     {"x": 0, "y": 0, "xgZone": "longRange", "isSlot": false},
     {"x": 0, "y": 1, "xgZone": "longRange", "isSlot": false},
+    {"x": 0, "y": 2, "xgZone": "longRange", "isSlot": false},
     {"x": 1, "y": 0, "xgZone": "longRange", "isSlot": false},
     {"x": 1, "y": 1, "xgZone": "longRange", "isSlot": false},
+    {"x": 1, "y": 2, "xgZone": "longRange", "isSlot": false},
     {"x": 2, "y": 0, "xgZone": "slot", "isSlot": true},
-    {"x": 2, "y": 1, "xgZone": "slot", "isSlot": true}
+    {"x": 2, "y": 1, "xgZone": "slot", "isSlot": false},
+    {"x": 2, "y": 2, "xgZone": "slot", "isSlot": true}
   ]
 }

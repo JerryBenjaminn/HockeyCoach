@@ -20,12 +20,12 @@ public class RinkLoaderTests
         Assert.Empty(result.Errors);
         Rink rink = result.Value!;
         Assert.Equal(3, rink.Length);
-        Assert.Equal(2, rink.Width);
+        Assert.Equal(3, rink.Width);
         Assert.Equal(new GridPoint(2, 1), rink.OpponentGoal);
         Assert.Equal(new[] { "slot", "longRange" }, rink.XgZones);
         Assert.Equal("center", rink.FaceoffSpots.Single().Id);
-        RinkNode node = rink.GetNode(rink.IdOf(2, 1));
-        Assert.Equal(RinkZone.Offensive, rink.ZoneOf(rink.IdOf(2, 1)));
+        RinkNode node = rink.GetNode(rink.IdOf(2, 0));
+        Assert.Equal(RinkZone.Offensive, rink.ZoneOf(rink.IdOf(2, 0)));
         Assert.Equal(RinkZone.Neutral, rink.ZoneOf(rink.IdOf(1, 0)));
         Assert.Equal("slot", node.XgZone);
         Assert.True(node.IsSlot);
@@ -72,9 +72,9 @@ public class RinkLoaderTests
     [Fact]
     public void WrongNodeCount_IsRejected()
     {
-        LoadResult<Rink> result = Load(r => r["nodes"]!.AsArray().RemoveAt(5));
+        LoadResult<Rink> result = Load(r => r["nodes"]!.AsArray().RemoveAt(8));
 
-        Assert.Contains("nodes: expected 6 nodes (length x width), got 5", result.Errors);
+        Assert.Contains("nodes: expected 9 nodes (length x width), got 8", result.Errors);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class RinkLoaderTests
     {
         LoadResult<Rink> result = Load(r => r["faceoffSpots"]![0]!["x"] = 7);
 
-        Assert.Contains(result.Errors, e => e.StartsWith("faceoffSpots[0]: (7,0) is outside", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, e => e.StartsWith("faceoffSpots[0]: (7,1) is outside", StringComparison.Ordinal));
     }
 
     [Fact]
