@@ -29,6 +29,7 @@ Jerry on pääsuunnittelija. Lukittuja päätöksiä muuttaa vain Jerry.
 ```bash
 dotnet build
 dotnet test
+dotnet run --project tools/HockeyCoach.Harness -- validate [--data <dir>]
 dotnet run --project tools/HockeyCoach.Harness -- match --home rulebased --away random --seed 42
 dotnet run --project tools/HockeyCoach.Harness -- batch --matches 5000 --matchups all
 dotnet run --project tools/HockeyCoach.Harness -- compare --tuning data/tuning.json --tuning data/tuning-b.json

@@ -24,7 +24,7 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-014 | 2026-10-09 | Todennäköisyyden rajat | Tarkistuksen onnistumistodennäköisyys rajataan välille min–max. Arvot (0,02 / 0,98) ovat tasapainoarvoja `tuning.json`:ssa. Tarkennus 2026-10-09 (Q-009): raja koskee vain tarkistuksia (syötöt, kamppailut, aloitukset jne.), ei laukauksen maalintodennäköisyyttä eikä xG:tä. Laukauksilla omat rajat `tuning.json`:ssa | lukittu |
 | D-015 | 2026-10-09 | Riippuvuudet | Simissä ja AI:ssa ei ajonaikaisia riippuvuuksia. Käännösaikaiset analysaattorit (BannedApiAnalyzers) sallittuja | lukittu |
 | D-016 | 2026-10-09 | Tavoitehaarukat | `data/targets.json` on tavoitehaarukoiden ainoa totuus. `stats-and-checks.md` viittaa siihen eikä toista lukuja | lukittu |
-| D-017 | 2026-10-09 | Datasopimukset | Tarkistuksen painot summautuvat 1:een kummallakin puolella (hyökkääjä, puolustaja). Solmun id = x × leveys + y (9 × 5 -verkossa x * 5 + y). Data kirjoitetaan oman joukkueen näkökulmasta: oma maali x = 0, vastustajan näkökulma kierrolla 180° | lukittu |
+| D-017 | 2026-10-09 | Datasopimukset | Tarkistuksen painot summautuvat 1:een kummallakin puolella (hyökkääjä, puolustaja). Solmun id = x × leveys + y (11 × 5 -verkossa x * 5 + y). Data kirjoitetaan oman joukkueen näkökulmasta: oma maali x = 0, vastustajan näkökulma kierrolla 180° | lukittu |
 | D-018 | 2026-10-09 | Toteutus | Klassinen `.sln`, nimiavaruus `Sim.Config`. Virstanpylväässä 1 pelaajat luodaan käsin, `roles.json` myöhemmin | lukittu |
 | D-019 | 2026-10-09 | Yksipuolinen tarkistus | Erillinen tarkistustyyppi: yhden osapuolen painotettu arvo vastaan referenssiarvo (oletus 10,5, `tuning.json`:ssa). D-017 koskee vain kaksipuolisia tarkistuksia. Blokki ja rebound ovat yksipuolisia (Q-013) | lukittu |
 | D-020 | 2026-10-09 | Aja maalille | `driveNet` on oletuksena kiekoton: pelaaja menee maalin eteen maskiin ja reboundille (Q-005) | lukittu |
@@ -34,6 +34,10 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-024 | 2026-10-09 | Pelipaikat | C, LW, RW, LD, RD. Pelaajalla on ensisijainen pelipaikka. Väärällä puolella pelaamisen miinus on tasapainoarvo `tuning.json`:ssa | lukittu |
 | D-025 | 2026-10-09 | Kysymykset | Molemmat agentit saavat lisätä kysymyksiä `questions.md`:hen, vain Jerry merkitsee ne ratkaistuiksi | lukittu |
 | D-026 | 2026-10-09 | Toteutuksen poikkeamat | Nullable pois päältä Simissä ja AI:ssa (Unity-yhteensopivuus). Usean pelaajan roolit (esim. karvaajat) käyttävät statsien keskiarvoa, laskenta latauksessa | lukittu |
+| D-027 | 2026-10-09 | Kaukalon verkko | 11 × 5 solmua, kummankin maalin takana oma solmurivi (E-002) | lukittu |
+| D-028 | 2026-10-09 | Solmun alue | Solmun alue (oma pää, keskialue, hyökkäysalue) johdetaan `zones`-osion x-väleistä eikä sitä tallenneta solmuun (Q-022) | lukittu |
+| D-029 | 2026-10-09 | baseXg-validointi | `baseXg` hylätään, jos se on välin 0–1 ulkopuolella tai yli laukausten ylärajan (Q-023) | lukittu |
+| D-030 | 2026-10-09 | tuning.json-osiot | Lataaja hylkää tuntemattomat pääosiot. Sallitut osiot ja uuden osion lisäysprosessi dokumentoidaan `data-schema.md`:hen | lukittu |
 
 ## Muutosehdotukset
 
@@ -47,7 +51,7 @@ Kirjaa uusin ylimmäksi.
 **Päätös:** (Jerry täyttää) hyväksytty / hylätty + lyhyt syy.
 -->
 
-### E-002 · 2026-10-09 · ehdotettu
+### E-002 · 2026-10-09 · hyväksytty
 **Ehdotus:** pidennetään kaukalon solmuverkko 9 × 5:stä 11 × 5:een niin, että kummankin maalin taakse tulee oma solmurivi.
 **Perustelu:** nykyisessä verkossa maaliviivat ovat päätyrivit (x = 0 ja x = 8), joten maalin takana ei ole yhtään solmua. Oikeassa kiekossa iso osa alueella pelaamisesta tapahtuu maalin takana ja päätylaidoilla: kierrätys (cycle), wraparound, maalin takaa syöttö slottiin ja pakkien kiekonhaku päätyyn ammutun kiekon jälkeen. Analyysissa ottelun 2 laukauksista suurin osa syntyi päätypelistä (joukkue A 26 / 47 ja joukkue B 8 / 20 syntytavan mukaan luokitellusta laukauksesta, `docs/stats-and-checks.md`). Ilman maalin takaisia solmuja näitä kuvioita ei voi kirjoittaa, eikä "kiekko päätyyn" (E-001) voi päätyä oikeaan paikkaan. Ratkaisu kannattaa tehdä ennen ensimmäisiä kuvioita (virstanpylväs 2), koska kuviot ja järjestelmät kirjoitetaan solmukoordinaateilla.
 **Ehdotettu verkko 11 × 5 (55 solmua):**
@@ -68,7 +72,7 @@ Kirjaa uusin ylimmäksi.
 
 Alueet: `defensive` 0–3, `neutral` 4–6, `offensive` 7–10 (symmetrinen kierrossa). Solmuväli maaliviivojen välillä on n. 22 jalkaa kuten nyt (maalin takainen alue on oikeasti vain n. 11 jalkaa syvä, mutta yksi rivi riittää kuvaamaan sen), joten nykyiset slotin ja vyöhykkeiden rajat säilyvät, ne vain siirtyvät yhdellä. Uusi laukaisuvyöhyke `behindNet` tarkoittaa, että suoraa laukausta ei ole (tai vain wraparound hyvin pienellä xG:llä), mikä on tasapainoarvo `checks.shot.baseXg.behindNet`. Leveys 5 säilyy, koska kuvioiden kaistat (laidat, aloituspisteet, keskikaista) mahtuvat siihen.
 **Vaikutus:** `data/rink.json` (uusi verkko, id = x × 5 + y, ids 0–54), `tuning.json` (`baseXg` ja `attackerByXgZone` uudelle vyöhykkeelle), `docs/data-schema.md` (koko ja taulukot), tech-spec.md ("9 × 5" → "11 × 5"), D-017:n esimerkki (9 × 5 → 11 × 5, kaava ei muutu). Q-002 ratkeaa tällä pituuden osalta. Programmer: verkon koko on datavetoinen, joten koodimuutoksia ei pitäisi tarvita. Testit, joissa on kovakoodattu 9 × 5 tai id 44, päivitetään. Mahdollinen lisäsääntö: maalin solmu ja sen takana oleva solmu eivät ole luistelureitillä läpi kuljettavia (maali on esteenä), mikä on uusi mekaniikka ja vaatii erillisen päätöksen.
-**Päätös:** (Jerry täyttää)
+**Päätös:** hyväksytty (Jerry, 2026-10-09). Kirjattu: D-027. Lisäsääntö maalin läpi kulkemisesta ei sisälly hyväksyntään, vaan vaatii erillisen päätöksen.
 
 ### E-001 · 2026-10-09 · ehdotettu
 **Ehdotus:** lisätään kuvioihin viides kiekkotoiminto `dump` ("kiekko päätyyn"): kiekollinen ampuu kiekon kohdesolmuun (kulma tai maalin taakse), ja siitä seuraa irtokiekkokamppailu.

@@ -75,7 +75,7 @@ Koodissa ei ole maagisia numeroita: jokainen painokerroin, perustaso ja aikakust
 
 Datatiedostojen tarkat skeemat, yksiköt ja validointisäännöt ovat dokumentissa `docs/data-schema.md`. Tavoitehaarukat ovat tiedostossa `data/targets.json`.
 
-**Kaukalon solmuverkko (`rink.json`).** Kaukalo on 9 × 5 solmun verkko (pituus × leveys). Jokaisella solmulla on koordinaatti, alue (oma pää, keskialue, hyökkäysalue), vyöhyke laukauksen perus-xG:tä varten ja tieto, onko se slotissa. Kuviot, puolustusjärjestelmät ja pelaajien sijainnit käyttävät samoja solmuja. Verkon koko on alustava ja voi tihentyä.
+**Kaukalon solmuverkko (`rink.json`).** Kaukalo on 11 × 5 solmun verkko (pituus × leveys, D-027): kummankin maalin takana on oma solmurivi. Jokaisella solmulla on koordinaatti, alue (oma pää, keskialue, hyökkäysalue; johdetaan `zones`-osion x-väleistä, D-028), vyöhyke laukauksen perus-xG:tä varten ja tieto, onko se slotissa. Kuviot, puolustusjärjestelmät ja pelaajien sijainnit käyttävät samoja solmuja. Verkon koko on alustava ja voi tihentyä.
 
 **Kuvio (`plays/*.json`).** Kuvion nimi, tyyppi (avaus, alueelle tulo, alueella pelaaminen, aloitus, ylivoima) ja enintään neljä tahtia. Jokainen tahti listaa pelaajien siirrot solmusta toiseen ja yhden kiekkotoiminnon (luistele, syötä, laukaise, aja maalille).
 
@@ -100,6 +100,7 @@ Testiympäristö on konsolisovellus, joka pelaa otteluita AI:den välillä ja ve
 
 **Komennot**
 
+- `validate --data <dir>`: lataa ja validoi datatiedostot.
 - `match --home rulebased --away random --seed 42`: yksi ottelu, tulostaa tapahtumalokin luettavana tekstinä ja JSONina.
 - `batch --matches 5000 --matchups all`: kaikki AI-parit, tulostaa raportin.
 - `compare --tuning a.json --tuning b.json`: kaksi tasapainoversiota rinnakkain.
@@ -158,7 +159,7 @@ Päivät 1–2 käytetään dokumentteihin. Erikoistilanteet (ylivoima ja alivoi
 
 ## Avoimet kysymykset
 
-- [ ] Kaukalon solmuverkon tiheys: riittääkö 9 × 5 kuvioille ja puolustusjärjestelmille?
+- [x] Kaukalon solmuverkon pituus: 11 × 5, maalin takana solmurivit (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen (Q-002)
 - [ ] Kuvion ja puolustusjärjestelmän JSON-skeema tarkasti: kirjoitetaan ennen virstanpylvästä 2
 - [ ] Sopeutuvan AI:n logiikka: miten se lukee vastustajan taipumuksia ottelun aikana?
 - [ ] Tarvitaanko yksinkertainen visualisointi (esim. HTML-toisto tapahtumalokista) jo prototyyppiin?

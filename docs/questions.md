@@ -14,30 +14,23 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-023 · 2026-10-09 · kirjaaja: programmer
-**Kysymys:** pitääkö lataajan hylätä `checks.shot.baseXg`-arvo, joka on laukauksen omien rajojen (`checks.shot.minProbability`–`maxProbability`) ulkopuolella?
-**Konteksti:** `docs/data-schema.md`, tuning.json → Validointi. Jos esim. `baseXg.crease` olisi yli `maxProbability`:n, tasaväkisen laukauksen maalitodennäköisyys ei olisi `baseXg` vaan raja. Nykydata on rajojen sisällä.
-**Ehdotettu oletus:** ei hylätä (sääntöä ei ole skeemassa). Lataaja tarkistaa vain, että `baseXg` on välillä (0, 1).
-
-### Q-022 · 2026-10-09 · kirjaaja: programmer
-**Kysymys:** pitääkö rink.json-validoinnin vaatia, että solmun `zone` vastaa `zones`-listan x-väliä (esim. solmu x = 4 on `neutral`)?
-**Konteksti:** `docs/data-schema.md`, rink.json → Validointi vaatii vain, että solmun `zone` löytyy `zones`-listasta ja että jokainen x kuuluu tasan yhteen alueeseen. Ristiriitainen solmu menisi nyt läpi. Nykydata on johdonmukainen.
-**Ehdotettu oletus:** ei vielä vaadita. Jos vastaus on kyllä, lisään tarkistuksen `RinkValidator`iin.
-
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
 **Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.
 **Ehdotettu oletus:** vain yksikön sisällä.
+**Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
 
 ### Q-020 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** lasketaanko väärän puolen miinus kerran puolta kohden vai jokaisesta väärällä puolella pelaavasta pelaajasta?
 **Konteksti:** D-024, `tuning.json` `positions.offSideCheckModifier`.
 **Ehdotettu oletus:** kerran puolta kohden.
+**Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
 
 ### Q-019 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** saavatko muut paikkavaihdot miinuksen (esim. sentteri laidassa, hyökkääjä pakkina)?
 **Konteksti:** D-024 määrittelee vain väärän puolen (LW↔RW, LD↔RD).
 **Ehdotettu oletus:** ei miinusta, kunnes päätetään.
+**Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
 
 ### Q-015 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-012:sta)
 **Kysymys veljelle:** mitkä alueet lasketaan slotiksi?
@@ -86,6 +79,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 ### Q-002 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys:** kaukalon solmuverkon tiheys: riittääkö 9 × 5?
 **Ehdotettu oletus:** 9 × 5, kunnes kuvioiden kirjoittaminen osoittaa toisin.
+**Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ### Q-001 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys:** kuvion ja puolustusjärjestelmän tarkka JSON-skeema.
@@ -93,6 +87,18 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (game-designer, 2026-10-09):** luonnosvastaus on `docs/data-schema.md`:ssä, osiot "Kuviot" ja "Puolustusjärjestelmät" (tila: luonnos – odottaa Jerryn hyväksyntää). Kysymys pysyy auki, kunnes Jerry on katsonut skeeman.
 
 ## Ratkaistut
+
+### Q-023 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** pitääkö lataajan hylätä `checks.shot.baseXg`-arvo, joka on laukauksen omien rajojen (`checks.shot.minProbability`–`maxProbability`) ulkopuolella?
+**Konteksti:** `docs/data-schema.md`, tuning.json → Validointi. Jos esim. `baseXg.crease` olisi yli `maxProbability`:n, tasaväkisen laukauksen maalitodennäköisyys ei olisi `baseXg` vaan raja. Nykydata on rajojen sisällä.
+**Ehdotettu oletus:** ei hylätä (sääntöä ei ole skeemassa). Lataaja tarkistaa vain, että `baseXg` on välillä (0, 1).
+**Vastaus (Jerry, 2026-10-09):** kyllä. `baseXg` hylätään validoinnissa, jos se on välin 0–1 ulkopuolella tai yli laukausten ylärajan. Kirjattu: D-029.
+
+### Q-022 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** pitääkö rink.json-validoinnin vaatia, että solmun `zone` vastaa `zones`-listan x-väliä (esim. solmu x = 4 on `neutral`)?
+**Konteksti:** `docs/data-schema.md`, rink.json → Validointi vaatii vain, että solmun `zone` löytyy `zones`-listasta ja että jokainen x kuuluu tasan yhteen alueeseen. Ristiriitainen solmu menisi nyt läpi. Nykydata on johdonmukainen.
+**Ehdotettu oletus:** ei vielä vaadita. Jos vastaus on kyllä, lisään tarkistuksen `RinkValidator`iin.
+**Vastaus (Jerry, 2026-10-09):** kyllä. Solmun vyöhyke lasketaan `zones`-osion x-väleistä eikä sitä tallenneta solmuun. Kirjattu: D-028.
 
 ### Q-018 · 2026-10-09 · kirjaaja: programmer
 **Kysymys:** tarvitaanko vasen ja oikea laitahyökkääjä erikseen (koodissa Center / Winger / Defenseman, kuvioissa LW ja RW)?
