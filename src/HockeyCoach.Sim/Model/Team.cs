@@ -3,20 +3,30 @@ using System.Collections.Generic;
 
 namespace HockeyCoach.Sim.Model
 {
-    /// <summary>An immutable team: roster of skaters and goalies plus the lines built from the roster.</summary>
+    /// <summary>
+    /// An immutable team: roster of skaters and goalies plus forward trios and defence pairs built from the roster.
+    /// Trios and pairs are separate units that rotate at different rates (D-023).
+    /// </summary>
     public sealed class Team
     {
         private readonly Skater[] _skaters;
         private readonly Goalie[] _goalies;
-        private readonly Line[] _lines;
+        private readonly ForwardLine[] _forwardLines;
+        private readonly DefencePair[] _defencePairs;
 
-        /// <summary>Creates a team and validates that ids are unique and every line member is on the roster.</summary>
-        public Team(string name, IReadOnlyList<Skater> skaters, IReadOnlyList<Goalie> goalies, IReadOnlyList<Line> lines)
+        /// <summary>Creates a team and validates that ids are unique and every unit member is on the roster.</summary>
+        public Team(
+            string name,
+            IReadOnlyList<Skater> skaters,
+            IReadOnlyList<Goalie> goalies,
+            IReadOnlyList<ForwardLine> forwardLines,
+            IReadOnlyList<DefencePair> defencePairs)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _skaters = Copy(skaters, nameof(skaters));
             _goalies = Copy(goalies, nameof(goalies));
-            _lines = Copy(lines, nameof(lines));
+            _forwardLines = Copy(forwardLines, nameof(forwardLines));
+            _defencePairs = Copy(defencePairs, nameof(defencePairs));
 
             var ids = new HashSet<int>();
             foreach (Skater skater in _skaters)
@@ -35,15 +45,14 @@ namespace HockeyCoach.Sim.Model
                 }
             }
 
-            foreach (Line line in _lines)
+            foreach (ForwardLine line in _forwardLines)
             {
-                foreach (Skater member in line.Skaters)
-                {
-                    if (Array.IndexOf(_skaters, member) < 0)
-                    {
-                        throw new ArgumentException("Line " + line.Name + " contains " + member + " who is not on the roster of " + name + ".", nameof(lines));
-                    }
-                }
+                RequireOnRoster(line.Skaters, "Forward line " + line.Name, nameof(forwardLines));
+            }
+
+            foreach (DefencePair pair in _defencePairs)
+            {
+                RequireOnRoster(pair.Skaters, "Defence pair " + pair.Name, nameof(defencePairs));
             }
         }
 
@@ -62,10 +71,27 @@ namespace HockeyCoach.Sim.Model
             get { return _goalies; }
         }
 
-        /// <summary>Lines in the order given (first line first).</summary>
-        public IReadOnlyList<Line> Lines
+        /// <summary>Forward trios in the order given (first trio first).</summary>
+        public IReadOnlyList<ForwardLine> ForwardLines
         {
-            get { return _lines; }
+            get { return _forwardLines; }
+        }
+
+        /// <summary>Defence pairs in the order given (first pair first).</summary>
+        public IReadOnlyList<DefencePair> DefencePairs
+        {
+            get { return _defencePairs; }
+        }
+
+        private void RequireOnRoster(IReadOnlyList<Skater> members, string unit, string paramName)
+        {
+            foreach (Skater member in members)
+            {
+                if (Array.IndexOf(_skaters, member) < 0)
+                {
+                    throw new ArgumentException(unit + " contains " + member + " who is not on the roster of " + Name + ".", paramName);
+                }
+            }
         }
 
         private static T[] Copy<T>(IReadOnlyList<T> items, string paramName)

@@ -20,7 +20,7 @@ public class CheckResolverTests
     public void StatWeighting_UsesEachParticipantsOwnStats()
     {
         var passer = new Skater(1, "P", Position.Center, SkaterStats.Uniform(1).With(SkaterStat.Passing, 20));
-        var receiver = new Skater(2, "R", Position.Winger, SkaterStats.Uniform(1).With(SkaterStat.Hands, 10));
+        var receiver = new Skater(2, "R", Position.RightWing, SkaterStats.Uniform(1).With(SkaterStat.Hands, 10));
         var participants = new CheckParticipants().With("passer", passer).With("receiver", receiver);
 
         double h = StatWeighting.Rating(TestChecks.Pass().Attacker, participants);
@@ -34,7 +34,7 @@ public class CheckResolverTests
         var goalie = new Goalie(9, "G", new GoalieStats(reflexes: 15, positioning: 10, mobility: 1, reboundControl: 1, puckHandling: 1, mentalToughness: 1));
         var participants = new CheckParticipants().With("goalie", goalie);
 
-        double d = StatWeighting.Rating(TestChecks.SlotShot().Defender, participants);
+        double d = StatWeighting.Rating(TestChecks.Shot().Defender, participants);
 
         Assert.Equal(0.6 * 10 + 0.4 * 15, d, 12);
     }

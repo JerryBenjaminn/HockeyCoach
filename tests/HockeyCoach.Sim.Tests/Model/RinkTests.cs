@@ -60,7 +60,7 @@ public class RinkTests
     {
         var nodes = new[] { new RinkNode(0, 0, RinkZone.Defensive, "none", false) };
 
-        Assert.Throws<ArgumentException>(() => new Rink(1, 2, nodes));
+        Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class RinkTests
             new RinkNode(0, 0, RinkZone.Defensive, "none", false),
         };
 
-        Assert.Throws<ArgumentException>(() => new Rink(1, 2, nodes));
+        Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));
     }
 
     [Fact]
@@ -84,6 +84,19 @@ public class RinkTests
             new RinkNode(0, 2, RinkZone.Defensive, "none", false),
         };
 
-        Assert.Throws<ArgumentException>(() => new Rink(1, 2, nodes));
+        Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));
+    }
+
+    private static Rink Build(int length, int width, IReadOnlyList<RinkNode> nodes)
+    {
+        return new Rink(
+            length,
+            width,
+            nodes,
+            new[] { new ZoneRange(RinkZone.Defensive, 0, length - 1) },
+            new[] { "none" },
+            new GridPoint(0, 0),
+            new GridPoint(length - 1, 0),
+            Array.Empty<FaceoffSpot>());
     }
 }

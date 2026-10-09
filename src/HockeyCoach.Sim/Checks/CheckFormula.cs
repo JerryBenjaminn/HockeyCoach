@@ -4,7 +4,7 @@ namespace HockeyCoach.Sim.Checks
 {
     /// <summary>
     /// The check formula of docs/stats-and-checks.md (Tarkistukset):
-    /// P = 1 / (1 + e^-(a + k (H - D) + M)), a = ln(p0 / (1 - p0)), then clamped to [min, max] (D-014).
+    /// P = 1 / (1 + e^-(a + k (H - D) + M)), a = ln(p0 / (1 - p0)), then clamped (D-014).
     /// Pure functions.
     /// </summary>
     public static class CheckFormula
@@ -21,11 +21,20 @@ namespace HockeyCoach.Sim.Checks
             return CheckMath.Sigmoid(logit);
         }
 
-        /// <summary>Success probability clamped to [<see cref="CheckFormulaConfig.MinProbability"/>, <see cref="CheckFormulaConfig.MaxProbability"/>].</summary>
+        /// <summary>Success probability clamped to [<paramref name="min"/>, <paramref name="max"/>].</summary>
+        public static double Probability(double p0, double k, double attackerRating, double defenderRating, double modifier, double min, double max)
+        {
+            return CheckMath.Clamp(RawProbability(p0, k, attackerRating, defenderRating, modifier), min, max);
+        }
+
+        /// <summary>
+        /// Check success probability clamped to the check bounds
+        /// [<see cref="CheckFormulaConfig.MinProbability"/>, <see cref="CheckFormulaConfig.MaxProbability"/>].
+        /// Not for the shot goal probability, which uses <see cref="ShotConfig"/> bounds (D-014).
+        /// </summary>
         public static double Probability(CheckFormulaConfig formula, double p0, double attackerRating, double defenderRating, double modifier)
         {
-            double raw = RawProbability(p0, formula.K, attackerRating, defenderRating, modifier);
-            return CheckMath.Clamp(raw, formula.MinProbability, formula.MaxProbability);
+            return Probability(p0, formula.K, attackerRating, defenderRating, modifier, formula.MinProbability, formula.MaxProbability);
         }
     }
 }

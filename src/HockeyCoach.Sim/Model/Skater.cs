@@ -8,13 +8,13 @@ namespace HockeyCoach.Sim.Model
         /// <summary>Creates a skater.</summary>
         /// <param name="id">Player id, unique within a match.</param>
         /// <param name="name">Display name.</param>
-        /// <param name="position">Position.</param>
+        /// <param name="primaryPosition">Primary position (D-024).</param>
         /// <param name="stats">Stat values.</param>
-        public Skater(int id, string name, Position position, SkaterStats stats)
+        public Skater(int id, string name, Position primaryPosition, SkaterStats stats)
         {
             Id = id;
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Position = position;
+            PrimaryPosition = primaryPosition;
             Stats = stats ?? throw new ArgumentNullException(nameof(stats));
         }
 
@@ -24,8 +24,8 @@ namespace HockeyCoach.Sim.Model
         /// <summary>Display name.</summary>
         public string Name { get; }
 
-        /// <summary>Position.</summary>
-        public Position Position { get; }
+        /// <summary>Primary position (D-024). Playing the opposite side gives the off-side check modifier.</summary>
+        public Position PrimaryPosition { get; }
 
         /// <summary>Stat values.</summary>
         public SkaterStats Stats { get; }

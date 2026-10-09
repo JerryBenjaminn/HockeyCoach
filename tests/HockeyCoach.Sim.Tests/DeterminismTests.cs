@@ -33,7 +33,9 @@ public class DeterminismTests
         var rng = new Pcg32(seed);
         CheckFormulaConfig formula = TestChecks.Formula();
         CheckDefinition pass = TestChecks.Pass();
-        CheckDefinition shot = TestChecks.SlotShot();
+        ShotConfig shot = TestChecks.Shot();
+        CheckDefinition breakout = TestChecks.Breakout();
+        CheckDefinition block = TestChecks.Block();
         Team home = BuildTeam("Home", 1, rng);
         Team away = BuildTeam("Away", 101, rng);
 
@@ -44,12 +46,25 @@ public class DeterminismTests
             Team attack = homeAttacks ? home : away;
             Team defend = homeAttacks ? away : home;
             CheckResult result;
-            if (rng.NextInt(4) == 0)
+            int kind = rng.NextInt(4);
+            if (kind == 0)
             {
                 var participants = new CheckParticipants()
                     .With("shooter", Pick(attack, rng))
                     .With("goalie", defend.Goalies[0]);
-                result = CheckResolver.Resolve(formula, shot, participants, 0.0, rng);
+                result = ShotResolver.Resolve(formula, shot, rng.Chance(0.5) ? "slot" : "longRange", participants, 0.0, rng);
+            }
+            else if (kind == 1)
+            {
+                var participants = new CheckParticipants()
+                    .With("carrier", Pick(attack, rng))
+                    .With("forecheckers", Pick(defend, rng), Pick(defend, rng));
+                result = CheckResolver.Resolve(formula, breakout, participants, 0.0, rng);
+            }
+            else if (kind == 2)
+            {
+                var participants = new CheckParticipants().With("nearestDefender", Pick(defend, rng));
+                result = CheckResolver.Resolve(formula, block, participants, 0.0, rng);
             }
             else
             {
@@ -77,7 +92,8 @@ public class DeterminismTests
 
     private static Team BuildTeam(string name, int firstId, IRandom rng)
     {
-        var skaters = new Skater[5];
+        Position[] slots = { Position.LeftWing, Position.Center, Position.RightWing, Position.LeftDefence, Position.RightDefence };
+        var skaters = new Skater[slots.Length];
         for (int i = 0; i < skaters.Length; i++)
         {
             var values = new int[StatNames.SkaterStatCount];
@@ -86,10 +102,12 @@ public class DeterminismTests
                 values[s] = rng.NextInt(1, 21);
             }
 
-            skaters[i] = new Skater(firstId + i, name + i, i < 3 ? Position.Winger : Position.Defenseman, SkaterStats.FromArray(values));
+            skaters[i] = new Skater(firstId + i, name + i, slots[i], SkaterStats.FromArray(values));
         }
 
         var goalie = new Goalie(firstId + 5, name + "G", GoalieStats.Uniform(rng.NextInt(1, 21)));
-        return new Team(name, skaters, new[] { goalie }, new[] { new Line("L1", skaters) });
+        var trio = new ForwardLine("F1", skaters[0], skaters[1], skaters[2]);
+        var pair = new DefencePair("D1", skaters[3], skaters[4]);
+        return new Team(name, skaters, new[] { goalie }, new[] { trio }, new[] { pair });
     }
 }
