@@ -56,6 +56,12 @@ Kirjaa uusin ylimmäksi.
 **Päätös:** (Jerry täyttää) hyväksytty / hylätty + lyhyt syy.
 -->
 
+### E-003 · 2026-10-09 · ehdotettu
+**Ehdotus:** maalin edustan tilannelaukaukset saavat `crease`-xG:n. Laukaus solmusta `netFront` (8, 2) käyttää vyöhykettä `crease` (nyt `baseXg` 0,25) eikä `slot` (0,15), kun laukaisija on reboundin saanut pelaaja tai `driveNet`-toiminnolla maskiin ajanut pelaaja, joka saa syötön. Muut laukaukset solmusta (8, 2) käyttävät `slot`-vyöhykettä.
+**Perustelu:** D-033 kieltää kenttäpelaajan maalisolmussa (9, 2), joka oli ainoa `crease`-solmu, joten `crease`-xG ei ole enää käytössä yhdessäkään laukauksessa. 22 jalan verkossa solmu (8, 2) kattaa sekä maalin edustan että matalan slotin. Ilman tätä reboundit ja ohjaukset maskista saavat saman xG:n kuin slotin vapaa laukaus, vaikka oikeassa kiekossa ne ovat vaarallisimpia paikkoja, ja `driveNet` (D-020) jää palkitsematta. Raporttilukuja ei vielä ole (virstanpylväs 2), joten arvo kalibroidaan simulaatiolla.
+**Vaikutus:** `docs/data-schema.md` (Maalisolmu ja `crease`, kuvioiden `shoot`), `Sim.Shift` (laukauksen xG-vyöhykkeen valinta). `tuning.json` ei muutu. Uusi mekaniikka, vaatii hyväksynnän.
+**Päätös:** (Jerry täyttää)
+
 ### E-002 · 2026-10-09 · hyväksytty
 **Ehdotus:** pidennetään kaukalon solmuverkko 9 × 5:stä 11 × 5:een niin, että kummankin maalin taakse tulee oma solmurivi.
 **Perustelu:** nykyisessä verkossa maaliviivat ovat päätyrivit (x = 0 ja x = 8), joten maalin takana ei ole yhtään solmua. Oikeassa kiekossa iso osa alueella pelaamisesta tapahtuu maalin takana ja päätylaidoilla: kierrätys (cycle), wraparound, maalin takaa syöttö slottiin ja pakkien kiekonhaku päätyyn ammutun kiekon jälkeen. Analyysissa ottelun 2 laukauksista suurin osa syntyi päätypelistä (joukkue A 26 / 47 ja joukkue B 8 / 20 syntytavan mukaan luokitellusta laukauksesta, `docs/stats-and-checks.md`). Ilman maalin takaisia solmuja näitä kuvioita ei voi kirjoittaa, eikä "kiekko päätyyn" (E-001) voi päätyä oikeaan paikkaan. Ratkaisu kannattaa tehdä ennen ensimmäisiä kuvioita (virstanpylväs 2), koska kuviot ja järjestelmät kirjoitetaan solmukoordinaateilla.
