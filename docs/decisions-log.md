@@ -110,6 +110,13 @@ Designerin `tuning.json`-säädöt tavoitehaarukoiden sisällä. Ei vaadi erilli
 
 | Päivä | Arvo | Ennen | Jälkeen | Syy | Vaikutus raporttiin |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-09 | `checks.pass.interceptionShare` | – | 0,6 (paikkamerkki) | Syötönkatkojen osuus epäonnistuneista syötöistä (D-040) | Ei raporttia vielä |
+| 2026-10-09 | `checks.block.maxLaneDistance` | – | 1 (paikkamerkki) | Blokkaajaehdokkaan suurin etäisyys laukauslinjasta (M-5, luonnos) | Ei raporttia vielä |
+| 2026-10-09 | `checks.block.modifiers.laneDistance` | – | [0,0, 1,0] (paikkamerkki) | Blokkaajan linjaetäisyyden muokkaaja (M-5, luonnos) | Ei raporttia vielä |
+| 2026-10-09 | `checks.loosePuck.extraPlayerRadius` | – | 1 (paikkamerkki) | Lisäpelaajan säde (M-6, luonnos) | Ei raporttia vielä |
+| 2026-10-09 | `checks.loosePuck.modifiers.distancePerNode` | – | 0,5 (paikkamerkki) | Kamppailijoiden etäisyysero (M-6, luonnos) | Ei raporttia vielä |
+| 2026-10-09 | `pressure.underPressureNodes` | – | 1 (paikkamerkki) | Paineen alla -säde (M-7, luonnos) | Ei raporttia vielä |
+| 2026-10-09 | `time.secondsPerAction.systemStep` | – | 2 (paikkamerkki) | Järjestelmätilan askel (D-036, M-6) | Ei raporttia vielä |
 | 2026-10-09 | `checks.dumpIn.goalieReachNodes` | – | 1 (paikkamerkki) | Maalivahdin ulottuma kiekon päätyyn lyönnissä (D-031) | Ei raporttia vielä |
 | 2026-10-09 | `checks.deke.modifiers.defenderDistance` | – | [0,0, 1,0, 3,5] (paikkamerkki, odottaa Jerryn vahvistusta) | Kuljetus on aina tarkistus (D-032): tavallinen kuljetus tarkistetaan harhautuksena puolustajan etäisyyden mukaan | Ei raporttia vielä |
 | 2026-10-09 | `rink.json` solmu (9,2) `isSlot` | true | false | Maalisolmu ei ole kenttäpelaajan paikka (D-033) | Ei raporttia vielä |
