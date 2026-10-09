@@ -1,0 +1,85 @@
+# =========================================================
+# HockeyCoach – repon juuren .gitignore
+# Simulaatio (.NET) juuressa, Unity-projekti kansiossa unity/HockeyCoach/
+# =========================================================
+
+# ---------- Yksityinen materiaali ----------
+# Otteluanalyysien raakadata, kuvakaappaukset ja PDF:t. Vain keskiarvot docs/-kansioon.
+private/
+analysis/
+
+# ---------- Harnessin tulosteet ----------
+reports/
+*.eventlog.json
+
+# ---------- .NET (src/, tools/, tests/) ----------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+*.userprefs
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+artifacts/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.sw?
+
+# ---------- Unity (unity/HockeyCoach/) ----------
+/unity/HockeyCoach/[Ll]ibrary/
+/unity/HockeyCoach/[Tt]emp/
+/unity/HockeyCoach/[Oo]bj/
+/unity/HockeyCoach/[Bb]uild/
+/unity/HockeyCoach/[Bb]uilds/
+/unity/HockeyCoach/[Ll]ogs/
+/unity/HockeyCoach/[Uu]ser[Ss]ettings/
+/unity/HockeyCoach/[Mm]emoryCaptures/
+/unity/HockeyCoach/[Rr]ecordings/
+
+# Unityn generoimat projekti- ja solution-tiedostot
+/unity/HockeyCoach/*.csproj
+/unity/HockeyCoach/*.sln
+/unity/HockeyCoach/*.slnx
+/unity/HockeyCoach/*.unityproj
+/unity/HockeyCoach/*.pidb
+/unity/HockeyCoach/*.booproj
+/unity/HockeyCoach/*.svd
+/unity/HockeyCoach/*.pdb
+/unity/HockeyCoach/*.mdb
+/unity/HockeyCoach/*.opendb
+/unity/HockeyCoach/*.VC.db
+
+# Asset Store -työkalut ja Gradle
+/unity/HockeyCoach/[Aa]ssets/AssetStoreTools*
+/unity/HockeyCoach/.gradle/
+
+# Crashlytics ja käännöstulosteet
+crashlytics-build.properties
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Addressables ja StreamingAssets-generoinnit
+/unity/HockeyCoach/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/unity/HockeyCoach/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ---------- Käyttöjärjestelmä ----------
+.DS_Store
+Thumbs.db
+desktop.ini
