@@ -63,7 +63,7 @@ Sim- ja AI-projektien pitää kääntyä Unity 6:ssa sellaisenaan. Siksi niissä
 | | `game-designer` | `programmer` |
 | --- | --- | --- |
 | Tehtävä | Data, kuviot, järjestelmät, raporttien analyysi, muutosehdotukset | Koodi ja testit speksin mukaan |
-| Saa muuttaa | `data/`, `docs/data-schema.md`, `docs/questions.md`, ehdotukset `docs/decisions-log.md`:hen | `src/`, `tools/`, `tests/` |
+| Saa muuttaa | `data/`, `docs/data-schema.md`, uudet kysymykset `docs/questions.md`:hen, ehdotukset `docs/decisions-log.md`:hen | `src/`, `tools/`, `tests/`, uudet kysymykset `docs/questions.md`:hen |
 | Ei saa muuttaa | Koodia, lukittuja päätöksiä | Suunnitteludokumentteja, tasapainoarvoja omin päin |
 
 Delegoi tehtävät näin:
@@ -73,7 +73,7 @@ Delegoi tehtävät näin:
 
 ## Kun jokin on epäselvää
 
-Älä keksi vastausta. Kirjaa kysymys `docs/questions.md`:hen, jatka sellaisilla osilla, joihin kysymys ei vaikuta, ja mainitse kysymys loppuraportissa.
+Älä keksi vastausta. Kirjaa kysymys `docs/questions.md`:hen, jatka sellaisilla osilla, joihin kysymys ei vaikuta, ja mainitse kysymys loppuraportissa. Molemmat agentit saavat lisätä kysymyksiä, mutta vain Jerry merkitsee ne ratkaistuiksi.
 
 ## Muutosehdotukset
 

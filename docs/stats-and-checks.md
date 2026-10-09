@@ -55,6 +55,9 @@ P = \frac{1}{1 + e^{-\left(a + k\,(H - D) + M\right)}}, \qquad a = \ln\frac{p_0}
 - p0 on perustaso: onnistumisen todennäköisyys, kun H = D. Se tulee otteluanalyyseista.
 - k on herkkyys, alustavasti 0,15 per stat-piste. Se ratkaisee, kuinka paljon statsit painavat suhteessa tuuriin.
 - M on muokkaajien summa: järjestäytyneisyys, energia, paine, kemia ja vire.
+- Tarkistuksen todennäköisyys rajataan välille 2–98 % (D-014). Raja ei koske laukauksen maalintodennäköisyyttä eikä xG:tä: laukauksilla on omat rajansa `tuning.json`:ssa.
+
+**Kaksipuolinen ja yksipuolinen tarkistus (D-019).** Useimmat tarkistukset ovat kaksipuolisia: hyökkääjän H vastaan puolustajan D, ja kummankin puolen painot summautuvat 1:een (D-017). Yksipuolisessa tarkistuksessa on vain yksi osapuoli: sen painotettua arvoa verrataan referenssiarvoon (oletus 10,5, `tuning.json`:ssa), ja puuttuvan puolen paikalle kaavassa tulee referenssiarvo. Blokki ja rebound ovat yksipuolisia.
 
 | Tapahtuma | Hyökkääjä (paino) | Puolustaja (paino) | Perustaso p0 | Muokkaajat |
 | --- | --- | --- | --- | --- |
@@ -65,8 +68,8 @@ P = \frac{1}{1 + e^{-\left(a + k\,(H - D) + M\right)}}, \qquad a = \ln\frac{p_0}
 | Harhautus 1v1 | Kädet 0,5, Ketteryys 0,5 | Asemapeli 0,6, Ketteryys 0,4 | Täytetään | Energia |
 | Avaus omasta päästä | Syöttö 0,5, Pelinluku 0,5 | Karvaajien Nopeus 0,5, Pelinluku 0,5 | Täytetään | Puolustusjärjestelmä (karvaus vs. trap) |
 | Laukaus | Tarkkuus ja Voima etäisyyden mukaan painotettuna | MV Sijoittuminen 0,6, Refleksit 0,4 | Laukauspaikan xG | Royal Road -syöttö, maski, paine, järjestäytyneisyys |
-| Blokki | – | Asemapeli 1,0 | Täytetään | Laukauksen etäisyys |
-| Rebound | – | MV Reboundikontrolli | Jakauma: pito / kulmaan / keskelle | Laukaisuvoima, MV:n energia |
+| Blokki (yksipuolinen) | – (referenssiarvo) | Asemapeli 1,0 | Täytetään | Laukauksen etäisyys |
+| Rebound (yksipuolinen) | – (referenssiarvo) | MV Reboundikontrolli | Jakauma: pito / kulmaan / keskelle | Laukaisuvoima, MV:n energia |
 | Irtokiekko | Voima 0,5, Kädet 0,3, Nopeus 0,2 | Samat | n. 36 / 22 / 41 % (voitto / ei voittajaa / häviö) | Ketkä ehtivät paikalle (Nopeus, järjestelmätilan ohjeet) |
 | Taklaus | Voima 0,7, Pelinluku 0,3 | Voima 0,5, Kädet 0,5 | Täytetään | Jäähyriski Kurinalaisuuden mukaan |
 

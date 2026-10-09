@@ -21,11 +21,19 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-011 | 2026-10-09 | Kieli | Koodi englanniksi, dokumentit suomeksi | lukittu |
 | D-012 | 2026-10-09 | Determinismi | Determinismi samassa ajoympäristössä riittää, bittitarkkuutta .NETin ja Unityn välillä ei vaadita. Asynkronisessa PvP:ssä palvelin laskee ottelun ja lähettää tapahtumalokin, jota asiakas vain toistaa. Kaikki matematiikka `CheckMath`-luokan takana, jotta sen voi vaihtaa yhdessä paikassa | lukittu |
 | D-013 | 2026-10-09 | Dataskeemat | `docs/data-schema.md` on datatiedostojen skeemojen ainoa totuus, designer omistaa ja ylläpitää | lukittu |
-| D-014 | 2026-10-09 | Todennäköisyyden rajat | Tarkistuksen onnistumistodennäköisyys rajataan välille min–max. Arvot (0,02 / 0,98) ovat tasapainoarvoja `tuning.json`:ssa | lukittu |
+| D-014 | 2026-10-09 | Todennäköisyyden rajat | Tarkistuksen onnistumistodennäköisyys rajataan välille min–max. Arvot (0,02 / 0,98) ovat tasapainoarvoja `tuning.json`:ssa. Tarkennus 2026-10-09 (Q-009): raja koskee vain tarkistuksia (syötöt, kamppailut, aloitukset jne.), ei laukauksen maalintodennäköisyyttä eikä xG:tä. Laukauksilla omat rajat `tuning.json`:ssa | lukittu |
 | D-015 | 2026-10-09 | Riippuvuudet | Simissä ja AI:ssa ei ajonaikaisia riippuvuuksia. Käännösaikaiset analysaattorit (BannedApiAnalyzers) sallittuja | lukittu |
 | D-016 | 2026-10-09 | Tavoitehaarukat | `data/targets.json` on tavoitehaarukoiden ainoa totuus. `stats-and-checks.md` viittaa siihen eikä toista lukuja | lukittu |
 | D-017 | 2026-10-09 | Datasopimukset | Tarkistuksen painot summautuvat 1:een kummallakin puolella (hyökkääjä, puolustaja). Solmun id = x × leveys + y (9 × 5 -verkossa x * 5 + y). Data kirjoitetaan oman joukkueen näkökulmasta: oma maali x = 0, vastustajan näkökulma kierrolla 180° | lukittu |
 | D-018 | 2026-10-09 | Toteutus | Klassinen `.sln`, nimiavaruus `Sim.Config`. Virstanpylväässä 1 pelaajat luodaan käsin, `roles.json` myöhemmin | lukittu |
+| D-019 | 2026-10-09 | Yksipuolinen tarkistus | Erillinen tarkistustyyppi: yhden osapuolen painotettu arvo vastaan referenssiarvo (oletus 10,5, `tuning.json`:ssa). D-017 koskee vain kaksipuolisia tarkistuksia. Blokki ja rebound ovat yksipuolisia (Q-013) | lukittu |
+| D-020 | 2026-10-09 | Aja maalille | `driveNet` on oletuksena kiekoton: pelaaja menee maalin eteen maskiin ja reboundille (Q-005) | lukittu |
+| D-021 | 2026-10-09 | Ensimmäiset järjestelmät | 2-1-2 aggressiivinen karvaus ja 1-2-2 passiivinen / trap (Q-012) | lukittu |
+| D-022 | 2026-10-09 | Moduulijärjestys | `Sim.Config` sijoittuu heti `Sim.Model`-moduulin yläpuolelle | lukittu |
+| D-023 | 2026-10-09 | Ketjut | Hyökkäyskolmikot ja pakkiparit ovat erillisiä yksiköitä, jotka kiertävät eri tahtiin | lukittu |
+| D-024 | 2026-10-09 | Pelipaikat | C, LW, RW, LD, RD. Pelaajalla on ensisijainen pelipaikka. Väärällä puolella pelaamisen miinus on tasapainoarvo `tuning.json`:ssa | lukittu |
+| D-025 | 2026-10-09 | Kysymykset | Molemmat agentit saavat lisätä kysymyksiä `questions.md`:hen, vain Jerry merkitsee ne ratkaistuiksi | lukittu |
+| D-026 | 2026-10-09 | Toteutuksen poikkeamat | Nullable pois päältä Simissä ja AI:ssa (Unity-yhteensopivuus). Usean pelaajan roolit (esim. karvaajat) käyttävät statsien keskiarvoa, laskenta latauksessa | lukittu |
 
 ## Muutosehdotukset
 

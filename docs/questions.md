@@ -14,15 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-013 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** miten lasketaan tarkistus, jonka toisella puolella ei ole statseja (blokki: hyökkääjä "–", rebound: hyökkääjä "–")?
-**Konteksti:** `docs/stats-and-checks.md`, Tarkistukset. Painot summautuvat 1:een kummallakin puolella (D-017), mutta näissä kahdessa toinen puoli on tyhjä.
-**Ehdotettu oletus:** tyhjä puoli saa arvon `stats.neutralValue` (10,5, asteikon keskikohta), jolloin p0 vastaa keskitasoista puolustajaa tai maalivahtia. Lataaja sallii tyhjän puolen vain tarkistuksissa `block` ja `rebound`. Vaihtoehto: laukaisijan stat (esim. Laukaisutarkkuus blokissa, Laukaisuvoima reboundissa) hyökkääjäpuolelle.
+### Q-015 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-012:sta)
+**Kysymys veljelle:** mitkä alueet lasketaan slotiksi?
+**Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan solmut. Q-012:n järjestelmäosa on ratkaistu (D-021).
+**Ehdotettu oletus:** slotti on keskikaista aloituspisteiden välissä maalin edestä ympyröiden yläreunaan.
 
-### Q-012 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys veljelle:** mitkä alueet lasketaan slotiksi ja mitkä puolustusjärjestelmät kannattaa toteuttaa ensin?
-**Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan kolme solmua: maalin edusta, matala slotti ja korkea slotti. `docs/data-schema.md` kertoo järjestelmien luonnosskeeman. Liittyy Q-003:een.
-**Ehdotettu oletus:** slotti on keskikaista aloituspisteiden välissä maalin edestä ympyröiden yläreunaan. Ensimmäiset järjestelmät ovat tunnettuja ja toisistaan selvästi erottuvia: karvaus 2-1-2, trap 1-2-2 ja omassa päässä aluepuolustus (box + 1); mies miestä -puolustus myöhemmin. Veljeltä kysytään, ovatko nämä oikeat kolme ja mitä niiden heikkoudet ovat (vision.md: jokainen järjestelmä häviää jollekin hyökkäystyylille).
+### Q-014 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-009:stä)
+**Kysymys:** lasketaanko xG laukausyritystä kohden (myös blokatut ja ohi menneet) vai maalia kohti mennyttä laukausta kohden, ja mihin xG-mittakaava sidotaan, jotta ottelussa syntyy 4–7 maalia?
+**Konteksti:** `tuning.json` `checks.shot.baseXg`. Ratkaisee, onko `baseXg` maalitarkistuksen p0 sellaisenaan. Q-009:n rajakysymys on ratkaistu (D-014:n tarkennus).
+**Kysymys veljelle (liittyy Q-004):** mitä laukauksia analyysityökalun xG kattaa (kaikki yritykset, blokkaamattomat vai maalia kohti menneet)?
+**Ehdotettu oletus:** `baseXg` on maalin todennäköisyys maalia kohti menneestä laukauksesta, raportin xG on yrityksen kokonaistodennäköisyys (läpi × maalia kohti × maali). Mittakaava kalibroidaan maalimäärään 4–7.
 
 ### Q-011 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** jaetaanko puolustusjärjestelmän roolit (F1 painostaja, F2, F3, D1, D2) etäisyyden mukaan kiekkoon vai kiinteästi pelipaikan mukaan?
@@ -33,14 +34,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Kysymys:** missä järjestyksessä laukauksen lopputulokset (blokattu, ohi, torjuttu, maali) ratkaistaan?
 **Konteksti:** tapahtumaskeeman laukauksella on neljä lopputulosta, mutta tarkistustaulukossa on vain blokki ja laukaus. Ohi menneille laukauksille ei ole sääntöä.
 **Ehdotettu oletus:** blokki (`checks.block`) → maalia kohti vai ohi (`checks.shot.onTargetShare`, alustavasti 0,55, ei statseja) → maalitarkistus (`checks.shot`). Myöhemmin Laukaisutarkkuus voi vaikuttaa ohilaukauksiin, mutta se on uusi mekaniikka ja vaatii hyväksynnän.
-
-### Q-009 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** mihin xG-mittakaava sidotaan, jotta ottelussa syntyy 4–7 maalia, ja mitä analyysityökalun xG tarkalleen mittaa?
-**Konteksti:** vision.md (4–7 maalia), `docs/stats-and-checks.md` (xG per joukkue 1,2–5,0, yksittäinen laukaus tyypillisesti 0,003–0,05), `tuning.json` `checks.shot.baseXg`. Kaksi ongelmaa:
-1. Todennäköisyyden alaraja 0,02 (D-014) nostaa kaukolaukausten xG:n (alustavasti 0,005–0,01) 0,02:een. Pitäisikö laukauksella olla oma alaraja, vai hyväksytäänkö tämä?
-2. Lasketaanko xG laukausyritystä kohden (myös blokatut ja ohi menneet) vai maalia kohti mennyttä laukausta kohden? Tämä ratkaisee, onko `baseXg` maalitarkistuksen p0 sellaisenaan vai jaetaanko se läpimenon ja maalia kohti -osuuden todennäköisyydellä.
-**Kysymys veljelle (liittyy Q-004):** mitä laukauksia analyysityökalun xG kattaa (kaikki yritykset, blokkaamattomat vai maalia kohti menneet)?
-**Ehdotettu oletus:** `baseXg` on maalin todennäköisyys maalia kohti menneestä laukauksesta, raportin xG on yrityksen kokonaistodennäköisyys (läpi × maalia kohti × maali). Alaraja 0,02 koskee myös laukauksia, kunnes Jerry päättää toisin. Mittakaava kalibroidaan maalimäärään 4–7.
 
 ### Q-008 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** ovatko kaikki muokkaajat (järjestäytyneisyys, paine, energia, poikittaissyöttö jne.) logit-yksiköitä, jotka lisätään kaavan summaan M?
@@ -56,11 +49,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Kysymys:** kuinka paljon aikaa kuluu, kun pelaajat asettuvat kuvion lähtösolmuihin (setup) tai kokoavat hyökkäyksen siirtymässä (regroup)?
 **Konteksti:** kuvion lähtöasetelma ei yleensä vastaa pelaajien sijaintia edellisen tapahtuman jälkeen. Siirtymäohje "kokoaminen" antaa puolustuksen järjestäytyä (stats-and-checks.md), mutta aikaa ei ole määritelty.
 **Ehdotettu oletus:** kiinteät ajat `time.setupSeconds` 6 ja `time.regroupSeconds` 8 (paikanpitäjiä). Aika palauttaa puolustuksen järjestäytyneisyyttä normaalisti tapahtumien tapaan.
-
-### Q-005 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** tarkoittaako "aja maalille" kiekollista vai kiekotonta pelaajaa?
-**Konteksti:** vision.md, kuvion neljä toimintoa. Kiekollisena se on käytännössä kuljetus maalille ja laukaus tai harhautus. Kiekottomana se on maalin eteen meno maskiin, ohjaukseen ja reboundiin.
-**Ehdotettu oletus:** kiekoton. Pelaaja siirtyy vastustajan maalin eteen, antaa laukaukselle maskibonuksen (`checks.shot.modifiers.screen`) ja osallistuu reboundiin. Kiekollinen maalille ajo kirjoitetaan `skate`-toimintona kohti maalia ja sitä seuraavana laukauksena.
 
 ### Q-004 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys veljelle:** millä xG-rajoilla otteluanalyysi jakaa paikat huippu-, hyviin ja kohtalaisiin?
@@ -80,3 +68,42 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (game-designer, 2026-10-09):** luonnosvastaus on `docs/data-schema.md`:ssä, osiot "Kuviot" ja "Puolustusjärjestelmät" (tila: luonnos – odottaa Jerryn hyväksyntää). Kysymys pysyy auki, kunnes Jerry on katsonut skeeman.
 
 ## Ratkaistut
+
+### Q-018 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** tarvitaanko vasen ja oikea laitahyökkääjä erikseen (koodissa Center / Winger / Defenseman, kuvioissa LW ja RW)?
+**Vastaus (Jerry, 2026-10-09):** pelipaikat C, LW, RW, LD, RD. Pelaajalla on ensisijainen pelipaikka. Väärällä puolella pelaamisen miinus paikkamerkkinä `tuning.json`:iin. Kirjattu: D-024.
+
+### Q-017 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** onko ketju viisi pelaajaa (3 hyökkääjää + 2 pakkia) vai hyökkäyskolmikko ja erillinen pakkipari?
+**Vastaus (Jerry, 2026-10-09):** hyökkäyskolmikot ja pakkiparit erikseen, ne kiertävät eri tahtiin. Kirjattu: D-023.
+
+### Q-016 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** mihin `Sim.Config` sijoittuu moduulijärjestyksessä? Painot viittaavat Modelin stat-tyyppeihin.
+**Vastaus (Jerry, 2026-10-09):** heti `Sim.Model`-moduulin yläpuolelle. Kirjattu: D-022.
+
+### Q-013 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** miten lasketaan tarkistus, jonka toisella puolella ei ole statseja (blokki: hyökkääjä "–", rebound: hyökkääjä "–")?
+**Konteksti:** `docs/stats-and-checks.md`, Tarkistukset. Painot summautuvat 1:een kummallakin puolella (D-017), mutta näissä kahdessa toinen puoli on tyhjä.
+**Ehdotettu oletus:** tyhjä puoli saa arvon `stats.neutralValue` (10,5, asteikon keskikohta), jolloin p0 vastaa keskitasoista puolustajaa tai maalivahtia. Lataaja sallii tyhjän puolen vain tarkistuksissa `block` ja `rebound`. Vaihtoehto: laukaisijan stat (esim. Laukaisutarkkuus blokissa, Laukaisuvoima reboundissa) hyökkääjäpuolelle.
+**Vastaus (Jerry, 2026-10-09):** ei poikkeusta D-017:ään. Lisätään erillinen yksipuolinen tarkistus: yhden osapuolen painotettu arvo vastaan referenssiarvo (oletus 10,5, `tuning.json`:ssa). D-017 koskee vain kaksipuolisia tarkistuksia. Blokki ja rebound ovat yksipuolisia. Kirjattu: D-019.
+
+### Q-012 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys veljelle:** mitkä alueet lasketaan slotiksi ja mitkä puolustusjärjestelmät kannattaa toteuttaa ensin?
+**Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan kolme solmua: maalin edusta, matala slotti ja korkea slotti. `docs/data-schema.md` kertoo järjestelmien luonnosskeeman. Liittyy Q-003:een.
+**Ehdotettu oletus:** slotti on keskikaista aloituspisteiden välissä maalin edestä ympyröiden yläreunaan. Ensimmäiset järjestelmät ovat tunnettuja ja toisistaan selvästi erottuvia: karvaus 2-1-2, trap 1-2-2 ja omassa päässä aluepuolustus (box + 1); mies miestä -puolustus myöhemmin. Veljeltä kysytään, ovatko nämä oikeat kolme ja mitä niiden heikkoudet ovat (vision.md: jokainen järjestelmä häviää jollekin hyökkäystyylille).
+**Vastaus (Jerry, 2026-10-09):** aloitetaan kahdella selvästi erilaisella järjestelmällä: 2-1-2 aggressiivinen karvaus ja 1-2-2 passiivinen / trap. Kirjattu: D-021. Slotin rajaus siirretty kysymykseen Q-015.
+
+### Q-009 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** mihin xG-mittakaava sidotaan, jotta ottelussa syntyy 4–7 maalia, ja mitä analyysityökalun xG tarkalleen mittaa?
+**Konteksti:** vision.md (4–7 maalia), `docs/stats-and-checks.md` (xG per joukkue 1,2–5,0, yksittäinen laukaus tyypillisesti 0,003–0,05), `tuning.json` `checks.shot.baseXg`. Kaksi ongelmaa:
+1. Todennäköisyyden alaraja 0,02 (D-014) nostaa kaukolaukausten xG:n (alustavasti 0,005–0,01) 0,02:een. Pitäisikö laukauksella olla oma alaraja, vai hyväksytäänkö tämä?
+2. Lasketaanko xG laukausyritystä kohden (myös blokatut ja ohi menneet) vai maalia kohti mennyttä laukausta kohden? Tämä ratkaisee, onko `baseXg` maalitarkistuksen p0 sellaisenaan vai jaetaanko se läpimenon ja maalia kohti -osuuden todennäköisyydellä.
+**Kysymys veljelle (liittyy Q-004):** mitä laukauksia analyysityökalun xG kattaa (kaikki yritykset, blokkaamattomat vai maalia kohti menneet)?
+**Ehdotettu oletus:** `baseXg` on maalin todennäköisyys maalia kohti menneestä laukauksesta, raportin xG on yrityksen kokonaistodennäköisyys (läpi × maalia kohti × maali). Alaraja 0,02 koskee myös laukauksia, kunnes Jerry päättää toisin. Mittakaava kalibroidaan maalimäärään 4–7.
+**Vastaus (Jerry, 2026-10-09):** todennäköisyyden raja 0,02–0,98 koskee vain tarkistuksia (syötöt, kamppailut, aloitukset jne.), ei laukauksen maalintodennäköisyyttä eikä xG:tä. Laukauksille omat rajat `tuning.json`:iin. Kirjattu D-014:n tarkennuksena. Kohta 2 (xG:n laskentaperuste) ja kysymys veljelle siirretty kysymykseen Q-014.
+
+### Q-005 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** tarkoittaako "aja maalille" kiekollista vai kiekotonta pelaajaa?
+**Konteksti:** vision.md, kuvion neljä toimintoa. Kiekollisena se on käytännössä kuljetus maalille ja laukaus tai harhautus. Kiekottomana se on maalin eteen meno maskiin, ohjaukseen ja reboundiin.
+**Ehdotettu oletus:** kiekoton. Pelaaja siirtyy vastustajan maalin eteen, antaa laukaukselle maskibonuksen (`checks.shot.modifiers.screen`) ja osallistuu reboundiin. Kiekollinen maalille ajo kirjoitetaan `skate`-toimintona kohti maalia ja sitä seuraavana laukauksena.
+**Vastaus (Jerry, 2026-10-09):** ehdotettu oletus hyväksytty: `driveNet` on oletuksena kiekoton (maskiin ja reboundille). Kirjattu: D-020.

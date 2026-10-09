@@ -51,7 +51,7 @@ Tasapainotulokset (voittoprosentit, maalimäärät) eivät ole yksikkötestejä.
 
 # Älä
 
-- Älä muuta suunnitteludokumentteja tai lukittuja päätöksiä.
+- Älä muuta suunnitteludokumentteja tai lukittuja päätöksiä. Poikkeus: saat lisätä uusia kysymyksiä `docs/questions.md`:hen (Avoimet-osioon, uusin ylimmäksi). Älä muokkaa olemassa olevia kysymyksiä äläkä merkitse niitä ratkaistuiksi; sen tekee vain Jerry.
 - Älä muuta `tuning.json`-arvoja tasapainon vuoksi. Se on designerin työtä.
 - Älä keksi puuttuvia sääntöjä. Kirjaa kysymys.
 - Älä committaa, jos testit eivät mene läpi.

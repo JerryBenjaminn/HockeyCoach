@@ -61,9 +61,9 @@ Riippuvuudet kulkevat ylhäältä alas: ylempi moduuli saa käyttää alempia, e
 | `Sim.Checks` | Tarkistuskaava, painotetut statsit, muokkaajat. Puhtaita funktioita |
 | `Sim.State` | Energia, paine, järjestäytyneisyys, tuttuus, kiekon ja pelaajien sijainnit |
 | `Sim.Tactics` | Kuviot (tahdit, toiminnot), puolustusjärjestelmien säännöt, järjestelmätilan ohjeet |
+| `Sim.Config` | Tasapainoarvojen ja kaukalon mallit sekä niiden validointi (data saapuu olioina) |
 | `Sim.Model` | Pelaaja, maalivahti, statsit, rooli, ketju, joukkue, kaukalon solmut |
 | `Sim.Events` | Tapahtumatyypit statsidokumentin tapahtumaskeeman mukaan, tapahtumaloki |
-| `Sim.Config` | Tasapainoarvojen ja kaukalon mallit sekä niiden validointi (data saapuu olioina) |
 | `Sim.Random` | Deterministinen satunnaislukugeneraattori |
 | `AI` | Valmentaja-AI:t: kokoonpano, pelikirja ja järjestelmä vaihdon alussa, reagointi vastustajaan |
 
