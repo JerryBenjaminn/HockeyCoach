@@ -217,6 +217,63 @@ namespace HockeyCoach.Sim.Model
             return IdOf(Length - 1 - node.X, Width - 1 - node.Y);
         }
 
+        /// <summary>The centre line column, x = (Length - 1) / 2 (data-schema.md, Koordinaatit).</summary>
+        public int CentreLineX
+        {
+            get { return (Length - 1) / 2; }
+        }
+
+        /// <summary>
+        /// The middle lane row, y = (Width - 1) / 2. Only meaningful for an odd width; <c>RinkValidator</c> requires
+        /// the goals to lie on it.
+        /// </summary>
+        public int CentreLaneY
+        {
+            get { return (Width - 1) / 2; }
+        }
+
+        /// <summary>Lane of row <paramref name="y"/>: left (y below the middle lane), middle or right.</summary>
+        public Lane LaneOf(int y)
+        {
+            int centre = CentreLaneY;
+            return y < centre ? Lane.Left : (y > centre ? Lane.Right : Lane.Middle);
+        }
+
+        /// <summary>
+        /// 180° rotation into the other team's view: (x, y) → (Length - 1 - x, Width - 1 - y) (D-017).
+        /// </summary>
+        public GridPoint Rotate(GridPoint point)
+        {
+            return new GridPoint(Length - 1 - point.X, Width - 1 - point.Y);
+        }
+
+        /// <summary>Mirror across the long axis: (x, y) → (x, Width - 1 - y) (D-034, data-schema.md: Peilaus).</summary>
+        public GridPoint MirrorY(GridPoint point)
+        {
+            return new GridPoint(point.X, Width - 1 - point.Y);
+        }
+
+        /// <summary>Whether the point is inside the grid.</summary>
+        public bool Contains(GridPoint point)
+        {
+            return Contains(point.X, point.Y);
+        }
+
+        /// <summary>Whether the point is either goal node (D-033: a shot target only, never a skater's node).</summary>
+        public bool IsGoalNode(GridPoint point)
+        {
+            return point.Equals(OwnGoal) || point.Equals(OpponentGoal);
+        }
+
+        /// <summary>
+        /// The net-front node of a goal node: one step from it toward the centre line along x
+        /// (data-schema.md: <c>netFront</c>; (9, 2) → (8, 2) and (1, 2) → (2, 2) on 11 × 5).
+        /// </summary>
+        public GridPoint NetFrontOf(GridPoint goal)
+        {
+            return new GridPoint(goal.X > CentreLineX ? goal.X - 1 : goal.X + 1, goal.Y);
+        }
+
         private static T[] Copy<T>(IReadOnlyList<T> items, string paramName)
             where T : class
         {

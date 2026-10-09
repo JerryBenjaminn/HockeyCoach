@@ -18,6 +18,18 @@ namespace HockeyCoach.Sim.Model
         /// <summary>Coordinate across the width of the rink.</summary>
         public int Y { get; }
 
+        /// <summary>Chebyshev distance max(|dx|, |dy|), the default node distance (data-schema.md).</summary>
+        public static int Chebyshev(GridPoint a, GridPoint b)
+        {
+            return Math.Max(Math.Abs(a.X - b.X), Math.Abs(a.Y - b.Y));
+        }
+
+        /// <summary>Manhattan distance |dx| + |dy|, the first tie-break after Chebyshev (data-schema.md).</summary>
+        public static int Manhattan(GridPoint a, GridPoint b)
+        {
+            return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
+        }
+
         /// <inheritdoc />
         public bool Equals(GridPoint other)
         {
