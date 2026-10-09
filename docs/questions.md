@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-029 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** mitä puolustaja tekee, kun hänen suora askeleensa y-suunnassa (sign(dx) = 0) osuisi maalisolmuun?
+**Konteksti:** `docs/data-schema.md`, Puolustusjärjestelmät → Liikkuminen. Sääntö korvaa maalisolmuun osuvan askeleen askeleella (sign(dx), 0), kun sign(dy) ≠ 0. Jos myös sign(dx) = 0 (esim. puolustaja (9, 1), kohde (9, 3), välissä maalisolmu (9, 2)), korvaava askel on (0, 0), eikä puolustaja pääse kohteeseensa koskaan. Tilanne on mahdollinen `puckOffset`-kohteilla maaliviivalla.
+**Ehdotettu oletus:** toteutettu kirjaimellisesti: puolustaja jää paikalleen tässä tapahtumassa. Vaihtoehto: kierretään maalin edustan kautta (askel (−1, sign(dy)) hyökkäyspäässä, eli keskiviivaa kohti).
+
+### Q-028 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** mitä Laukaus-tapahtuman kenttä "laukausnopeus" tarkoittaa simulaatiossa?
+**Konteksti:** `docs/stats-and-checks.md`, Tapahtumaskeema. Simulaatio ei mallinna laukauksen nopeutta, eikä `tuning.json`:ssa ole sille arvoja. Kenttä on nyt `ShotEvent.Speed`, ja se on aina tyhjä (null).
+**Ehdotettu oletus:** kenttä pysyy tyhjänä, kunnes päätetään, johdetaanko se esim. laukaisijan Laukaisuvoimasta tai poistetaanko se skeemasta.
+
 ### Q-027 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** saako syöttölinja tai luistelureitti kulkea maalisolmun kautta (esim. maalin takaa (10, 1) slottiin (8, 3), linjan solmut (10, 1), (9, 2), (8, 3))?
 **Konteksti:** `docs/data-schema.md`, Määritelmät M-1 (luonnos). E-002:n hyväksyntä jätti "maali esteenä" -säännön erillisen päätöksen varaan. Oikeassa kiekossa maalin takaa syötetään slottiin maalin ohi, ei läpi, mutta 22 jalan verkossa ero ei näy solmuina.
