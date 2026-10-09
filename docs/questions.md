@@ -14,6 +14,21 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-021 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
+**Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.
+**Ehdotettu oletus:** vain yksikön sisällä.
+
+### Q-020 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** lasketaanko väärän puolen miinus kerran puolta kohden vai jokaisesta väärällä puolella pelaavasta pelaajasta?
+**Konteksti:** D-024, `tuning.json` `positions.offSideCheckModifier`.
+**Ehdotettu oletus:** kerran puolta kohden.
+
+### Q-019 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saavatko muut paikkavaihdot miinuksen (esim. sentteri laidassa, hyökkääjä pakkina)?
+**Konteksti:** D-024 määrittelee vain väärän puolen (LW↔RW, LD↔RD).
+**Ehdotettu oletus:** ei miinusta, kunnes päätetään.
+
 ### Q-015 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-012:sta)
 **Kysymys veljelle:** mitkä alueet lasketaan slotiksi?
 **Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan solmut. Q-012:n järjestelmäosa on ratkaistu (D-021).
