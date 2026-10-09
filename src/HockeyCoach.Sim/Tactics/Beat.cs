@@ -12,7 +12,7 @@ namespace HockeyCoach.Sim.Tactics
     {
         private readonly SortedDictionary<Position, GridPoint> _moves;
 
-        /// <summary>Creates a beat. Use <c>PlayValidator</c> to check it against the rules.</summary>
+        /// <summary>Creates a beat. Use <see cref="PlayValidator"/> to check it against the rules.</summary>
         public Beat(IEnumerable<KeyValuePair<Position, GridPoint>> moves, PlayAction action)
         {
             _moves = PositionMap.Copy(moves, nameof(moves));

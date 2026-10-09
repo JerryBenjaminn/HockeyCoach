@@ -11,7 +11,7 @@ namespace HockeyCoach.Sim.Tactics
     {
         private readonly SystemRule[] _rules;
 
-        /// <summary>Creates a system. Use <c>SystemValidator</c> to check it against the rules.</summary>
+        /// <summary>Creates a system. Use <see cref="SystemValidator"/> to check it against the rules.</summary>
         /// <param name="id">Unique id, equal to the file name.</param>
         /// <param name="name">Display name.</param>
         /// <param name="mirrorY">Rules are written for the puck on the left or middle lane and mirrored for the right.</param>

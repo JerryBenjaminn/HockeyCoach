@@ -3,7 +3,7 @@ namespace HockeyCoach.Sim.Tactics
     /// <summary>An inclusive integer range <c>[min, max]</c> (system conditions <c>puckX</c>, <c>puckY</c>).</summary>
     public sealed class IntRange
     {
-        /// <summary>Creates the range. Use <c>SystemValidator</c> to check min ≤ max.</summary>
+        /// <summary>Creates the range. Use <see cref="SystemValidator"/> to check min ≤ max.</summary>
         public IntRange(int min, int max)
         {
             Min = min;

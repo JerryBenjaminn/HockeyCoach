@@ -8,7 +8,7 @@ namespace HockeyCoach.Sim.Tactics
     {
         private readonly SortedDictionary<SystemRole, SystemTarget> _targets;
 
-        /// <summary>Creates a rule. Use <c>SystemValidator</c> to check that every role has a target.</summary>
+        /// <summary>Creates a rule. Use <see cref="SystemValidator"/> to check that every role has a target.</summary>
         public SystemRule(SystemCondition when, IEnumerable<KeyValuePair<SystemRole, SystemTarget>> targets)
         {
             When = when ?? throw new ArgumentNullException(nameof(when));

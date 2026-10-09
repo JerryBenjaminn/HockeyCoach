@@ -13,7 +13,7 @@ namespace HockeyCoach.Sim.Tactics
         private readonly SortedDictionary<Position, GridPoint> _startPositions;
         private readonly Beat[] _beats;
 
-        /// <summary>Creates a play. Use <c>PlayValidator</c> to check it against the rules.</summary>
+        /// <summary>Creates a play. Use <see cref="PlayValidator"/> to check it against the rules.</summary>
         /// <param name="id">Unique id, equal to the file name.</param>
         /// <param name="name">Display name.</param>
         /// <param name="type">Play type.</param>
