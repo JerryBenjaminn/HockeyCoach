@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-023 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** pitääkö lataajan hylätä `checks.shot.baseXg`-arvo, joka on laukauksen omien rajojen (`checks.shot.minProbability`–`maxProbability`) ulkopuolella?
+**Konteksti:** `docs/data-schema.md`, tuning.json → Validointi. Jos esim. `baseXg.crease` olisi yli `maxProbability`:n, tasaväkisen laukauksen maalitodennäköisyys ei olisi `baseXg` vaan raja. Nykydata on rajojen sisällä.
+**Ehdotettu oletus:** ei hylätä (sääntöä ei ole skeemassa). Lataaja tarkistaa vain, että `baseXg` on välillä (0, 1).
+
+### Q-022 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** pitääkö rink.json-validoinnin vaatia, että solmun `zone` vastaa `zones`-listan x-väliä (esim. solmu x = 4 on `neutral`)?
+**Konteksti:** `docs/data-schema.md`, rink.json → Validointi vaatii vain, että solmun `zone` löytyy `zones`-listasta ja että jokainen x kuuluu tasan yhteen alueeseen. Ristiriitainen solmu menisi nyt läpi. Nykydata on johdonmukainen.
+**Ehdotettu oletus:** ei vielä vaadita. Jos vastaus on kyllä, lisään tarkistuksen `RinkValidator`iin.
+
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
 **Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.
