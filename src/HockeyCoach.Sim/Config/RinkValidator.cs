@@ -7,6 +7,7 @@ namespace HockeyCoach.Sim.Config
     /// <summary>
     /// Validates a constructed <see cref="Rink"/> against the data rules of docs/data-schema.md (rink.json → Validointi).
     /// Grid completeness and node order are checked by the loader and the <see cref="Rink"/> constructor.
+    /// Node zones are derived from the zone x-ranges (D-028), so the ranges must cover every x exactly once.
     /// </summary>
     public static class RinkValidator
     {
@@ -20,7 +21,7 @@ namespace HockeyCoach.Sim.Config
                 return errors;
             }
 
-            HashSet<RinkZone> zones = ValidateZones(rink, errors);
+            ValidateZones(rink, errors);
 
             var xgZones = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < rink.XgZones.Count; i++)
@@ -38,11 +39,6 @@ namespace HockeyCoach.Sim.Config
             for (int id = 0; id < rink.NodeCount; id++)
             {
                 RinkNode node = rink.GetNode(id);
-                if (!zones.Contains(node.Zone))
-                {
-                    errors.Add("nodes[" + id + "].zone: zone is not listed in zones");
-                }
-
                 if (!xgZones.Contains(node.XgZone))
                 {
                     errors.Add("nodes[" + id + "].xgZone: " + node.XgZone + " is not listed in xgZones");
@@ -72,7 +68,7 @@ namespace HockeyCoach.Sim.Config
             return errors;
         }
 
-        private static HashSet<RinkZone> ValidateZones(Rink rink, List<string> errors)
+        private static void ValidateZones(Rink rink, List<string> errors)
         {
             var owners = new int[rink.Length];
             var seen = new HashSet<RinkZone>();
@@ -109,8 +105,6 @@ namespace HockeyCoach.Sim.Config
                     errors.Add("zones: x " + x + " belongs to " + owners[x] + " zones, expected exactly 1");
                 }
             }
-
-            return seen;
         }
 
         private static void ValidatePoint(string path, GridPoint point, Rink rink, List<string> errors)

@@ -266,4 +266,33 @@ public class TuningLoaderTests
 
         Assert.Contains("checkFormula.k: duplicate key", result.Errors);
     }
+
+    [Fact]
+    public void BaseXgAboveShotMaximum_IsReported()
+    {
+        LoadResult<TuningConfig> result = Load(r => Check(r, "shot")["baseXg"]!["slot"] = 0.7);
+
+        Assert.Contains(result.Errors, e => e.StartsWith("checks.shot.baseXg.slot: must not exceed checks.shot.maxProbability", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AllowedTopLevelSections_MatchDataSchema()
+    {
+        // docs/data-schema.md, tuning.json: "Sallitut ylimmän tason avaimet" (D-030).
+        string[] allowed =
+        {
+            "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "energy", "organization",
+            "pressure", "form", "chemistry", "familiarity", "plays", "chanceTypes", "chanceClasses",
+        };
+
+        LoadResult<TuningConfig> result = Load(r =>
+        {
+            foreach (string section in allowed.Where(s => r[s] == null))
+            {
+                r[section] = new JsonObject();
+            }
+        });
+
+        Assert.Empty(result.Errors);
+    }
 }

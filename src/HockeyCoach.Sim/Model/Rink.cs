@@ -172,6 +172,42 @@ namespace HockeyCoach.Sim.Model
         }
 
         /// <summary>
+        /// The zone of a node id, derived from <see cref="Zones"/> by its x coordinate (D-028).
+        /// Throws if no zone covers that x; <c>RinkValidator</c> reports such data as invalid.
+        /// </summary>
+        public RinkZone ZoneOf(int id)
+        {
+            return ZoneAtX(GetNode(id).X);
+        }
+
+        /// <summary>The zone covering column <paramref name="x"/> (first matching range in data order).</summary>
+        public RinkZone ZoneAtX(int x)
+        {
+            if (TryGetZoneAtX(x, out RinkZone zone))
+            {
+                return zone;
+            }
+
+            throw new InvalidOperationException("No zone covers x = " + x + ".");
+        }
+
+        /// <summary>Finds the zone covering column <paramref name="x"/>; false if none does.</summary>
+        public bool TryGetZoneAtX(int x, out RinkZone zone)
+        {
+            foreach (ZoneRange range in _zones)
+            {
+                if (x >= range.XMin && x <= range.XMax)
+                {
+                    zone = range.Zone;
+                    return true;
+                }
+            }
+
+            zone = default;
+            return false;
+        }
+
+        /// <summary>
         /// Converts a node id to the opponent's view: (x, y) becomes (Length - 1 - x, Width - 1 - y).
         /// Applying it twice returns the original id.
         /// </summary>

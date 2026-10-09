@@ -54,7 +54,7 @@ internal static class TestPlayers
         {
             for (int y = 0; y < width; y++)
             {
-                nodes.Add(new RinkNode(x, y, ZoneOf(x, length), "none", false));
+                nodes.Add(new RinkNode(x, y, "none", false));
             }
         }
 
@@ -67,16 +67,5 @@ internal static class TestPlayers
         };
         var spots = new[] { new FaceoffSpot("center", new GridPoint(length / 2, width / 2)) };
         return new Rink(length, width, nodes, zones, new[] { "none" }, new GridPoint(0, width / 2), new GridPoint(length - 1, width / 2), spots);
-    }
-
-    private static RinkZone ZoneOf(int x, int length)
-    {
-        int third = length / 3;
-        if (x < third)
-        {
-            return RinkZone.Defensive;
-        }
-
-        return x < length - third ? RinkZone.Neutral : RinkZone.Offensive;
     }
 }

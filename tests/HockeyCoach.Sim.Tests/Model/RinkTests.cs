@@ -9,11 +9,12 @@ public class RinkTests
     [InlineData(0, 0, 0)]
     [InlineData(0, 4, 4)]
     [InlineData(1, 0, 5)]
-    [InlineData(4, 2, 22)]
-    [InlineData(8, 4, 44)]
-    public void IdOf_IsXTimesWidthPlusY_On9x5Grid(int x, int y, int expectedId)
+    [InlineData(5, 2, 27)]
+    [InlineData(9, 2, 47)]
+    [InlineData(10, 4, 54)]
+    public void IdOf_IsXTimesWidthPlusY_On11x5Grid(int x, int y, int expectedId)
     {
-        Rink rink = TestPlayers.GridRink(9, 5);
+        Rink rink = TestPlayers.GridRink(11, 5);
 
         Assert.Equal(expectedId, rink.IdOf(x, y));
         Assert.Equal(x, rink.XOf(expectedId));
@@ -31,12 +32,13 @@ public class RinkTests
     }
 
     [Theory]
-    [InlineData(0, 0, 8, 4)]
-    [InlineData(4, 2, 4, 2)]
-    [InlineData(7, 1, 1, 3)]
-    public void Flip_Rotates180Degrees(int x, int y, int flippedX, int flippedY)
+    [InlineData(0, 0, 10, 4)]
+    [InlineData(5, 2, 5, 2)]
+    [InlineData(1, 2, 9, 2)]
+    [InlineData(8, 1, 2, 3)]
+    public void Flip_Rotates180Degrees_On11x5Grid(int x, int y, int flippedX, int flippedY)
     {
-        Rink rink = TestPlayers.GridRink(9, 5);
+        Rink rink = TestPlayers.GridRink(11, 5);
 
         int flipped = rink.Flip(rink.IdOf(x, y));
 
@@ -47,7 +49,7 @@ public class RinkTests
     [Fact]
     public void Flip_TwiceReturnsOriginal_ForEveryNode()
     {
-        Rink rink = TestPlayers.GridRink(9, 5);
+        Rink rink = TestPlayers.GridRink(11, 5);
 
         for (int id = 0; id < rink.NodeCount; id++)
         {
@@ -58,7 +60,7 @@ public class RinkTests
     [Fact]
     public void Constructor_Throws_WhenNodeIsMissing()
     {
-        var nodes = new[] { new RinkNode(0, 0, RinkZone.Defensive, "none", false) };
+        var nodes = new[] { new RinkNode(0, 0, "none", false) };
 
         Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));
     }
@@ -68,8 +70,8 @@ public class RinkTests
     {
         var nodes = new[]
         {
-            new RinkNode(0, 0, RinkZone.Defensive, "none", false),
-            new RinkNode(0, 0, RinkZone.Defensive, "none", false),
+            new RinkNode(0, 0, "none", false),
+            new RinkNode(0, 0, "none", false),
         };
 
         Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));
@@ -80,8 +82,8 @@ public class RinkTests
     {
         var nodes = new[]
         {
-            new RinkNode(0, 0, RinkZone.Defensive, "none", false),
-            new RinkNode(0, 2, RinkZone.Defensive, "none", false),
+            new RinkNode(0, 0, "none", false),
+            new RinkNode(0, 2, "none", false),
         };
 
         Assert.Throws<ArgumentException>(() => Build(1, 2, nodes));

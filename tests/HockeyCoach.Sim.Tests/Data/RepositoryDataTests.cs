@@ -25,7 +25,12 @@ public class RepositoryDataTests
         for (int id = 0; id < rink.NodeCount; id++)
         {
             Assert.Equal(id, rink.Flip(rink.Flip(id)));
+            Assert.Equal(RinkZones.Flip(rink.ZoneOf(id)), rink.ZoneOf(rink.Flip(id)));
         }
+
+        // data-schema.md: the goals are each other's images under the 180-degree rotation.
+        int ownGoal = rink.IdOf(rink.OwnGoal.X, rink.OwnGoal.Y);
+        Assert.Equal(rink.IdOf(rink.OpponentGoal.X, rink.OpponentGoal.Y), rink.Flip(ownGoal));
     }
 
     [Fact]

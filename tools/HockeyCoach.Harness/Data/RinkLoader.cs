@@ -186,20 +186,14 @@ public static class RinkLoader
         for (int i = 0; i < items.Count; i++)
         {
             JsonReader item = items[i];
-            item.RejectUnknown("x", "y", "zone", "xgZone", "isSlot");
+            // A node's zone is derived from the zones x-ranges (D-028); a stored "zone" is an unknown key.
+            item.RejectUnknown("x", "y", "xgZone", "isSlot");
             int? x = item.Int("x");
             int? y = item.Int("y");
-            string? zoneName = item.String("zone");
             string? xgZone = item.String("xgZone");
             bool isSlot = item.Required("isSlot")?.AsBool() ?? false;
-            RinkZone zone = default;
-            if (zoneName != null && !RinkZones.TryParse(zoneName, out zone))
-            {
-                item.Error("zone", "unknown zone " + zoneName + " (expected defensive, neutral or offensive)");
-                ok = false;
-            }
 
-            if (!x.HasValue || !y.HasValue || zoneName == null || xgZone == null)
+            if (!x.HasValue || !y.HasValue || xgZone == null)
             {
                 ok = false;
                 continue;
@@ -214,7 +208,7 @@ public static class RinkLoader
                 continue;
             }
 
-            nodes.Add(new RinkNode(x.Value, y.Value, zone, xgZone, isSlot));
+            nodes.Add(new RinkNode(x.Value, y.Value, xgZone, isSlot));
         }
 
         return ok ? nodes : null;

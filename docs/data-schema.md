@@ -48,11 +48,12 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 
 ### Koordinaatit ja näkökulma (D-017)
 
-- Kaukalo on `length × width` -solmuverkko. Nykyinen koko on 9 × 5 (Q-002, E-002). Koodi ei saa olettaa kokoa, vaan lukee sen `rink.json`:sta.
+- Kaukalo on `length × width` -solmuverkko. Nykyinen koko on 11 × 5 (E-002 hyväksytty): maaliviivojen välissä 9 riviä ja kummankin maalin takana yksi päätyrivi. Koodi ei saa olettaa kokoa, vaan lukee sen `rink.json`:sta.
 - `x` kulkee pituussuunnassa 0 … length − 1, `y` leveyssuunnassa 0 … width − 1.
-- **Jokainen tiedosto kirjoitetaan oman joukkueen näkökulmasta:** oma maali on x = 0, vastustajan maali x = length − 1, ja joukkue hyökkää kohti kasvavaa x:ää. y = 0 on vasen laita, kun katsotaan kohti vastustajan maalia.
-- **Vastustajan näkökulma** saadaan kierrolla 180°: (x, y) → (length − 1 − x, width − 1 − y). Kierto vaihtaa alueet (defensive ↔ offensive) ja puolet (vasen ↔ oikea). Kaukalon tila tallennetaan simulaatiossa yhdessä kiinteässä koordinaatistossa (kotijoukkueen näkökulma); vierasjoukkueen data kierretään latauksen jälkeen.
-- **Solmun id** johdetaan, sitä ei tallenneta: `id = x * width + y` (9 × 5 -verkossa `x * 5 + y`, ids 0–44).
+- **Jokainen tiedosto kirjoitetaan oman joukkueen näkökulmasta:** oma maali on maaliviivalla x = 1 (`ownGoal`), vastustajan maali x = length − 2 (`opponentGoal`), ja joukkue hyökkää kohti kasvavaa x:ää. Rivit x = 0 ja x = length − 1 ovat maalien takana. y = 0 on vasen laita, kun katsotaan kohti vastustajan maalia. Koodi lukee maalien paikat `rink.json`:sta eikä johda niitä koosta.
+- **Vastustajan näkökulma** saadaan kierrolla 180°: (x, y) → (length − 1 − x, width − 1 − y), 11 × 5 -verkossa (10 − x, 4 − y). Kierto vaihtaa alueet (defensive ↔ offensive) ja puolet (vasen ↔ oikea), ja oma maali (1, 2) kiertyy vastustajan maaliksi (9, 2). Kaukalon tila tallennetaan simulaatiossa yhdessä kiinteässä koordinaatistossa (kotijoukkueen näkökulma); vierasjoukkueen data kierretään latauksen jälkeen.
+- **Solmun id** johdetaan, sitä ei tallenneta: `id = x * width + y` (11 × 5 -verkossa `x * 5 + y`, ids 0–54).
+- **Solmun alue** johdetaan `zones`-osion x-väleistä, sitä ei tallenneta solmuun (Q-022).
 - **Etäisyys** solmujen välillä on Chebyshev-etäisyys max(|dx|, |dy|), ellei toisin mainita. Syöttölinja on suora jana solmujen välillä.
 - Koordinaatit kirjoitetaan kuvioissa ja järjestelmissä taulukkona `[x, y]`, kaukalotiedostossa objektina `{"x": .., "y": ..}`.
 
@@ -61,34 +62,45 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 | Kenttä | Tyyppi | Kuvaus |
 | --- | --- | --- |
 | `schemaVersion` | int | 1 |
-| `length`, `width` | int | Verkon koko. Nyt 9 ja 5 |
-| `ownGoal`, `opponentGoal` | `{x, y}` | Maalien solmut. Nyt (0, 2) ja (8, 2), molemmat maaliviivalla |
-| `zones` | lista `{id, xMin, xMax}` | Alueet x-väleinä: `defensive` 0–2, `neutral` 3–5, `offensive` 6–8. Jokainen x kuuluu tasan yhteen alueeseen |
+| `length`, `width` | int | Verkon koko. Nyt 11 ja 5 |
+| `ownGoal`, `opponentGoal` | `{x, y}` | Maalien solmut. Nyt (1, 2) ja (9, 2), molemmat maaliviivalla. Kierrossa toistensa kuvat |
+| `zones` | lista `{id, xMin, xMax}` | Alueet x-väleinä (mukaan lukien): `defensive` 0–3, `neutral` 4–6, `offensive` 7–10. Jokainen x välillä 0 … length − 1 kuuluu tasan yhteen alueeseen. Solmun alue johdetaan tästä (Q-022) |
 | `xgZones` | lista merkkijonoja | Laukaisuvyöhykkeiden nimet. Jokaisella on `tuning.json`:ssa `checks.shot.baseXg`- ja `checks.shot.attackerByXgZone`-arvo |
 | `faceoffSpots` | lista `{id, x, y}` | Aloituspisteet, nimet oman joukkueen näkökulmasta |
-| `nodes` | lista `{x, y, zone, xgZone, isSlot}` | Kaikki `length × width` solmua id-järjestyksessä |
+| `nodes` | lista `{x, y, xgZone, isSlot}` | Kaikki `length × width` solmua id-järjestyksessä. **Ei `zone`-kenttää** |
 
-**Solmun kentät.** `zone` on alueen id. `xgZone` ja `isSlot` kuvaavat laukausta **vastustajan maalia kohti** solmun omasta näkökulmasta. Puolustava joukkue löytää suojattavan slottinsa kierrolla: hyökkääjän solmu (7, 2) on puolustajan näkökulmasta (1, 2).
+**Solmun kentät.** Solmun alue johdetaan sen x-koordinaatista `zones`-osion väleillä, eikä sitä kirjoiteta solmuun (Q-022): yksi totuus, ei ristiriitamahdollisuutta. `xgZone` ja `isSlot` kuvaavat laukausta **vastustajan maalia kohti** solmun omasta näkökulmasta. Puolustava joukkue löytää suojattavan slottinsa kierrolla: hyökkääjän solmu (8, 2) on puolustajan näkökulmasta (10 − 8, 4 − 2) = (2, 2).
 
-**Alueiden perustelu.** Maaliviivat ovat x = 0 ja x = 8, joten solmuväli on n. 22 jalkaa (178 ft / 8). Siniviiva on 64 jalan päässä maaliviivasta, eli x ≈ 2,9 ja x ≈ 5,1. Keskiviiva on x = 4.
+**Alueiden perustelu.** Maaliviivat ovat x = 1 ja x = 9, joten solmuväli on n. 22 jalkaa (178 ft / 8). Siniviiva on 64 jalan päässä maaliviivasta, eli x ≈ 3,9 ja x ≈ 6,1. Keskiviiva on x = 5. Päätyrivit x = 0 ja x = 10 kuvaavat maalin takaista aluetta (oikeasti n. 11 jalkaa syvä, mutta yksi rivi riittää): kierrätys, wraparound, maalin takaa syöttö ja kiekonhaku päätyyn ammutun kiekon jälkeen (E-002). Alueet ovat symmetriset kierrossa: defensive 0–3 ↔ offensive 7–10, neutral 4–6 ↔ 4–6.
 
-**Laukaisuvyöhykkeet (hyökkäyspää, 9 × 5).** Rivit x = 6–8 ylhäältä alas (y 0 … 4):
+**Laukaisuvyöhykkeet (hyökkäyspää, 11 × 5).** Rivit x = 7–10 (y 0 … 4):
 
 | x | y = 0 | y = 1 | y = 2 | y = 3 | y = 4 |
 | --- | --- | --- | --- | --- | --- |
-| 8 (maaliviiva) | boards | lowAngle | crease | lowAngle | boards |
-| 7 (aloituspisteet) | boards | circle | slot | circle | boards |
-| 6 (ympyröiden yläreuna) | boards | point | highSlot | point | boards |
+| 10 (maalin takana) | boards | behindNet | behindNet | behindNet | boards |
+| 9 (maaliviiva) | boards | lowAngle | crease | lowAngle | boards |
+| 8 (aloituspisteet) | boards | circle | slot | circle | boards |
+| 7 (ympyröiden yläreuna) | boards | point | highSlot | point | boards |
 
-x ≤ 5 on `longRange`. `isSlot` on tosi solmuissa (6, 2), (7, 2) ja (8, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 6:lla (siniviiva on x ≈ 5,1) ovat kompromisseja 9 × 5 -verkossa, ks. Q-015 ja E-002.
+x ≤ 6 on `longRange`. `behindNet` = laukaus maaliviivan takaa (wraparound), hyvin pieni xG (`checks.shot.baseXg.behindNet`). `isSlot` on tosi solmuissa (7, 2), (8, 2) ja (9, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 7:llä (siniviiva on x ≈ 6,1) ovat 5-leveän verkon kompromisseja, ks. Q-015.
 
-**Aloituspisteet.** `center` (4, 2), `defensiveLeft` (1, 1), `defensiveRight` (1, 3), `neutralDefensiveLeft` (3, 1), `neutralDefensiveRight` (3, 3), `neutralOffensiveLeft` (5, 1), `neutralOffensiveRight` (5, 3), `offensiveLeft` (7, 1), `offensiveRight` (7, 3). Kierrossa `offensiveLeft` ↔ `defensiveRight` jne.
+**Aloituspisteet.** `center` (5, 2), `defensiveLeft` (2, 1), `defensiveRight` (2, 3), `neutralDefensiveLeft` (4, 1), `neutralDefensiveRight` (4, 3), `neutralOffensiveLeft` (6, 1), `neutralOffensiveRight` (6, 3), `offensiveLeft` (8, 1), `offensiveRight` (8, 3). Kierrossa `offensiveLeft` ↔ `defensiveRight`, `neutralOffensiveLeft` ↔ `neutralDefensiveRight` jne., `center` kiertyy itsekseen.
 
-**Validointi.** Solmuja on tasan `length × width`, järjestys on id-järjestys, jokainen `zone` löytyy `zones`-listasta ja jokainen `xgZone` `xgZones`-listasta, aloituspisteet ovat verkon sisällä ja niiden id:t ovat yksilöllisiä.
+**Validointi.** Lataaja hylkää tiedoston, jos: solmuja ei ole tasan `length × width` tai ne eivät ole id-järjestyksessä; solmulla on tuntematon kenttä (myös vanha `zone`, Q-022); `zones`-välit eivät kata jokaista x:ää 0 … length − 1 tasan kerran tai alueen id on tuntematon (`defensive`, `neutral`, `offensive`); `xgZone` ei löydy `xgZones`-listasta; `ownGoal`, `opponentGoal` tai aloituspiste on verkon ulkopuolella; aloituspisteiden id:t eivät ole yksilöllisiä.
 
 ## tuning.json
 
-Kaikki tasapainoarvot (CLAUDE.md, sääntö 2). Ylimmän tason osiot:
+Kaikki tasapainoarvot (CLAUDE.md, sääntö 2).
+
+**Sallitut ylimmän tason avaimet.** Lataaja hylkää tiedoston, jos sen ylimmällä tasolla on avain, jota ei ole tässä listassa (`_`-alkuisia meta-avaimia lukuun ottamatta): `schemaVersion`, `stats`, `checkFormula`, `checks`, `positions`, `time`, `energy`, `organization`, `pressure`, `form`, `chemistry`, `familiarity`, `plays`, `chanceTypes`, `chanceClasses`. Lista vastaa lataajan sallittujen osioiden listaa. Osiot, joiden virstanpylväs ei ole vielä käynnissä, hyväksytään ja ohitetaan, kunnes koodi alkaa käyttää niitä.
+
+**Uuden osion lisääminen.**
+
+1. Designer kuvaa osion tähän dokumenttiin (alla oleva taulukko: nimi, virstanpylväs, sisältö, validointisäännöt) ja lisää sen `tuning.json`:iin, alkuarvaukset `_placeholders`-listaan.
+2. Programmer lisää osion lataajan sallittujen osioiden listaan (ja tarvittaessa tyypitettyyn konfiguraatioon ja validointiin) **samassa muutoksessa**.
+3. Data ja koodi commitoidaan yhdessä vasta, kun `dotnet test` menee läpi. Pelkkä datamuutos ilman lataajan päivitystä rikkoo latauksen.
+
+Ylimmän tason osiot:
 
 | Osio | Virstanpylväs | Sisältö |
 | --- | --- | --- |
@@ -142,7 +154,7 @@ Kaikki tasapainoarvot (CLAUDE.md, sääntö 2). Ylimmän tason osiot:
 - `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007).
 - `rebound`: onnistuminen = rebound slottiin. Muuten maalivahti hallitsee kiekon: `controlledHoldShare` pitää (katko), loput kulmaan.
 
-**Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: `kind` puuttuu tai on tuntematon; `twoSided`-tarkistukselta puuttuu jompikumpi puoli (`shot`: `attackerByXgZone` korvaa `attacker`-puolen) tai sillä on `side`; `oneSided`-tarkistukselta puuttuu `side`, `side`-puoli puuttuu tai toinen puoli on kirjoitettu; `noCheck`-tarkistuksella on `p0`, `attacker` tai `defender`; läsnä olevan puolen painojen summa poikkeaa 1:stä yli 1e-6; stat- tai roolinimi on tuntematon; p0 tai osuus on välin (0, 1) ulkopuolella; `checkFormula`:n tai `checks.shot`:n `minProbability` ≥ `maxProbability` tai jompikumpi on välin (0, 1) ulkopuolella; `referenceValue` on välin `stats.min`–`stats.max` ulkopuolella; `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa, tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti.
+**Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: `kind` puuttuu tai on tuntematon; `twoSided`-tarkistukselta puuttuu jompikumpi puoli (`shot`: `attackerByXgZone` korvaa `attacker`-puolen) tai sillä on `side`; `oneSided`-tarkistukselta puuttuu `side`, `side`-puoli puuttuu tai toinen puoli on kirjoitettu; `noCheck`-tarkistuksella on `p0`, `attacker` tai `defender`; läsnä olevan puolen painojen summa poikkeaa 1:stä yli 1e-6; stat- tai roolinimi on tuntematon; p0 tai osuus on välin (0, 1) ulkopuolella; `checkFormula`:n tai `checks.shot`:n `minProbability` ≥ `maxProbability` tai jompikumpi on välin (0, 1) ulkopuolella; `referenceValue` on välin `stats.min`–`stats.max` ulkopuolella; `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa; jokin `baseXg`-arvo on välin 0–1 ulkopuolella tai suurempi kuin `checks.shot.maxProbability` (Q-023: perustaso, jota laukauksen yläraja leikkaisi jo ennen statseja, on datavirhe); tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti. Ylimmän tason tuntematon avain hylätään (ks. Sallitut ylimmän tason avaimet).
 
 ## Pelaajat, pelipaikat ja ketjut
 
@@ -184,11 +196,11 @@ Vastaa kysymykseen Q-001 (kuvion osalta). Yksi kuvio per tiedosto, tiedoston nim
   "mirrorable": true,
   "start": {
     "puckCarrier": "LW",
-    "positions": { "LW": [7, 0], "C": [7, 3], "RW": [8, 4], "LD": [6, 1], "RD": [6, 3] }
+    "positions": { "LW": [8, 0], "C": [8, 3], "RW": [10, 3], "LD": [7, 1], "RD": [7, 3] }
   },
   "beats": [
     {
-      "moves": { "C": [7, 2], "RW": [8, 2] },
+      "moves": { "C": [8, 2], "RW": [9, 2] },
       "action": { "type": "pass", "from": "LW", "to": "LD" }
     },
     {
@@ -242,19 +254,19 @@ Vastaa kysymykseen Q-001 (järjestelmän osalta). Säännöt ovat deterministisi
       "when": { "puckZones": ["offensive"] },
       "targets": {
         "F1": { "puckOffset": [0, 0] },
-        "F2": { "node": [5, 1] },
-        "F3": { "node": [5, 3] },
-        "D1": { "node": [3, 1] },
-        "D2": { "node": [3, 3] }
+        "F2": { "node": [6, 1] },
+        "F3": { "node": [6, 3] },
+        "D1": { "node": [4, 1] },
+        "D2": { "node": [4, 3] }
       }
     },
     {
       "when": {},
       "targets": {
         "F1": { "puckOffset": [-1, 0] },
-        "F2": { "node": [2, 1] },
-        "F3": { "node": [2, 3] },
-        "D1": { "node": [1, 1] },
+        "F2": { "node": [3, 1] },
+        "F3": { "node": [3, 3] },
+        "D1": { "node": [2, 1] },
         "D2": { "node": [1, 2] }
       }
     }
@@ -274,7 +286,7 @@ Järjestelmätiedostot kirjoitetaan, kun Q-001 (skeema) ja Q-003 on vastattu.
 | Kenttä | Kuvaus |
 | --- | --- |
 | `id`, `name` | Kuten kuvioissa |
-| `mirrorY` | Jos tosi, säännöt kirjoitetaan kiekon ollessa vasemmalla tai keskellä (y ≤ (width − 1) / 2), ja oikealla puolella käytetään peilikuvaa y → width − 1 − y |
+| `mirrorY` | Jos tosi, säännöt kirjoitetaan kanoniselle puolelle: kiekko vasemmalla tai keskellä (y ≤ (width − 1) / 2, 11 × 5 -verkossa y ≤ 2). Kun kiekko on oikealla (y > 2), kiekon solmu peilataan y → width − 1 − y, sääntö valitaan peilatulla kiekolla ja valitun säännön kohteet peilataan takaisin (`node` [x, y] → [x, width − 1 − y], `puckOffset` [dx, dy] → [dx, −dy]). Kohteet saavat olla kummalla puolella tahansa |
 | `rules` | Järjestetty lista. Ensimmäinen sääntö, jonka `when` täsmää, ratkaisee. Viimeisen säännön `when` on `{}` (aina tosi) |
 | `when.puckZones` | Lista alueita, joissa kiekko on (puolustajan näkökulmasta). Puuttuu = mikä tahansa |
 | `when.puckX`, `when.puckY` | Valinnaiset `[min, max]`-välit kiekon koordinaateille |
@@ -287,4 +299,4 @@ Järjestelmätiedostot kirjoitetaan, kun Q-001 (skeema) ja Q-003 on vastattu.
 
 **Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` solmua kohti kohdettaan. Järjestäytyneisyys johdetaan siitä, kuinka moni puolustaja on kohteessaan tai kiekon takana (stats-and-checks.md), ja sen tarkka kaava kuuluu virstanpylvääseen 3.
 
-**Validointi.** Kaikki viisi roolia jokaisessa säännössä, solmut verkon sisällä, viimeinen sääntö kattaa kaiken, `mirrorY`-järjestelmässä säännöt eivät viittaa oikeaan puoliskoon.
+**Validointi.** Kaikki viisi roolia jokaisessa säännössä, solmut verkon sisällä, viimeinen sääntö kattaa kaiken, `mirrorY`-järjestelmässä `when.puckY`-välit eivät ulotu oikealle puoliskolle (y > (width − 1) / 2). Kohdesolmut saavat olla oikealla puolella.

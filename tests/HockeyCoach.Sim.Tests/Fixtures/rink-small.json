@@ -15,11 +15,11 @@
     {"id": "center", "x": 1, "y": 0}
   ],
   "nodes": [
-    {"x": 0, "y": 0, "zone": "defensive", "xgZone": "longRange", "isSlot": false},
-    {"x": 0, "y": 1, "zone": "defensive", "xgZone": "longRange", "isSlot": false},
-    {"x": 1, "y": 0, "zone": "neutral", "xgZone": "longRange", "isSlot": false},
-    {"x": 1, "y": 1, "zone": "neutral", "xgZone": "longRange", "isSlot": false},
-    {"x": 2, "y": 0, "zone": "offensive", "xgZone": "slot", "isSlot": true},
-    {"x": 2, "y": 1, "zone": "offensive", "xgZone": "slot", "isSlot": true}
+    {"x": 0, "y": 0, "xgZone": "longRange", "isSlot": false},
+    {"x": 0, "y": 1, "xgZone": "longRange", "isSlot": false},
+    {"x": 1, "y": 0, "xgZone": "longRange", "isSlot": false},
+    {"x": 1, "y": 1, "xgZone": "longRange", "isSlot": false},
+    {"x": 2, "y": 0, "xgZone": "slot", "isSlot": true},
+    {"x": 2, "y": 1, "xgZone": "slot", "isSlot": true}
   ]
 }

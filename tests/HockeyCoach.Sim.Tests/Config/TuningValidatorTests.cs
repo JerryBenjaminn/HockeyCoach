@@ -239,4 +239,18 @@ public class TuningValidatorTests
             TuningValidator.Validate(TestChecks.Shot(min: 0.5, max: 0.1), new[] { "longRange", "slot" }),
             e => e.StartsWith("checks.shot: minProbability", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Shot_IsInvalid_WhenBaseXgExceedsShotMaximum()
+    {
+        IReadOnlyList<string> errors = TuningValidator.Validate(TestChecks.Shot(slotXg: 0.65, max: 0.6), new[] { "longRange", "slot" });
+
+        Assert.Contains(errors, e => e.StartsWith("checks.shot.baseXg.slot: must not exceed checks.shot.maxProbability (0.6), was 0.65", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Shot_IsValid_WhenBaseXgEqualsShotMaximum()
+    {
+        Assert.Empty(TuningValidator.Validate(TestChecks.Shot(slotXg: 0.6, max: 0.6), new[] { "longRange", "slot" }));
+    }
 }

@@ -25,7 +25,8 @@ public class RinkLoaderTests
         Assert.Equal(new[] { "slot", "longRange" }, rink.XgZones);
         Assert.Equal("center", rink.FaceoffSpots.Single().Id);
         RinkNode node = rink.GetNode(rink.IdOf(2, 1));
-        Assert.Equal(RinkZone.Offensive, node.Zone);
+        Assert.Equal(RinkZone.Offensive, rink.ZoneOf(rink.IdOf(2, 1)));
+        Assert.Equal(RinkZone.Neutral, rink.ZoneOf(rink.IdOf(1, 0)));
         Assert.Equal("slot", node.XgZone);
         Assert.True(node.IsSlot);
     }
@@ -77,11 +78,35 @@ public class RinkLoaderTests
     }
 
     [Fact]
-    public void UnknownZoneName_IsRejected()
+    public void StoredNodeZone_IsRejected()
     {
-        LoadResult<Rink> result = Load(r => r["nodes"]![2]!["zone"] = "middle");
+        LoadResult<Rink> result = Load(r => r["nodes"]![2]!["zone"] = "neutral");
 
-        Assert.Contains(result.Errors, e => e.StartsWith("nodes[2].zone: unknown zone middle", StringComparison.Ordinal));
+        Assert.Contains("nodes[2].zone: unknown key", result.Errors);
+    }
+
+    [Fact]
+    public void UnknownZoneId_IsRejected()
+    {
+        LoadResult<Rink> result = Load(r => r["zones"]![1]!["id"] = "middle");
+
+        Assert.Contains(result.Errors, e => e.StartsWith("zones[1].id: unknown zone middle", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ZonesNotCoveringEveryX_AreRejected()
+    {
+        LoadResult<Rink> result = Load(r => r["zones"]![1]!["xMax"] = 0);
+
+        Assert.Contains("zones: x 1 belongs to 0 zones, expected exactly 1", result.Errors);
+    }
+
+    [Fact]
+    public void GoalOutsideGrid_IsRejected()
+    {
+        LoadResult<Rink> result = Load(r => r["ownGoal"]!["y"] = 5);
+
+        Assert.Contains(result.Errors, e => e.StartsWith("ownGoal: (0,5) is outside", StringComparison.Ordinal));
     }
 
     [Fact]

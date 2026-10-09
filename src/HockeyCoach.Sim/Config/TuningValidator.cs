@@ -227,7 +227,8 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>
         /// Validates the shot check: goalie side and every zone's shooter weights sum to 1, baseXg and
-        /// attackerByXgZone cover exactly <paramref name="xgZones"/>, base rates and onTargetShare in (0, 1),
+        /// attackerByXgZone cover exactly <paramref name="xgZones"/>, base rates in (0, 1) and not above the shot
+        /// maxProbability (D-029), onTargetShare in (0, 1),
         /// and the shot's own probability bounds (D-014).
         /// </summary>
         public static IReadOnlyList<string> Validate(ShotConfig shot, IReadOnlyList<string> xgZones)
@@ -251,6 +252,10 @@ namespace HockeyCoach.Sim.Config
                 if (!IsOpenUnit(zone.Value))
                 {
                     errors.Add(path + ".baseXg." + zone.Key + ": must be in (0, 1), was " + Format(zone.Value));
+                }
+                else if (zone.Value > shot.MaxProbability)
+                {
+                    errors.Add(path + ".baseXg." + zone.Key + ": must not exceed checks.shot.maxProbability (" + Format(shot.MaxProbability) + "), was " + Format(zone.Value) + " (D-029)");
                 }
             }
 
