@@ -423,6 +423,7 @@ Laukaus saa `shot.modifiers.royalRoad`-muokkaajan, kun **kaikki** pätevät:
 1. Laukaus on onnistunutta syöttöä **seuraava kiekkotoiminto**, ja syötön vastaanottaja on laukaisija. Kuviossa: syöttö tahdissa n ja `shoot` tahdissa n + 1. Mikä tahansa välissä oleva toiminto katkaisee ehdon, myös `driveNet`, vaikka se ei näy tapahtumalokissa omana tapahtumanaan. Järjestelmätilassa sama: syötön ja laukauksen välissä ei ole muuta toimintoa eikä järjestelmätilan askelta.
 2. Syöttö oli poikittaissyöttö (M-2).
 3. Sekä syöttäjän että vastaanottajan x on hyökkäysalueella maaliviivan edessä tai sillä: hyökkäysalueen `xMin` ≤ x ≤ `opponentGoal.x`, 11 × 5 -verkossa 7 ≤ x ≤ 9. Päätyriviltä (x = 10) lähtevä tai sinne menevä syöttö ei ole Royal Road, koska se ei ylitä maalin ja siniviivan välistä keskilinjaa.
+4. Ainakin toinen päätepiste on aloituspisteiden rivillä tai maaliviivalla: x ≥ `opponentGoal.x` − 1 (11 × 5 -verkossa x ≥ 8, sama yhden askeleen sääntö kuin `netFront`). Pelkkä pakilta pakille -syöttö siniviivalla (molemmat x = 7) ei ole Royal Road: maalivahti ehtii siirtyä, eikä analyysi laske sitä slotin poikki menevänä syöttönä.
 
 Kiekon kieli: poikittaissyöttö slotin yli hyökkäysalueella juuri ennen laukausta pakottaa maalivahdin sivuttaisliikkeeseen.
 
