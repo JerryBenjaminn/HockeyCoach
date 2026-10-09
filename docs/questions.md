@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-025 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako kenttäpelaajan kohde (kuviossa tai järjestelmässä) olla maalisolmussa (1,2) tai (9,2)?
+**Konteksti:** 11 × 5 -verkossa maalisolmu on myös crease-solmu, johon `driveNet` vie pelaajan. Esimerkkijärjestelmässä trap122 kaksi kohdetta osuu omaan maalisolmuun. Liittyy E-002:n mainitsemaan "maali esteenä" -lisäsääntöön, joka on uusi mekaniikka.
+**Ehdotettu oletus:** sallitaan, kunnes päätetään.
+
+### Q-024 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako kuvion `moves` siirtää kiekollista pelaajaa, vai liikkuuko kiekollinen vain `skate`-toiminnolla?
+**Konteksti:** Q-001, kuvioskeema (`docs/data-schema.md`).
+**Ehdotettu oletus:** kiekollinen liikkuu vain `skate`-toiminnolla.
+
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
 **Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.

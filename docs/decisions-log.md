@@ -86,3 +86,4 @@ Designerin `tuning.json`-säädöt tavoitehaarukoiden sisällä. Ei vaadi erilli
 
 | Päivä | Arvo | Ennen | Jälkeen | Syy | Vaikutus raporttiin |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-09 | `checks.shot.baseXg.behindNet`, `checks.shot.attackerByXgZone.behindNet.shooter` | – | 0,01 / shotAccuracy 0,8, shotPower 0,2 (paikkamerkkejä) | Uusi xG-vyöhyke maalin takana (E-002, D-027) | Ei raporttia vielä |
