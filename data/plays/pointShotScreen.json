@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "pointShotScreen",
+  "name": "Point shot with screen",
+  "_notes": "Winger on the wall moves the puck up to the point, the far winger drives the net for the screen and the rebound, the D shoots through traffic.",
+  "type": "offensiveZone",
+  "start": {
+    "puckCarrier": "LW",
+    "positions": {
+      "LW": [8, 0],
+      "C": [8, 3],
+      "RW": [9, 4],
+      "LD": [7, 1],
+      "RD": [7, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "C": [9, 3]
+      },
+      "action": {
+        "type": "pass",
+        "from": "LW",
+        "to": "LD"
+      }
+    },
+    {
+      "moves": {
+        "LW": [9, 1]
+      },
+      "action": {
+        "type": "driveNet",
+        "by": "RW"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "shoot",
+        "by": "LD"
+      }
+    }
+  ]
+}

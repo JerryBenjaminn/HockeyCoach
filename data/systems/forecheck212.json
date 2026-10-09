@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "forecheck212",
+  "name": "2-1-2 aggressive forecheck",
+  "_notes": "F1 pressures the carrier, F2 takes away the weak-side reverse low, F3 holds the high slot, the D pinch at the offensive blue line. Neutral zone: F1 and F2 keep pressing. Own zone: F1 on the puck, F2 high slot, F3 weak-side point, D1 puck-side low, D2 net front.",
+  "mirrorY": true,
+  "rules": [
+    {
+      "when": {
+        "puckZones": [
+          "offensive"
+        ]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "node": [9, 3]
+        },
+        "F3": {
+          "node": [7, 2]
+        },
+        "D1": {
+          "node": [7, 1]
+        },
+        "D2": {
+          "node": [6, 3]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckZones": [
+          "neutral"
+        ]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "puckOffset": [-1, 1]
+        },
+        "F3": {
+          "node": [4, 3]
+        },
+        "D1": {
+          "node": [3, 1]
+        },
+        "D2": {
+          "node": [3, 3]
+        }
+      }
+    },
+    {
+      "when": {},
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "node": [3, 2]
+        },
+        "F3": {
+          "node": [3, 3]
+        },
+        "D1": {
+          "node": [2, 1]
+        },
+        "D2": {
+          "node": [2, 2]
+        }
+      }
+    }
+  ]
+}

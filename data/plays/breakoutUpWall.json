@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "breakoutUpWall",
+  "name": "Breakout up the wall",
+  "_notes": "D retrieves in the corner, passes to the winger on the wall at the top of the circle, centre swings low to high as the outlet, winger carries out over the blue line.",
+  "type": "breakout",
+  "start": {
+    "puckCarrier": "LD",
+    "positions": {
+      "LD": [1, 0],
+      "LW": [3, 0],
+      "C": [2, 1],
+      "RW": [3, 4],
+      "RD": [2, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "C": [3, 2]
+      },
+      "action": {
+        "type": "pass",
+        "from": "LD",
+        "to": "LW"
+      }
+    },
+    {
+      "moves": {
+        "C": [5, 2],
+        "RW": [5, 4]
+      },
+      "action": {
+        "type": "skate",
+        "by": "LW",
+        "to": [5, 0]
+      }
+    },
+    {
+      "moves": {
+        "RD": [3, 3],
+        "LD": [3, 1]
+      },
+      "action": {
+        "type": "pass",
+        "from": "LW",
+        "to": "C"
+      }
+    }
+  ]
+}

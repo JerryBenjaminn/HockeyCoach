@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "dumpAndChase",
+  "name": "Dump and chase",
+  "_notes": "Against a set neutral-zone trap: the carrier dumps to the far corner, away from the goalie, and the far winger is already on his way to win the race.",
+  "type": "zoneEntry",
+  "start": {
+    "puckCarrier": "LW",
+    "positions": {
+      "LW": [6, 0],
+      "C": [5, 2],
+      "RW": [6, 4],
+      "LD": [4, 1],
+      "RD": [4, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "RW": [8, 4],
+        "C": [7, 2]
+      },
+      "action": {
+        "type": "dump",
+        "by": "LW",
+        "to": [9, 4]
+      }
+    }
+  ]
+}

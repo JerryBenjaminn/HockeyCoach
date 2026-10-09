@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "offensiveFaceoffPointShot",
+  "name": "Offensive draw back to the point",
+  "_notes": "Centre wins the draw straight back to the strong-side D, the far winger goes to the net front for the screen, the D shoots.",
+  "type": "faceoff",
+  "faceoffSpot": "offensiveLeft",
+  "start": {
+    "puckCarrier": "C",
+    "positions": {
+      "C": [8, 1],
+      "LW": [8, 0],
+      "RW": [8, 3],
+      "LD": [7, 1],
+      "RD": [7, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {},
+      "action": {
+        "type": "pass",
+        "from": "C",
+        "to": "LD"
+      }
+    },
+    {
+      "moves": {
+        "C": [9, 1]
+      },
+      "action": {
+        "type": "driveNet",
+        "by": "RW"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "shoot",
+        "by": "LD"
+      }
+    }
+  ]
+}

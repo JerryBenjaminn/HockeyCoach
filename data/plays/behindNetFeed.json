@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "behindNetFeed",
+  "name": "Feed from behind the net",
+  "_notes": "Winger takes the puck behind the net ('the office'), the centre drives to the front of the net and gets the pass in tight for a tip-in or quick shot.",
+  "type": "offensiveZone",
+  "start": {
+    "puckCarrier": "LW",
+    "positions": {
+      "LW": [9, 0],
+      "C": [7, 2],
+      "RW": [8, 4],
+      "LD": [7, 1],
+      "RD": [7, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "RW": [8, 3]
+      },
+      "action": {
+        "type": "skate",
+        "by": "LW",
+        "to": [10, 1]
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "driveNet",
+        "by": "C"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "pass",
+        "from": "LW",
+        "to": "C"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "shoot",
+        "by": "C"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "middleDriveWidePass",
+  "name": "Middle drive, pass wide",
+  "_notes": "Centre carries through the middle and passes to the winger entering wide on the right, then drives the net for the screen; the winger cuts to the circle and shoots.",
+  "type": "zoneEntry",
+  "start": {
+    "puckCarrier": "C",
+    "positions": {
+      "C": [5, 2],
+      "LW": [5, 0],
+      "RW": [5, 4],
+      "LD": [4, 1],
+      "RD": [4, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "LW": [7, 0],
+        "RW": [7, 4]
+      },
+      "action": {
+        "type": "pass",
+        "from": "C",
+        "to": "RW"
+      }
+    },
+    {
+      "moves": {
+        "C": [7, 2],
+        "LW": [8, 1]
+      },
+      "action": {
+        "type": "skate",
+        "by": "RW",
+        "to": [8, 3]
+      }
+    },
+    {
+      "moves": {
+        "LD": [6, 1],
+        "RD": [6, 3]
+      },
+      "action": {
+        "type": "driveNet",
+        "by": "C"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "shoot",
+        "by": "RW"
+      }
+    }
+  ]
+}

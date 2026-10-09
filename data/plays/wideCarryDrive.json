@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "wideCarryDrive",
+  "name": "Wide carry, middle drive",
+  "_notes": "Winger carries wide over the blue line, centre drives the middle to the net, far winger comes to the far circle for a cross-slot pass and a one-timer through the screen.",
+  "type": "zoneEntry",
+  "start": {
+    "puckCarrier": "LW",
+    "positions": {
+      "LW": [5, 0],
+      "C": [5, 2],
+      "RW": [5, 4],
+      "LD": [4, 1],
+      "RD": [4, 3]
+    }
+  },
+  "beats": [
+    {
+      "moves": {
+        "C": [7, 2],
+        "RW": [7, 4]
+      },
+      "action": {
+        "type": "skate",
+        "by": "LW",
+        "to": [7, 0]
+      }
+    },
+    {
+      "moves": {
+        "RW": [8, 3],
+        "LD": [5, 1],
+        "RD": [5, 3]
+      },
+      "action": {
+        "type": "driveNet",
+        "by": "C"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "pass",
+        "from": "LW",
+        "to": "RW"
+      }
+    },
+    {
+      "moves": {},
+      "action": {
+        "type": "shoot",
+        "by": "RW"
+      }
+    }
+  ]
+}
