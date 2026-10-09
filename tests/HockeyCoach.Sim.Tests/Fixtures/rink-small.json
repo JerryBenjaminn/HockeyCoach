@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "_notes": "Test fixture: 3 x 2 grid.",
+  "length": 3,
+  "width": 2,
+  "ownGoal": {"x": 0, "y": 1},
+  "opponentGoal": {"x": 2, "y": 1},
+  "zones": [
+    {"id": "defensive", "xMin": 0, "xMax": 0},
+    {"id": "neutral", "xMin": 1, "xMax": 1},
+    {"id": "offensive", "xMin": 2, "xMax": 2}
+  ],
+  "xgZones": ["slot", "longRange"],
+  "faceoffSpots": [
+    {"id": "center", "x": 1, "y": 0}
+  ],
+  "nodes": [
+    {"x": 0, "y": 0, "zone": "defensive", "xgZone": "longRange", "isSlot": false},
+    {"x": 0, "y": 1, "zone": "defensive", "xgZone": "longRange", "isSlot": false},
+    {"x": 1, "y": 0, "zone": "neutral", "xgZone": "longRange", "isSlot": false},
+    {"x": 1, "y": 1, "zone": "neutral", "xgZone": "longRange", "isSlot": false},
+    {"x": 2, "y": 0, "zone": "offensive", "xgZone": "slot", "isSlot": true},
+    {"x": 2, "y": 1, "zone": "offensive", "xgZone": "slot", "isSlot": true}
+  ]
+}

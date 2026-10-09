@@ -18,10 +18,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\HockeyCoach.Sim\HockeyCoach.Sim.csproj" />
     <ProjectReference Include="..\..\src\HockeyCoach.AI\HockeyCoach.AI.csproj" />
+    <ProjectReference Include="..\..\tools\HockeyCoach.Harness\HockeyCoach.Harness.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

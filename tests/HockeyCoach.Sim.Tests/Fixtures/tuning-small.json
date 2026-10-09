@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "_notes": "Test fixture. Values are test inputs, not balance values.",
+  "_placeholders": ["checks.pass.p0"],
+  "stats": {
+    "min": 1,
+    "max": 20,
+    "grades": {"A": [11, 20], "B": [1, 10]}
+  },
+  "checkFormula": {"k": 0.15, "minProbability": 0.02, "maxProbability": 0.98, "referenceValue": 10.5},
+  "checks": {
+    "pass": {
+      "_notes": "two-sided",
+      "kind": "twoSided",
+      "p0": 0.85,
+      "attacker": {"passer": {"passing": 0.6}, "receiver": {"hands": 0.4}},
+      "defender": {"nearestDefender": {"awareness": 0.5, "positioning": 0.5}},
+      "modifiers": {"laneDefenderDistance": [-1.2, -0.5, 0.0], "crossIce": -0.4}
+    },
+    "breakout": {
+      "kind": "twoSided",
+      "p0": 0.7,
+      "attacker": {"carrier": {"passing": 0.5, "awareness": 0.5}},
+      "defender": {"forecheckers": {"speed": 0.5, "awareness": 0.5}},
+      "modifiers": {}
+    },
+    "block": {
+      "kind": "oneSided",
+      "side": "defender",
+      "p0": 0.75,
+      "defender": {"nearestDefender": {"positioning": 1.0}},
+      "modifiers": {"distancePerNode": 0.15}
+    },
+    "rebound": {
+      "kind": "oneSided",
+      "side": "defender",
+      "p0": 0.15,
+      "defender": {"goalie": {"reboundControl": 1.0}},
+      "controlledHoldShare": 0.6,
+      "modifiers": {"shotPowerPerPoint": 0.05}
+    },
+    "dumpIn": {
+      "kind": "noCheck",
+      "goaliePuckHandlingPerPoint": 0.03
+    },
+    "shot": {
+      "kind": "twoSided",
+      "attackerByXgZone": {
+        "slot": {"shooter": {"shotAccuracy": 0.8, "shotPower": 0.2}},
+        "longRange": {"shooter": {"shotAccuracy": 0.3, "shotPower": 0.7}}
+      },
+      "defender": {"goalie": {"positioning": 0.6, "reflexes": 0.4}},
+      "baseXg": {"slot": 0.15, "longRange": 0.005},
+      "onTargetShare": 0.55,
+      "minProbability": 0.001,
+      "maxProbability": 0.6,
+      "modifiers": {"screen": 0.3}
+    }
+  },
+  "positions": {"offSideCheckModifier": -0.3},
+  "time": {"periods": 3, "anythingForLater": {"x": 1}},
+  "energy": {}
+}
