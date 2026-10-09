@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace HockeyCoach.Sim.Config
 {
     /// <summary>
-    /// Typed balance values from tuning.json for the sections used so far (stats, checkFormula, checks, positions).
-    /// Sections for later milestones are added as they are implemented.
+    /// Typed balance values from tuning.json for the sections used so far (stats, checkFormula, checks, positions,
+    /// time, plays, chanceTypes, chanceClasses). Sections for later milestones are added as they are implemented.
     /// </summary>
     public sealed class TuningConfig
     {
@@ -17,8 +17,25 @@ namespace HockeyCoach.Sim.Config
         /// <param name="checks">All checks except <c>shot</c>.</param>
         /// <param name="shot">The shot goal check.</param>
         /// <param name="positions">Position balance values.</param>
-        public TuningConfig(StatsConfig stats, CheckFormulaConfig checkFormula, IEnumerable<CheckDefinition> checks, ShotConfig shot, PositionsConfig positions)
+        /// <param name="time">Time values.</param>
+        /// <param name="plays">Play limits.</param>
+        /// <param name="chanceTypes">Chance type classification.</param>
+        /// <param name="chanceClasses">Chance class xG thresholds.</param>
+        public TuningConfig(
+            StatsConfig stats,
+            CheckFormulaConfig checkFormula,
+            IEnumerable<CheckDefinition> checks,
+            ShotConfig shot,
+            PositionsConfig positions,
+            TimeConfig time,
+            PlaysConfig plays,
+            ChanceTypesConfig chanceTypes,
+            ChanceClassesConfig chanceClasses)
         {
+            Time = time ?? throw new ArgumentNullException(nameof(time));
+            Plays = plays ?? throw new ArgumentNullException(nameof(plays));
+            ChanceTypes = chanceTypes ?? throw new ArgumentNullException(nameof(chanceTypes));
+            ChanceClasses = chanceClasses ?? throw new ArgumentNullException(nameof(chanceClasses));
             Stats = stats ?? throw new ArgumentNullException(nameof(stats));
             CheckFormula = checkFormula ?? throw new ArgumentNullException(nameof(checkFormula));
             Shot = shot ?? throw new ArgumentNullException(nameof(shot));
@@ -62,6 +79,18 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>Position balance values.</summary>
         public PositionsConfig Positions { get; }
+
+        /// <summary>Time values (game seconds).</summary>
+        public TimeConfig Time { get; }
+
+        /// <summary>Play limits.</summary>
+        public PlaysConfig Plays { get; }
+
+        /// <summary>Chance type classification.</summary>
+        public ChanceTypesConfig ChanceTypes { get; }
+
+        /// <summary>Chance class xG thresholds.</summary>
+        public ChanceClassesConfig ChanceClasses { get; }
 
         /// <summary>Returns a check by id; throws if it does not exist.</summary>
         public CheckDefinition GetCheck(string id)

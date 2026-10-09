@@ -14,12 +14,15 @@ public static class TuningLoader
     public const int SchemaVersion = 1;
 
     /// <summary>Top-level sections mapped into <see cref="TuningConfig"/>.</summary>
-    private static readonly string[] MappedSections = { "schemaVersion", "stats", "checkFormula", "checks", "positions" };
+    private static readonly string[] MappedSections =
+    {
+        "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "plays", "chanceTypes", "chanceClasses",
+    };
 
     /// <summary>Top-level sections of later milestones (data-schema.md); accepted and not mapped yet.</summary>
     private static readonly string[] LaterSections =
     {
-        "time", "energy", "organization", "pressure", "form", "chemistry", "familiarity", "plays", "chanceTypes", "chanceClasses",
+        "energy", "organization", "pressure", "form", "chemistry", "familiarity",
     };
 
     private static readonly string[] CheckKeys = { "kind", "side", "p0", "attacker", "defender", "modifiers" };
@@ -63,6 +66,10 @@ public static class TuningLoader
         StatsConfig? stats = MapStats(root.Required("stats"));
         CheckFormulaConfig? formula = MapFormula(root.Required("checkFormula"));
         PositionsConfig? positions = MapPositions(root.Required("positions"));
+        TimeConfig? time = MapTime(root.Required("time"));
+        PlaysConfig? plays = MapPlays(root.Required("plays"));
+        ChanceTypesConfig? chanceTypes = MapChanceTypes(root.Required("chanceTypes"));
+        ChanceClassesConfig? chanceClasses = MapChanceClasses(root.Required("chanceClasses"));
 
         var checks = new List<CheckDefinition>();
         ShotConfig? shot = null;
@@ -91,12 +98,79 @@ public static class TuningLoader
             }
         }
 
-        if (stats == null || formula == null || positions == null || shot == null)
+        if (stats == null || formula == null || positions == null || shot == null || time == null || plays == null
+            || chanceTypes == null || chanceClasses == null)
         {
             return null;
         }
 
-        return new TuningConfig(stats, formula, checks, shot, positions);
+        return new TuningConfig(stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses);
+    }
+
+    private static TimeConfig? MapTime(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown(
+            "periods", "periodSeconds", "forwardShiftSeconds", "defenceShiftSeconds", "secondsPerAction", "setupSeconds", "regroupSeconds");
+        int? periods = reader.Int("periods");
+        var secondsPerAction = new List<KeyValuePair<string, double>>();
+        JsonReader? actions = reader.Required("secondsPerAction");
+        if (actions != null)
+        {
+            foreach (KeyValuePair<string, JsonReader> action in actions.Properties())
+            {
+                secondsPerAction.Add(new KeyValuePair<string, double>(action.Key, action.Value.AsDouble()));
+            }
+        }
+
+        var time = new TimeConfig(
+            periods ?? 0,
+            reader.Double("periodSeconds"),
+            reader.Double("forwardShiftSeconds"),
+            reader.Double("defenceShiftSeconds"),
+            secondsPerAction,
+            reader.Double("setupSeconds"),
+            reader.Double("regroupSeconds"));
+        return periods.HasValue ? time : null;
+    }
+
+    private static PlaysConfig? MapPlays(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown("maxBeats", "maxNodesPerBeat");
+        int? maxBeats = reader.Int("maxBeats");
+        int? maxNodesPerBeat = reader.Int("maxNodesPerBeat");
+        return maxBeats.HasValue && maxNodesPerBeat.HasValue ? new PlaysConfig(maxBeats.Value, maxNodesPerBeat.Value) : null;
+    }
+
+    private static ChanceTypesConfig? MapChanceTypes(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown("rushOrganizationBelow", "turnoverWindowSeconds");
+        return new ChanceTypesConfig(reader.Double("rushOrganizationBelow"), reader.Double("turnoverWindowSeconds"));
+    }
+
+    private static ChanceClassesConfig? MapChanceClasses(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown("topMinXg", "goodMinXg", "moderateMinXg");
+        return new ChanceClassesConfig(reader.Double("topMinXg"), reader.Double("goodMinXg"), reader.Double("moderateMinXg"));
     }
 
     private static StatsConfig? MapStats(JsonReader? reader)

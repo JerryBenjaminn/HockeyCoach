@@ -36,6 +36,108 @@ namespace HockeyCoach.Sim.Config
                 errors.Add("positions.offSideCheckModifier: must be a finite number");
             }
 
+            errors.AddRange(Validate(tuning.Time));
+            errors.AddRange(Validate(tuning.Plays));
+            errors.AddRange(Validate(tuning.ChanceTypes));
+            errors.AddRange(Validate(tuning.ChanceClasses));
+            return errors;
+        }
+
+        /// <summary>
+        /// Validates the time section: at least one period, positive period and shift lengths, non-negative setup,
+        /// regroup and action times, and every <see cref="TimeConfig.PlayActionKeys"/> present.
+        /// </summary>
+        public static IReadOnlyList<string> Validate(TimeConfig time)
+        {
+            var errors = new List<string>();
+            if (time == null)
+            {
+                errors.Add("time: missing");
+                return errors;
+            }
+
+            if (time.Periods < 1)
+            {
+                errors.Add("time.periods: must be at least 1, was " + time.Periods);
+            }
+
+            RequirePositive("time.periodSeconds", time.PeriodSeconds, errors);
+            RequirePositive("time.forwardShiftSeconds", time.ForwardShiftSeconds, errors);
+            RequirePositive("time.defenceShiftSeconds", time.DefenceShiftSeconds, errors);
+            RequireNonNegative("time.setupSeconds", time.SetupSeconds, errors);
+            RequireNonNegative("time.regroupSeconds", time.RegroupSeconds, errors);
+            foreach (KeyValuePair<string, double> action in time.SecondsPerAction)
+            {
+                RequireNonNegative("time.secondsPerAction." + action.Key, action.Value, errors);
+            }
+
+            foreach (string key in TimeConfig.PlayActionKeys)
+            {
+                if (!time.SecondsPerAction.ContainsKey(key))
+                {
+                    errors.Add("time.secondsPerAction." + key + ": missing (used by the play actions)");
+                }
+            }
+
+            return errors;
+        }
+
+        /// <summary>Validates the plays section: maxBeats and maxNodesPerBeat are at least 1.</summary>
+        public static IReadOnlyList<string> Validate(PlaysConfig plays)
+        {
+            var errors = new List<string>();
+            if (plays == null)
+            {
+                errors.Add("plays: missing");
+                return errors;
+            }
+
+            if (plays.MaxBeats < 1)
+            {
+                errors.Add("plays.maxBeats: must be at least 1, was " + plays.MaxBeats);
+            }
+
+            if (plays.MaxNodesPerBeat < 1)
+            {
+                errors.Add("plays.maxNodesPerBeat: must be at least 1, was " + plays.MaxNodesPerBeat);
+            }
+
+            return errors;
+        }
+
+        /// <summary>Validates the chanceTypes section: organization threshold in [0, 1], non-negative window.</summary>
+        public static IReadOnlyList<string> Validate(ChanceTypesConfig chanceTypes)
+        {
+            var errors = new List<string>();
+            if (chanceTypes == null)
+            {
+                errors.Add("chanceTypes: missing");
+                return errors;
+            }
+
+            RequireUnit("chanceTypes.rushOrganizationBelow", chanceTypes.RushOrganizationBelow, errors);
+            RequireNonNegative("chanceTypes.turnoverWindowSeconds", chanceTypes.TurnoverWindowSeconds, errors);
+            return errors;
+        }
+
+        /// <summary>Validates the chanceClasses section: thresholds in [0, 1] and top ≥ good ≥ moderate.</summary>
+        public static IReadOnlyList<string> Validate(ChanceClassesConfig chanceClasses)
+        {
+            var errors = new List<string>();
+            if (chanceClasses == null)
+            {
+                errors.Add("chanceClasses: missing");
+                return errors;
+            }
+
+            RequireUnit("chanceClasses.topMinXg", chanceClasses.TopMinXg, errors);
+            RequireUnit("chanceClasses.goodMinXg", chanceClasses.GoodMinXg, errors);
+            RequireUnit("chanceClasses.moderateMinXg", chanceClasses.ModerateMinXg, errors);
+            if (!(chanceClasses.TopMinXg >= chanceClasses.GoodMinXg && chanceClasses.GoodMinXg >= chanceClasses.ModerateMinXg))
+            {
+                errors.Add("chanceClasses: thresholds must satisfy topMinXg >= goodMinXg >= moderateMinXg");
+            }
+
             return errors;
         }
 
@@ -411,6 +513,30 @@ namespace HockeyCoach.Sim.Config
                 {
                     errors.Add(path + "." + zone + ": not an xG zone in rink.json");
                 }
+            }
+        }
+
+        private static void RequirePositive(string path, double value, List<string> errors)
+        {
+            if (!IsFinite(value) || value <= 0.0)
+            {
+                errors.Add(path + ": must be a finite number > 0, was " + Format(value));
+            }
+        }
+
+        private static void RequireNonNegative(string path, double value, List<string> errors)
+        {
+            if (!IsFinite(value) || value < 0.0)
+            {
+                errors.Add(path + ": must be a finite number >= 0, was " + Format(value));
+            }
+        }
+
+        private static void RequireUnit(string path, double value, List<string> errors)
+        {
+            if (!IsFinite(value) || value < 0.0 || value > 1.0)
+            {
+                errors.Add(path + ": must be in [0, 1], was " + Format(value));
             }
         }
 
