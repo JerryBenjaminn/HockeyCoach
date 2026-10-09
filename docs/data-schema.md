@@ -116,15 +116,16 @@ Ylimmän tason osiot:
 | `stats` | 1 | `min`, `max` (1, 20), `grades` (A–E-rajat, `[min, max]`) |
 | `checkFormula` | 1 | `k` (0,15), `minProbability` (0,02), `maxProbability` (0,98) (D-014: koskee vain tarkistuksia, ei laukauksen maalintodennäköisyyttä eikä xG:tä), `referenceValue` (10,5: yksipuolisen tarkistuksen puuttuva puoli ja `...PerPoint`-muokkaajien nollakohta, D-019) |
 | `checks` | 1 | Tarkistukset, ks. alla |
-| `time` | 2 | `periods`, `periodSeconds`, `forwardShiftSeconds`, `defenceShiftSeconds` (kolmikot ja pakkiparit vaihtuvat erikseen, D-023), `secondsPerAction`, `setupSeconds`, `regroupSeconds` (Q-006) |
+| `time` | 2 | `periods`, `periodSeconds`, `forwardShiftSeconds`, `defenceShiftSeconds` (kolmikot ja pakkiparit vaihtuvat erikseen, D-023), `secondsPerAction` (myös `systemStep`: järjestelmätilan askel, D-036), `setupSeconds`, `regroupSeconds` (Q-006) |
 | `energy` | 3 | Kulutus, palautuminen penkillä, `checkModifierAtZero` (kaikkiin tarkistuksiin) |
 | `positions` | 2 | `offSideCheckModifier`: väärän puolen miinus (D-024), ks. Pelaajat, pelipaikat ja ketjut |
 | `organization` | 3 | Pudotus kiekonmenetyksessä alueittain, palautuminen, `organizedThreshold` |
-| `pressure` | 3 | Kasvu, säilyminen katkolla, energian kulutus, henkisen kestävyyden vaimennus |
+| `pressure` | 3 | Kasvu, säilyminen katkolla, energian kulutus, henkisen kestävyyden vaimennus. Lisäksi `underPressureNodes` (virstanpylväs 2): fyysisen paineen säde, ei joukkueen painetila (Määritelmät M-7, luonnos) |
 | `form`, `chemistry`, `familiarity` | 3+ | Vire (±`maxStatDelta`), ketjukemia, tuttuus |
 | `plays` | 2 | `maxBeats` (4), `maxNodesPerBeat` |
 | `chanceTypes` | 2 | Paikkatyyppien luokittelu (suorahyökkäys, kiekonriisto) |
 | `chanceClasses` | 4 | Paikkaluokkien xG-rajat (Q-004) |
+| `loosePuckSpots` | 2 | **Ei vielä datassa, odottaa lataajan tukea (D-030).** Irtokiekon paikkasäännöt (D-044), ks. Määritelmät, Irtokiekon paikat |
 
 ### Tarkistus (`checks.<nimi>`)
 
@@ -163,7 +164,9 @@ Ylimmän tason osiot:
 - `deke`: myös `skate`-toiminnon kuljetustarkistus, kun kuljetus ei ylitä alueen rajaa (D-032). `modifiers.defenderDistance` on taulukko lähimmän puolustajan etäisyydelle luistelureitistä (0, 1, 2+), sama janasääntö kuin `pass.modifiers.laneDefenderDistance`.
 
 - `shot`: ei `p0`- eikä `attacker`-kenttää. Perustaso on `baseXg[xgZone]` ja hyökkääjän painot `attackerByXgZone[xgZone]` (laukaisijan solmu hänen näkökulmastaan). Järjestys: blokki → `onTargetShare` (maalia kohti vai ohi) → maalitarkistus (Q-010). Omat todennäköisyysrajat `minProbability` ja `maxProbability` (D-014, Q-009).
-- `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007).
+- `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007). `extraPlayerRadius` ja `modifiers.distancePerNode`: kamppailijat ja lisäpelaaja, ks. Määritelmät M-6.
+- `pass`: `interceptionShare` = epäonnistuneista syötöistä syötönkatkojen osuus, loput irtokiekkoja (D-040, ks. Määritelmät).
+- `block`: `maxLaneDistance` (blokkaajaehdokkaan suurin etäisyys laukauslinjasta) ja `modifiers.laneDistance` (taulukko), ks. Määritelmät M-5.
 - `rebound`: onnistuminen = rebound slottiin. Muuten maalivahti hallitsee kiekon: `controlledHoldShare` pitää (katko), loput kulmaan.
 
 **Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: `kind` puuttuu tai on tuntematon; `twoSided`-tarkistukselta puuttuu jompikumpi puoli (`shot`: `attackerByXgZone` korvaa `attacker`-puolen) tai sillä on `side`; `oneSided`-tarkistukselta puuttuu `side`, `side`-puoli puuttuu tai toinen puoli on kirjoitettu; `noCheck`-tarkistuksella on `p0`, `attacker` tai `defender`; läsnä olevan puolen painojen summa poikkeaa 1:stä yli 1e-6; stat- tai roolinimi on tuntematon; p0 tai osuus on välin (0, 1) ulkopuolella; `checkFormula`:n tai `checks.shot`:n `minProbability` ≥ `maxProbability` tai jompikumpi on välin (0, 1) ulkopuolella; `referenceValue` on välin `stats.min`–`stats.max` ulkopuolella; `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa; jokin `baseXg`-arvo on välin 0–1 ulkopuolella tai suurempi kuin `checks.shot.maxProbability` (Q-023: perustaso, jota laukauksen yläraja leikkaisi jo ennen statseja, on datavirhe); tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti. Ylimmän tason tuntematon avain hylätään (ks. Sallitut ylimmän tason avaimet).
