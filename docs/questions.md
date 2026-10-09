@@ -5,6 +5,13 @@ Agentit kirjaavat tänne kysymykset, joihin dokumentit eivät vastaa. Jerry vast
 Kirjaa uusin ylimmäksi. Muoto:
 
 <!--
+### Q-001 · YYYY-MM-DD · kirjaaja: programmer / game-designer
+**Kysymys:** mitä pitää päättää.
+**Konteksti:** mihin tehtävään liittyy, mikä dokumentin kohta on epäselvä.
+**Ehdotettu oletus:** mitä käytetään sillä välin (jos jotain).
+**Vastaus:** (Jerry täyttää)
+-->
+
 ## Avoimet
 
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
@@ -74,12 +81,13 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Ehdotettu oletus:** 9 × 5, kunnes kuvioiden kirjoittaminen osoittaa toisin.
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
+## Ratkaistut
+
 ### Q-001 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys:** kuvion ja puolustusjärjestelmän tarkka JSON-skeema.
 **Konteksti:** kirjoitetaan ennen virstanpylvästä 2.
 **Huom. (game-designer, 2026-10-09):** luonnosvastaus on `docs/data-schema.md`:ssä, osiot "Kuviot" ja "Puolustusjärjestelmät" (tila: luonnos – odottaa Jerryn hyväksyntää). Kysymys pysyy auki, kunnes Jerry on katsonut skeeman.
-
-## Ratkaistut
+**Vastaus (Jerry, 2026-10-09):** hyväksytty ehdoin (D-034): toiminnot skate, pass, shoot, driveNet, dump; kuviot viittaavat pelipaikkoihin; saman kuvion voi pelata peilattuna kummallakin laidalla; järjestelmien säännöt deterministisiä ja viimeinen sääntö varasääntö. Skeema korjataan ehtojen mukaiseksi ennen virstanpylvästä 2.
 
 ### Q-025 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** saako kenttäpelaajan kohde (kuviossa tai järjestelmässä) olla maalisolmussa (1,2) tai (9,2)?
@@ -93,13 +101,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Ehdotettu oletus:** kiekollinen liikkuu vain `skate`-toiminnolla.
 **Vastaus (Jerry, 2026-10-09):** kiekollinen pelaaja liikkuu vain tahdin toiminnolla `skate`, ei siirroilla. Muut liikkuvat siirroilla. Kirjattu: D-032.
 
-### Q-001 · YYYY-MM-DD · kirjaaja: programmer / game-designer
-**Kysymys:** mitä pitää päättää.
-**Konteksti:** mihin tehtävään liittyy, mikä dokumentin kohta on epäselvä.
-**Ehdotettu oletus:** mitä käytetään sillä välin (jos jotain).
-**Vastaus:** (Jerry täyttää)
--->
-**Vastaus (Jerry, 2026-10-09):** hyväksytty ehdoin (D-034): toiminnot skate, pass, shoot, driveNet, dump; kuviot viittaavat pelipaikkoihin; saman kuvion voi pelata peilattuna kummallakin laidalla; järjestelmien säännöt deterministisiä ja viimeinen sääntö varasääntö. Skeema korjataan ehtojen mukaiseksi ennen virstanpylvästä 2.
 
 ### Q-023 · 2026-10-09 · kirjaaja: programmer
 **Kysymys:** pitääkö lataajan hylätä `checks.shot.baseXg`-arvo, joka on laukauksen omien rajojen (`checks.shot.minProbability`–`maxProbability`) ulkopuolella?
