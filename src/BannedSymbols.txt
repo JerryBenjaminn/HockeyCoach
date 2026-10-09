@@ -1,0 +1,34 @@
+# Banned APIs for HockeyCoach.Sim and HockeyCoach.AI (Microsoft.CodeAnalysis.BannedApiAnalyzers, RS0030).
+# Format: <documentation comment id>;<message>
+
+# --- Determinism: all randomness goes through HockeyCoach.Sim.Random.IRandom ---
+T:System.Random;Use HockeyCoach.Sim.Random.IRandom passed in as a parameter
+M:System.Guid.NewGuid;Non-deterministic; derive ids from data or IRandom
+P:System.DateTime.Now;Non-deterministic wall clock
+P:System.DateTime.UtcNow;Non-deterministic wall clock
+P:System.DateTime.Today;Non-deterministic wall clock
+P:System.DateTimeOffset.Now;Non-deterministic wall clock
+P:System.DateTimeOffset.UtcNow;Non-deterministic wall clock
+T:System.Diagnostics.Stopwatch;Non-deterministic clock
+
+# --- No threading inside the simulation ---
+T:System.Threading.Thread;No threading inside the simulation
+T:System.Threading.ThreadPool;No threading inside the simulation
+T:System.Threading.Tasks.Task;No threading inside the simulation
+T:System.Threading.Tasks.Task`1;No threading inside the simulation
+T:System.Threading.Tasks.Parallel;No threading inside the simulation
+
+# --- No file system or console: data arrives as objects, the Harness does I/O ---
+N:System.IO;No file system access in Sim/AI; the Harness loads data
+T:System.Console;No console in Sim/AI; the Harness writes output
+T:System.Environment;No environment or clock access (TickCount) in Sim/AI
+
+# --- Transcendental math lives only in HockeyCoach.Sim.Checks.CheckMath (D-012) ---
+M:System.Math.Exp(System.Double);Use CheckMath
+M:System.Math.Log(System.Double);Use CheckMath
+M:System.Math.Log(System.Double,System.Double);Use CheckMath
+M:System.Math.Log10(System.Double);Use CheckMath
+M:System.Math.Pow(System.Double,System.Double);Use CheckMath
+M:System.Math.Sqrt(System.Double);Use CheckMath
+M:System.Math.Tanh(System.Double);Use CheckMath
+T:System.MathF;Use CheckMath
