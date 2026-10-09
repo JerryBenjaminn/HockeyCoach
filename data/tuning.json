@@ -1,0 +1,460 @@
+{
+  "schemaVersion": 1,
+  "_notes": "All balance values. Keys starting with _ are ignored by the loader. Paths in _placeholders are not from the docs and will be calibrated by simulation. Modifiers are logit units unless the key name says otherwise. Schema: docs/data-schema.md.",
+  "_placeholders": [
+    "stats.neutralValue",
+    "checks.faceoff.modifiers.homeAdvantage",
+    "checks.pass.modifiers.laneDefenderDistance",
+    "checks.pass.modifiers.crossIce",
+    "checks.pass.modifiers.pressure",
+    "checks.pass.modifiers.organization",
+    "checks.zoneEntryCarry.p0",
+    "checks.zoneEntryCarry.modifiers.organization",
+    "checks.dumpIn.goaliePuckHandlingPerPoint",
+    "checks.deke.p0",
+    "checks.breakout.p0",
+    "checks.shot.attackerByXgZone.crease.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.crease.shooter.shotPower",
+    "checks.shot.attackerByXgZone.highSlot.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.highSlot.shooter.shotPower",
+    "checks.shot.attackerByXgZone.circle.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.circle.shooter.shotPower",
+    "checks.shot.attackerByXgZone.lowAngle.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.lowAngle.shooter.shotPower",
+    "checks.shot.attackerByXgZone.boards.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.boards.shooter.shotPower",
+    "checks.shot.attackerByXgZone.longRange.shooter.shotAccuracy",
+    "checks.shot.attackerByXgZone.longRange.shooter.shotPower",
+    "checks.shot.baseXg.crease",
+    "checks.shot.baseXg.slot",
+    "checks.shot.baseXg.highSlot",
+    "checks.shot.baseXg.circle",
+    "checks.shot.baseXg.lowAngle",
+    "checks.shot.baseXg.point",
+    "checks.shot.baseXg.boards",
+    "checks.shot.baseXg.longRange",
+    "checks.shot.onTargetShare",
+    "checks.shot.modifiers.royalRoad",
+    "checks.shot.modifiers.screen",
+    "checks.shot.modifiers.pressure",
+    "checks.shot.modifiers.organization",
+    "checks.block.p0",
+    "checks.block.modifiers.distancePerNode",
+    "checks.rebound.p0",
+    "checks.rebound.controlledHoldShare",
+    "checks.rebound.modifiers.shotPowerPerPoint",
+    "checks.rebound.modifiers.goalieEnergy",
+    "checks.loosePuck.p0",
+    "checks.loosePuck.modifiers.extraPlayer",
+    "checks.hit.p0",
+    "checks.hit.penaltyBaseProbability",
+    "checks.hit.penaltyChangePerDisciplinePoint",
+    "time.periodSeconds",
+    "time.secondsPerAction.faceoff",
+    "time.secondsPerAction.skate",
+    "time.secondsPerAction.pass",
+    "time.secondsPerAction.shoot",
+    "time.secondsPerAction.driveNet",
+    "time.secondsPerAction.dumpIn",
+    "time.secondsPerAction.zoneEntry",
+    "time.secondsPerAction.breakout",
+    "time.secondsPerAction.deke",
+    "time.secondsPerAction.hit",
+    "time.secondsPerAction.loosePuck",
+    "time.secondsPerAction.rebound",
+    "time.setupSeconds",
+    "time.regroupSeconds",
+    "energy.start",
+    "energy.costPerAction",
+    "energy.enduranceCostReductionPerPoint",
+    "energy.benchRecoveryPerSecond",
+    "energy.checkModifierAtZero",
+    "organization.dropOnTurnover.defensive",
+    "organization.dropOnTurnover.neutral",
+    "organization.dropOnTurnover.offensive",
+    "organization.recoveryPerEvent",
+    "organization.recoveryWeights.speed",
+    "organization.recoveryWeights.awareness",
+    "organization.recoveryPerStatPoint",
+    "organization.organizedThreshold",
+    "pressure.gainOnZoneEntry",
+    "pressure.gainOnShot",
+    "pressure.gainPerSecondInZone",
+    "pressure.keepOnStoppage",
+    "pressure.energyDrainPerSecond",
+    "pressure.mentalToughnessReductionPerPoint",
+    "chemistry.maxPassModifier",
+    "chemistry.maxOrganizationRecoveryBonus",
+    "familiarity.penaltyPerRepeat",
+    "familiarity.maxPenalty",
+    "plays.maxNodesPerBeat",
+    "chanceTypes.rushOrganizationBelow",
+    "chanceTypes.turnoverWindowSeconds",
+    "chanceClasses.topMinXg",
+    "chanceClasses.goodMinXg",
+    "chanceClasses.moderateMinXg"
+  ],
+  "stats": {
+    "min": 1,
+    "max": 20,
+    "neutralValue": 10.5,
+    "grades": {
+      "A": [
+        17,
+        20
+      ],
+      "B": [
+        13,
+        16
+      ],
+      "C": [
+        9,
+        12
+      ],
+      "D": [
+        5,
+        8
+      ],
+      "E": [
+        1,
+        4
+      ]
+    }
+  },
+  "checkFormula": {
+    "k": 0.15,
+    "minProbability": 0.02,
+    "maxProbability": 0.98
+  },
+  "checks": {
+    "faceoff": {
+      "_notes": "Success = attacker-side centre wins the draw. Values: stats-and-checks.md, Tarkistukset.",
+      "p0": 0.5,
+      "attacker": {
+        "centre": {
+          "faceoffs": 0.8,
+          "hands": 0.2
+        }
+      },
+      "defender": {
+        "centre": {
+          "faceoffs": 0.8,
+          "hands": 0.2
+        }
+      },
+      "modifiers": {
+        "homeAdvantage": 0.05
+      }
+    },
+    "pass": {
+      "_notes": "Success = pass reaches the receiver. laneDefenderDistance is indexed by the nearest defender's node distance from the passing lane (0, 1, 2+). pressure placeholder derived from analysis (85 % -> about 70 % under pressure = about -0.9 logit).",
+      "p0": 0.85,
+      "attacker": {
+        "passer": {
+          "passing": 0.6
+        },
+        "receiver": {
+          "hands": 0.4
+        }
+      },
+      "defender": {
+        "nearestDefender": {
+          "awareness": 0.5,
+          "positioning": 0.5
+        }
+      },
+      "modifiers": {
+        "laneDefenderDistance": [
+          -1.2,
+          -0.5,
+          0.0
+        ],
+        "crossIce": -0.4,
+        "pressure": -0.9,
+        "organization": 0.6
+      }
+    },
+    "zoneEntryCarry": {
+      "_notes": "Success = carrier enters the offensive zone with possession.",
+      "p0": 0.6,
+      "attacker": {
+        "carrier": {
+          "speed": 0.5,
+          "hands": 0.5
+        }
+      },
+      "defender": {
+        "nearestDefender": {
+          "positioning": 0.5,
+          "speed": 0.5
+        }
+      },
+      "modifiers": {
+        "organization": 0.8
+      }
+    },
+    "dumpIn": {
+      "_notes": "No check (stats-and-checks.md). Leads to a loose puck; goaliePuckHandlingPerPoint (logit per goalie puckHandling point above stats.neutralValue) favours the defending team in that loose-puck check.",
+      "goaliePuckHandlingPerPoint": 0.03
+    },
+    "deke": {
+      "_notes": "1v1 deke. Success = attacker beats the defender. Energy applies via energy.checkModifierAtZero.",
+      "p0": 0.45,
+      "attacker": {
+        "carrier": {
+          "hands": 0.5,
+          "agility": 0.5
+        }
+      },
+      "defender": {
+        "nearestDefender": {
+          "positioning": 0.6,
+          "agility": 0.4
+        }
+      },
+      "modifiers": {}
+    },
+    "breakout": {
+      "_notes": "Breakout from own zone. Success = puck leaves the defensive zone with possession. forecheckers = mean of the forechecking players' stats. Defensive system effect is a later modifier (Q-003).",
+      "p0": 0.7,
+      "attacker": {
+        "carrier": {
+          "passing": 0.5,
+          "awareness": 0.5
+        }
+      },
+      "defender": {
+        "forecheckers": {
+          "speed": 0.5,
+          "awareness": 0.5
+        }
+      },
+      "modifiers": {}
+    },
+    "shot": {
+      "_notes": "Order: block -> onTargetShare -> goal check (Q-010). Success = goal. p0 = baseXg[xgZone] of the shooting node in the shooter's view. Shooter weights slide with distance (attackerByXgZone): slot accuracy 0.8, blue line power 0.7 from docs, others interpolated placeholders.",
+      "attackerByXgZone": {
+        "crease": {
+          "shooter": {
+            "shotAccuracy": 0.8,
+            "shotPower": 0.2
+          }
+        },
+        "slot": {
+          "shooter": {
+            "shotAccuracy": 0.8,
+            "shotPower": 0.2
+          }
+        },
+        "highSlot": {
+          "shooter": {
+            "shotAccuracy": 0.6,
+            "shotPower": 0.4
+          }
+        },
+        "circle": {
+          "shooter": {
+            "shotAccuracy": 0.6,
+            "shotPower": 0.4
+          }
+        },
+        "lowAngle": {
+          "shooter": {
+            "shotAccuracy": 0.7,
+            "shotPower": 0.3
+          }
+        },
+        "point": {
+          "shooter": {
+            "shotAccuracy": 0.3,
+            "shotPower": 0.7
+          }
+        },
+        "boards": {
+          "shooter": {
+            "shotAccuracy": 0.4,
+            "shotPower": 0.6
+          }
+        },
+        "longRange": {
+          "shooter": {
+            "shotAccuracy": 0.3,
+            "shotPower": 0.7
+          }
+        }
+      },
+      "defender": {
+        "goalie": {
+          "positioning": 0.6,
+          "reflexes": 0.4
+        }
+      },
+      "baseXg": {
+        "crease": 0.25,
+        "slot": 0.15,
+        "highSlot": 0.07,
+        "circle": 0.05,
+        "lowAngle": 0.03,
+        "point": 0.03,
+        "boards": 0.01,
+        "longRange": 0.005
+      },
+      "onTargetShare": 0.55,
+      "modifiers": {
+        "royalRoad": 0.6,
+        "screen": 0.3,
+        "pressure": 0.3,
+        "organization": 0.7
+      }
+    },
+    "block": {
+      "_notes": "Success = shot gets through (not blocked). Attacker side is empty and uses stats.neutralValue (Q-013). distancePerNode: logit in the shooter's favour per node between shooter and blocker.",
+      "p0": 0.75,
+      "attacker": {},
+      "defender": {
+        "nearestDefender": {
+          "positioning": 1.0
+        }
+      },
+      "modifiers": {
+        "distancePerNode": 0.15
+      }
+    },
+    "rebound": {
+      "_notes": "After a save. Success = rebound to the slot (attacker outcome). Otherwise the goalie controls it: controlledHoldShare of those are held (stoppage), the rest go to the corner. Attacker side is empty and uses stats.neutralValue (Q-013).",
+      "p0": 0.15,
+      "attacker": {},
+      "defender": {
+        "goalie": {
+          "reboundControl": 1.0
+        }
+      },
+      "controlledHoldShare": 0.6,
+      "modifiers": {
+        "shotPowerPerPoint": 0.05,
+        "goalieEnergy": 0.4
+      }
+    },
+    "loosePuck": {
+      "_notes": "Three outcomes. noWinnerShare from analysis (22 %). The remaining share is split by the logistic check (p0 0.5 -> 39 / 22 / 39 for equal players, Q-007). Who reaches the puck: speed and system-mode instructions.",
+      "noWinnerShare": 0.22,
+      "p0": 0.5,
+      "attacker": {
+        "participant": {
+          "strength": 0.5,
+          "hands": 0.3,
+          "speed": 0.2
+        }
+      },
+      "defender": {
+        "participant": {
+          "strength": 0.5,
+          "hands": 0.3,
+          "speed": 0.2
+        }
+      },
+      "modifiers": {
+        "extraPlayer": 0.5
+      }
+    },
+    "hit": {
+      "_notes": "Success = hitter separates the opponent from the puck. Penalty risk from discipline (probability, not logit).",
+      "p0": 0.4,
+      "attacker": {
+        "hitter": {
+          "strength": 0.7,
+          "awareness": 0.3
+        }
+      },
+      "defender": {
+        "carrier": {
+          "strength": 0.5,
+          "hands": 0.5
+        }
+      },
+      "modifiers": {},
+      "penaltyBaseProbability": 0.04,
+      "penaltyChangePerDisciplinePoint": -0.003
+    }
+  },
+  "time": {
+    "_notes": "Game seconds.",
+    "periods": 3,
+    "periodSeconds": 1200,
+    "shiftSeconds": 45,
+    "secondsPerAction": {
+      "faceoff": 2,
+      "skate": 3,
+      "pass": 2,
+      "shoot": 1,
+      "driveNet": 2,
+      "dumpIn": 2,
+      "zoneEntry": 3,
+      "breakout": 4,
+      "deke": 2,
+      "hit": 2,
+      "loosePuck": 3,
+      "rebound": 1
+    },
+    "setupSeconds": 6,
+    "regroupSeconds": 8
+  },
+  "energy": {
+    "_notes": "Energy 0..1. checkModifierAtZero = logit applied to every check of a player at energy 0, linear in between.",
+    "start": 1.0,
+    "costPerAction": 0.02,
+    "enduranceCostReductionPerPoint": 0.03,
+    "benchRecoveryPerSecond": 0.01,
+    "checkModifierAtZero": -0.8
+  },
+  "organization": {
+    "_notes": "0..1. dropOnTurnover is indexed by the zone where the puck was lost (losing team view). Each check lists its own organization modifier (logit for the attacker at defender organization 0, linear).",
+    "dropOnTurnover": {
+      "defensive": 0.2,
+      "neutral": 0.4,
+      "offensive": 0.6
+    },
+    "recoveryPerEvent": 0.15,
+    "recoveryWeights": {
+      "speed": 0.5,
+      "awareness": 0.5
+    },
+    "recoveryPerStatPoint": 0.01,
+    "organizedThreshold": 0.8
+  },
+  "pressure": {
+    "_notes": "0..1 per attacking team.",
+    "gainOnZoneEntry": 0.1,
+    "gainOnShot": 0.08,
+    "gainPerSecondInZone": 0.005,
+    "keepOnStoppage": 0.5,
+    "energyDrainPerSecond": 0.002,
+    "mentalToughnessReductionPerPoint": 0.03
+  },
+  "form": {
+    "maxStatDelta": 2
+  },
+  "chemistry": {
+    "maxPassModifier": 0.2,
+    "maxOrganizationRecoveryBonus": 0.1
+  },
+  "familiarity": {
+    "penaltyPerRepeat": 0.1,
+    "maxPenalty": 0.5
+  },
+  "plays": {
+    "maxBeats": 4,
+    "maxNodesPerBeat": 2
+  },
+  "chanceTypes": {
+    "_notes": "Shot classification by origin (stats-and-checks.md, Paikkatyypit).",
+    "rushOrganizationBelow": 0.8,
+    "turnoverWindowSeconds": 8
+  },
+  "chanceClasses": {
+    "_notes": "xG thresholds for top / good / moderate chances (Q-004, question for the brother).",
+    "topMinXg": 0.15,
+    "goodMinXg": 0.07,
+    "moderateMinXg": 0.03
+  }
+}
