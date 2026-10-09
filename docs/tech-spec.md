@@ -77,7 +77,7 @@ Datatiedostojen tarkat skeemat, yksiköt ja validointisäännöt ovat dokumentis
 
 **Kaukalon solmuverkko (`rink.json`).** Kaukalo on 11 × 5 solmun verkko (pituus × leveys, D-027): kummankin maalin takana on oma solmurivi. Jokaisella solmulla on koordinaatti, alue (oma pää, keskialue, hyökkäysalue; johdetaan `zones`-osion x-väleistä, D-028), vyöhyke laukauksen perus-xG:tä varten ja tieto, onko se slotissa. Kuviot, puolustusjärjestelmät ja pelaajien sijainnit käyttävät samoja solmuja. Verkon koko on alustava ja voi tihentyä.
 
-**Kuvio (`plays/*.json`).** Kuvion nimi, tyyppi (avaus, alueelle tulo, alueella pelaaminen, aloitus, ylivoima) ja enintään neljä tahtia. Jokainen tahti listaa pelaajien siirrot solmusta toiseen ja yhden kiekkotoiminnon (luistele, syötä, laukaise, aja maalille).
+**Kuvio (`plays/*.json`).** Kuvion nimi, tyyppi (avaus, alueelle tulo, alueella pelaaminen, aloitus, ylivoima) ja enintään neljä tahtia. Jokainen tahti listaa pelaajien siirrot solmusta toiseen ja yhden kiekkotoiminnon (luistele, syötä, laukaise, aja maalille, kiekko päätyyn; D-031). Tarkka skeema: `docs/data-schema.md`.
 
 **Puolustusjärjestelmä (`systems/*.json`).** Säännöt, joilla jokaisen puolustajan kohdesolmu määräytyy kiekon sijainnista ja alueesta. Sääntöjen pitää olla deterministisiä, jotta editori voi myöhemmin näyttää puolustajien haamut.
 

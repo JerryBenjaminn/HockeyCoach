@@ -86,7 +86,7 @@ Pelaajadata on dataa, ei kovakoodia. Näin oikean liigadatan voi kytkeä myöhem
 Pelaaja käyttää valmiita kuvioita pelikirjasta ja voi myöhemmin rakentaa omia rakenteellisella editorilla. Vapaata piirtämistä ei tehdä.
 
 - **Pelikirja (taso 1):** valmiit kuviot, rakennettu samalla editorilla, jota pelaajat käyttävät. Editori on siis myös sisällöntuotantotyökalu.
-- **Editori (taso 2):** kaukalo on jaettu solmuihin, ja sormella vedetty viiva napsahtaa niihin. Kuviossa on enintään 3–4 tahtia, ja toimintoja on neljä: luistele, syötä, laukaise, aja maalille.
+- **Editori (taso 2):** kaukalo on jaettu solmuihin, ja sormella vedetty viiva napsahtaa niihin. Kuviossa on enintään 3–4 tahtia, ja toimintoja on viisi: luistele, syötä, laukaise, aja maalille, kiekko päätyyn (D-031).
 - **Ensikosketus:** valmiin kuvion muokkaaminen, ei tyhjä kaukalo.
 - **Puolustajien haamut:** vastustajan järjestelmä noudattaa selkeitä sääntöjä, joten editori näyttää, missä puolustajat todennäköisesti ovat kunakin tahtina. Tämä tekee kuvioshakista ennakoitavaa.
 - **Riskin väri:** syöttölinja on vihreä, keltainen tai punainen sen mukaan, kuinka lähellä puolustajaa se kulkee. Ei numeroita.

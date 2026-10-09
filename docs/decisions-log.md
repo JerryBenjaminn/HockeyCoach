@@ -24,7 +24,7 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-014 | 2026-10-09 | Todennäköisyyden rajat | Tarkistuksen onnistumistodennäköisyys rajataan välille min–max. Arvot (0,02 / 0,98) ovat tasapainoarvoja `tuning.json`:ssa. Tarkennus 2026-10-09 (Q-009): raja koskee vain tarkistuksia (syötöt, kamppailut, aloitukset jne.), ei laukauksen maalintodennäköisyyttä eikä xG:tä. Laukauksilla omat rajat `tuning.json`:ssa | lukittu |
 | D-015 | 2026-10-09 | Riippuvuudet | Simissä ja AI:ssa ei ajonaikaisia riippuvuuksia. Käännösaikaiset analysaattorit (BannedApiAnalyzers) sallittuja | lukittu |
 | D-016 | 2026-10-09 | Tavoitehaarukat | `data/targets.json` on tavoitehaarukoiden ainoa totuus. `stats-and-checks.md` viittaa siihen eikä toista lukuja | lukittu |
-| D-017 | 2026-10-09 | Datasopimukset | Tarkistuksen painot summautuvat 1:een kummallakin puolella (hyökkääjä, puolustaja). Solmun id = x × leveys + y (11 × 5 -verkossa x * 5 + y). Data kirjoitetaan oman joukkueen näkökulmasta: oma maali x = 0, vastustajan näkökulma kierrolla 180° | lukittu |
+| D-017 | 2026-10-09 | Datasopimukset | Tarkistuksen painot summautuvat 1:een kummallakin puolella (hyökkääjä, puolustaja). Solmun id = x × leveys + y (11 × 5 -verkossa x * 5 + y). Data kirjoitetaan oman joukkueen näkökulmasta: oma pää on pienillä x:n arvoilla (11 × 5 -verkossa oma maali x = 1, D-027), vastustajan näkökulma kierrolla 180° | lukittu |
 | D-018 | 2026-10-09 | Toteutus | Klassinen `.sln`, nimiavaruus `Sim.Config`. Virstanpylväässä 1 pelaajat luodaan käsin, `roles.json` myöhemmin | lukittu |
 | D-019 | 2026-10-09 | Yksipuolinen tarkistus | Erillinen tarkistustyyppi: yhden osapuolen painotettu arvo vastaan referenssiarvo (oletus 10,5, `tuning.json`:ssa). D-017 koskee vain kaksipuolisia tarkistuksia. Blokki ja rebound ovat yksipuolisia (Q-013) | lukittu |
 | D-020 | 2026-10-09 | Aja maalille | `driveNet` on oletuksena kiekoton: pelaaja menee maalin eteen maskiin ja reboundille (Q-005) | lukittu |
@@ -97,4 +97,7 @@ Designerin `tuning.json`-säädöt tavoitehaarukoiden sisällä. Ei vaadi erilli
 
 | Päivä | Arvo | Ennen | Jälkeen | Syy | Vaikutus raporttiin |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-09 | `checks.dumpIn.goalieReachNodes` | – | 1 (paikkamerkki) | Maalivahdin ulottuma kiekon päätyyn lyönnissä (D-031) | Ei raporttia vielä |
+| 2026-10-09 | `checks.deke.modifiers.defenderDistance` | – | [0,0, 1,0, 3,5] (paikkamerkki, odottaa Jerryn vahvistusta) | Kuljetus on aina tarkistus (D-032): tavallinen kuljetus tarkistetaan harhautuksena puolustajan etäisyyden mukaan | Ei raporttia vielä |
+| 2026-10-09 | `rink.json` solmu (9,2) `isSlot` | true | false | Maalisolmu ei ole kenttäpelaajan paikka (D-033) | Ei raporttia vielä |
 | 2026-10-09 | `checks.shot.baseXg.behindNet`, `checks.shot.attackerByXgZone.behindNet.shooter` | – | 0,01 / shotAccuracy 0,8, shotPower 0,2 (paikkamerkkejä) | Uusi xG-vyöhyke maalin takana (E-002, D-027) | Ei raporttia vielä |
