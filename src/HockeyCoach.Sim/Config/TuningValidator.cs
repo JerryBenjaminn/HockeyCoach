@@ -10,9 +10,9 @@ namespace HockeyCoach.Sim.Config
     public static class TuningValidator
     {
         /// <summary>
-        /// Floating point tolerance when checking that weights sum to 1. A numeric tolerance, not a balance value.
+        /// Tolerance when checking that weights sum to 1 (docs/data-schema.md: 1e-6). A numeric tolerance, not a balance value.
         /// </summary>
-        public const double WeightSumTolerance = 1e-9;
+        public const double WeightSumTolerance = 1e-6;
 
         /// <summary>Validates the global check formula parameters.</summary>
         public static IReadOnlyList<string> Validate(CheckFormulaConfig formula)
