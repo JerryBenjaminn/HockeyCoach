@@ -136,6 +136,7 @@ Designerin `tuning.json`-säädöt tavoitehaarukoiden sisällä. Ei vaadi erilli
 
 | Päivä | Arvo | Ennen | Jälkeen | Syy | Vaikutus raporttiin |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-11 | `pressure.presserReactionNodes` | – | 1 | Painostajan reaktioviive (D-074). Lisätään dataan lataajan tuen kanssa (D-030, O-16) | Ei raporttia vielä |
 | 2026-10-10 | `pressure.underPressureNodes` | 1 | 0 | D-056 | Ei raporttia vielä |
 | 2026-10-10 | `energy.benchRecoveryPerSecond → energy.benchRecoveryRate` | 0,01 (lineaarinen) | 0,011 (eksponentiaalinen, τ ≈ 90 s) | D-062 | Ei raporttia vielä |
 | 2026-10-10 | `energy.drainPerSecondOnIce` | – | 0,0055 | D-062 | Ei raporttia vielä |

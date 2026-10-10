@@ -122,7 +122,7 @@ Ylimmän tason osiot:
 | `energy` | 3 | `start`, `drainPerSecondOnIce`, `costPerAction`, `enduranceCostReductionPerPoint`, `benchRecoveryRate` (eksponentiaalinen), `checkModifierAtZero`. Ks. O-5 |
 | `positions` | 2 | `offSideCheckModifier`: väärän puolen miinus (D-024), ks. Pelaajat, pelipaikat ja ketjut |
 | `organization` | 3 | `dropOnTurnover` alueittain, `dropFactorOnShotOrDump`, `dropPerCommittedPlayer`, `recoveryPerSecond`, `recoveryWeights`, `recoveryPerStatPoint`, `organizedThreshold`. Ks. O-6 |
-| `pressure` | 2–3 | Joukkueen painetila: `gainOnZoneEntry`, `gainOnShot`, `gainPerSecondInZone`, `decayPerSecond`, `keepOnStoppage`, `energyDrainPerSecond`, `mentalToughnessReductionPerPoint` (O-9). Lisäksi `underPressureNodes` (virstanpylväs 2): fyysisen paineen säde, ei joukkueen painetila (Määritelmät M-7, D-049, D-056) |
+| `pressure` | 2–3 | Joukkueen painetila: `gainOnZoneEntry`, `gainOnShot`, `gainPerSecondInZone`, `decayPerSecond`, `keepOnStoppage`, `energyDrainPerSecond`, `mentalToughnessReductionPerPoint` (O-9). Lisäksi `underPressureNodes` (virstanpylväs 2): fyysisen paineen säde, ei joukkueen painetila (Määritelmät M-7, D-049, D-056), ja `presserReactionNodes`: painostajan askeleet onnistuneen syötön jälkeisessä tahdissa (D-074, Puolustusjärjestelmät, Painostajan reaktioviive) |
 | `familiarity` | 3 | `freeUses`, `penaltyPerRepeat`, `maxPenalty`, `intermissionMultiplier`. Ks. O-11 |
 | `form`, `chemistry` | myöhemmin | Vire (±`maxStatDelta`), ketjukemia. Eivät käytössä virstanpylväässä 3 (vaikutus 0) |
 | `plays` | 2 | `maxBeats` (4), `maxNodesPerBeat` |
@@ -224,7 +224,7 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 
 | Avain | `unit` / `scope` | Laskenta |
 | --- | --- | --- |
-| `smartVsRandomWinRate` | share / perMatchup | Älykkään AI:n voitot / ottelut parissa älykäs vs. satunnainen (tasapeli ei ole voitto, ks. avoin suositus Q-053) |
+| `smartVsRandomWinRate` | share / perMatchup | (Älykkään AI:n voitot + 0,5 × tasapelit) / ottelut parissa älykäs vs. satunnainen: tasapeli on puoli voittoa (D-073). Raportti näyttää rinnalla voitot, tasapelit ja tappiot erikseen (määrät ja osuudet älykkään AI:n näkökulmasta). Tasapeli = varsinaisen peliajan lopussa tasan (Q-052, ei jatkoaikaa) |
 | `goalsPerMatch` | count / perMatch | Kotimaalit + vierasmaalit |
 | `goalsPerTeamPerMatch` | count / perTeamPerMatch | Joukkueen maalit (laukaukset, lopputulos maali) |
 | `shotAttempts` | count / perTeamPerMatch | Joukkueen laukaukset, kaikki lopputulokset, blokatut mukaan lukien (Q-050) |
@@ -237,7 +237,7 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 | `evenStrengthXgShareTurnover` | share / perTeam | Sama, riisto |
 | `evenStrengthXgShareZonePlay` | share / perTeam | Sama, alueella pelaaminen |
 | `evenStrengthXgShareFaceoff` | share / perTeam | Tasakentällinen xG, paikkatyyppi aloitus / kaikkien neljän luokan tasakentällinen xG |
-| `shotXgTypical` | xg / perShot | Ks. avoin suositus Q-053 |
+| `shotXgTypical` | xg / perShot | Raportti näyttää laukausten xG:n 10., 50. ja 90. persentiilin. TOO LOW, jos 10. persentiili < `min`; TOO HIGH, jos 90. persentiili > `max`; muuten OK (D-073) |
 | `shotsUnderPressureShare` | share / perTeam | Laukaukset, joissa `underPressure` (M-7, myös D-070:n poikkeus) / laukaukset |
 | `shots5v5` | count / perTeamPerMatch | Laukaukset 5 vs 5 |
 | `shots5v5Rush`, `shots5v5Turnover`, `shots5v5ZonePlay` | count / perTeamPerMatch | Laukaukset 5 vs 5 paikkatyypin mukaan (aloituslaukaukset eivät kuulu mihinkään näistä) |
@@ -431,7 +431,35 @@ Järjestelmätiedostot kirjoitetaan virstanpylväässä 2. Alueella puolustamise
 - `node`: solmu sellaisenaan.
 - `puckOffset`: (kiekon x + dx, kiekon y + dy), jonka jälkeen x rajataan välille 0 … length − 1 ja y välille 0 … width − 1 erikseen. Jos tulos on maalisolmu (kumpi tahansa), se siirretään yhden askeleen keskiviivaa kohti x-suunnassa eli maalin edustalle (oma maali (1, 2) → (2, 2), vastustajan maali (9, 2) → (8, 2)).
 
-**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` askelta kohti kohdettaan (setupissa ja regroupissa rajattu askelmäärä, O-6). Askel on (sign(dx), sign(dy)), eli vinottain, kunnes toinen koordinaatti täsmää. Jos askel osuisi maalisolmuun, puolustaja kiertää maalin (D-053, alla). Samassa solmussa saa olla enintään yksi pelaaja kummastakin joukkueesta (D-058): päätesolmut ratkaistaan Solmun pelaajamäärä -säännöllä (alla). Järjestäytyneisyys on joukkueen skaalaariarvo (O-6), jota sijainnit seuraavat viiveellä; sitä ei johdeta sijainneista.
+**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` askelta kohti kohdettaan (setupissa ja regroupissa rajattu askelmäärä, O-6; painostaja onnistuneen syötön jälkeen `pressure.presserReactionNodes`, D-074, alla). Askel on (sign(dx), sign(dy)), eli vinottain, kunnes toinen koordinaatti täsmää. Jos askel osuisi maalisolmuun, puolustaja kiertää maalin (D-053, alla). Samassa solmussa saa olla enintään yksi pelaaja kummastakin joukkueesta (D-058): päätesolmut ratkaistaan Solmun pelaajamäärä -säännöllä (alla). Järjestäytyneisyys on joukkueen skaalaariarvo (O-6), jota sijainnit seuraavat viiveellä; sitä ei johdeta sijainneista.
+
+**Painostajan reaktioviive (D-074, muuttaa D-041:tä).** Kiekko liikkuu nopeammin kuin pelaaja: kun kiekko on liikkunut onnistuneella syötöllä, painostaja liikkuu seuraavan kiekkotoiminnon edellä enintään `pressure.presserReactionNodes` (1) askelta `plays.maxNodesPerBeat`-arvon (2) sijasta. Muut puolustajat liikkuvat kuten ennen.
+
+1. **Laukaisija:** onnistunut syöttö, eli kiekko tuli vastaanottajalle (Syöttö-tapahtuma, lopputulos onnistunut). Jokainen onnistunut syöttö laukaisee viiveen uudelleen, joten syöttö → syöttö → laukaus viivästää painostajaa kahdesti.
+   - **Epäonnistunut syöttö ei laukaise viivettä** (designerin suositus, D-074 ei ratkaise): syötönkatkossa kiekko vaihtaa joukkuetta, joten viivästettävää painostajaa ei ole; irtokiekko ratkaistaan kamppailulla (M-6), jonka liikkeet eivät ole tahdin vaihe 2. Irtokiekon voitto, aloitusvoitto, rebound ja kuljetus (`skate`) eivät ole syöttöjä.
+2. **Mihin liikkeeseen viive kohdistuu:** täsmälleen yhteen liikkeeseen, eli syöttöä seuraavan kiekkotoiminnon D-041:n vaiheeseen 2 (puolustajien järjestelmäliike), kun seuraava toiminto on saman joukkueen kuvion tahti, aloituskuvion tahti tai suorahyökkäyksen toiminto (O-7). Kuviossa syöttö tahdissa n → viive tahdin n + 1 vaiheessa 2. Syötön oman tahdin liike tapahtui jo ennen syöttöä (vaihe 2 ennen vaihetta 3), joten siihen viive ei vaikuta.
+3. **Viive raukeaa** (designerin suositus), jos syötön ja seuraavan tahdin vaiheen 2 väliin tulee mikä tahansa muu puolustajien liike tai aikakokonaisuus: järjestelmätilan askel (kuvion viimeinen tahti oli syöttö), setup tai regroup (esim. suorahyökkäys päättyy syötön jälkeen ja kuvio valitaan D-036:n mukaan), katko, vaihto, erän loppu tai kiekonmenetys. Perustelu: viive on yhden tahdin reaktio, ja näissä tilanteissa painostajalla on aikaa ehtiä kohteeseensa. Viive ei koskaan siirry myöhempään toimintoon.
+4. **Painostajan tunnistus:** sama valitsin kuin M-7:n Painostaja, mutta arvioituna **ennen** vaiheen 2 liikettä, eli hyökkääjien siirtojen (vaihe 1) jälkeen, kiekollisena syötön vastaanottaja. Kiekollinen ei liiku vaiheessa 1, joten kiekon solmu on sama kuin syötön lopussa ja liikkeessä.
+   - **Järjestelmä ohjaa liikettä** (M-7, kohta 1): painostaja on se rooli, jonka kohde tämän liikkeen valitussa säännössä on valittu `puckOffset` (pienin Chebyshev-pituus, sitten Manhattan, sitten `F1`, `D1`, `D2`, `F2`, `F3`; `pinch`-D1 pituudella 0). Roolit ovat samat, jotka liike itse jakaa nykyisistä sijainneista, joten painostaja on se puolustaja, joka tässä liikkeessä luistelee painostajan kohteeseen. Ei ehdokasta → ei viivettä.
+   - **Suorahyökkäys** (M-7, kohta 2, D-074): painostaja on vastaanottajaa lähin puolustaja (Chebyshev, Manhattan, `C`, `LW`, `RW`, `LD`, `RD`) ennen vaihetta 2. Puolustajat liikkuvat silti järjestelmän mukaan (O-7); viive rajaa vain tämän pelaajan askeleet.
+   - **Toinen yritys** (O-8): ei puolustajien liikettä ennen laukausta eikä syöttöä, joten viive ei tule kyseeseen.
+   - Toiminnon hetken paine (M-7) valitaan edelleen omalla arvioinnillaan liikkeen jälkeen. Jos roolit vaihtuvat liikkeen aikana (viivästetty painostaja jää jälkeen ja toinen puolustaja on nyt lähempänä), M-7 voi valita eri pelaajan. Tätä ei yhtenäistetä, koska M-7 on puhdas funktio nykyisistä sijainneista (Q-054, kohta 3).
+5. **Askeleet ja maalin kierto (D-053):** painostaja ottaa enintään N = `pressure.presserReactionNodes` askelta tavallisilla askelsäännöillä. Kiertoaskel (korvaava solmu) on yksi N:stä askeleesta. Arvolla 1 painostaja ottaa vain ensimmäisen, tarvittaessa korvatun askeleen.
+6. **Solmun pelaajamäärä (D-058):** painostajan ihannepääte ja polku lasketaan kohdassa 1 lyhennetyllä askelmäärällä N. Käsittelyjärjestys (`F1`, `D1`, `D2`, `F2`, `F3`), peruutus omaa (lyhyempää) polkua pitkin ja renkaat ihannepäätteen ympärillä ovat ennallaan. Muiden puolustajien ihannepäätteet eivät muutu, mutta lopulliset päätteet voivat muuttua, koska painostaja varaa eri solmun.
+7. **Ei satunnaisuutta, ei uutta tapahtumaa.** Viivettä ei kirjata tapahtumalokiin. Toteutus voi tallentaa tiedon "viive odottaa" onnistuneen syötön yhteydessä (samaan paikkaan kuin M-3:n ja D-070:n syöttötiedon) ja nollata sen kohdan 3 tilanteissa.
+8. **Raja-arvot:** N ≥ `plays.maxNodesPerBeat` = ei vaikutusta; N = 0 = painostaja ei liiku syötön jälkeisessä tahdissa. Validointi: O-16.
+
+| Syöttö | Viive seuraavassa toiminnossa |
+| --- | --- |
+| Kuvion `pass` tahdissa n, tahti n + 1 olemassa | kyllä, tahdin n + 1 vaihe 2 |
+| Kuvion viimeinen tahti on `pass` | ei, viive raukeaa (järjestelmätilan askel tai setup ennen seuraavaa toimintoa) |
+| D-036:n aloitussyöttö setupin jälkeen (kiekollinen → kuvion `puckCarrier`) | kyllä, ensimmäisen tahdin vaihe 2. Setup on ennen syöttöä (designerin suositus) |
+| Aloituskuvion `pass` (D-060) | kyllä, kuten kuvion tahti. Aloitusvoitto ei ole syöttö |
+| Avaussyöttö omalta alueelta (`breakout`-tarkistus) | kyllä. Tarkistuksen tyypillä ei ole väliä, kiekko liikkui syötöllä (designerin suositus) |
+| Suorahyökkäyksen `pass` (O-7) | kyllä (D-074), seuraavan rush-toiminnon vaihe 2, jos rush jatkuu. Jos rush päättyy (O ≥ raja tai toiminnot käytetty), viive raukeaa |
+| Epäonnistunut syöttö (syötönkatko tai irtokiekko) | ei |
+
+Muut sijoitukset (setup, regroup, järjestelmätilan askel, irtokiekko, O-10:n ohjeet) käyttävät omia askelmääriään ilman viivettä. Laajuuden tarkennukset (epäonnistunut syöttö, raukeaminen, D-036:n aloitussyöttö, `breakout`) ovat designerin suosituksia (Q-055).
 
 **Solmun pelaajamäärä (D-058).** Samassa solmussa voi olla enintään yksi pelaaja kummastakin joukkueesta; hyökkääjä ja puolustaja samassa solmussa on sallittu. Sääntö koskee jokaista sijoitusta, jossa liikkuu yksi tai useampi saman joukkueen pelaaja: puolustusjärjestelmän liike, setup ja regroup, järjestelmätilan askel, suorahyökkäyksen liikkeet (O-7), järjestelmätilan ohjeet (O-10), irtokiekon voittajan sijoitus, vaihto ja aloitusasettelu. Kuvion siirrot ja lähtösolmut on jo validoitu erillisiksi.
 
@@ -568,11 +596,11 @@ Kiekollinen (syöttäjä tai laukaisija) on **paineen alla**, kun puolustavan jo
 | --- | --- |
 | Kuvion tahti (D-041), myös D-036:n avaussyöttö setupin jälkeen ja avaussyöttö omalta alueelta (`breakout`) | järjestelmä (kohta 1) |
 | Aloituskuvion tahti (D-060). Ensimmäisessä tahdissa ei ole setuppia, mutta tahdin vaihe 2 liikuttaa puolustajia järjestelmän mukaan | järjestelmä (kohta 1) |
-| Suorahyökkäys (O-7) | lähin (kohta 2). D-072 nimeää suorahyökkäyksen esimerkiksi. Huom. O-7:ssä puolustajat liikkuvat rushin aikana järjestelmän mukaan; ristiriita on kirjattu Q-054:ään, ja tämä rivi on designerin oletus siihen asti |
+| Suorahyökkäys (O-7) | lähin (kohta 2). Puolustajat liikkuvat rushin aikana järjestelmän mukaan (O-7), mutta paineen antaa lähin puolustaja (Q-054, kohta 6, hyväksytty D-074) |
 | Toinen yritys (O-8): ei puolustajien liikettä ennen laukausta, kiekko oli irti | lähin (kohta 2) |
 | Järjestelmätila, regroup, setup, irtokiekkokamppailu, aloitustarkistus | ei syöttöjä eikä laukauksia, sääntöä ei tarvita |
 
-Muotoilun yksityiskohdat (roolien jako toiminnon hetkellä, kaikki `puckOffset`-arvot, useamman ehdokkaan valinta, ei ehdokasta → ei painetta, `pinch`, suorahyökkäys) ovat designerin suosituksia, joita D-072 ei suoraan ratkaise (Q-054). Painostajaa ei kirjata tapahtumalokiin (uusi kenttä vaatisi tapahtumaskeeman muutoksen).
+Muotoilun yksityiskohdat (roolien jako toiminnon hetkellä, kaikki `puckOffset`-arvot, useamman ehdokkaan valinta, ei ehdokasta → ei painetta, `pinch`, suorahyökkäys) olivat designerin suosituksia (Q-054), ja Jerry hyväksyi ne (D-074). Sama valitsin tunnistaa painostajan reaktioviiveessä (D-074, Puolustusjärjestelmät, Painostajan reaktioviive), mutta ennen tahdin puolustajaliikettä. Painostajaa ei kirjata tapahtumalokiin (uusi kenttä vaatisi tapahtumaskeeman muutoksen).
 
 **Säteen kalibrointi (D-072).** Jos 200 ottelun mittauksessa laukausten tai syöttöjen paineosuus putoaa alle 68 %:n, designer saa nostaa `pressure.underPressureNodes`-arvon 1:een. Se on erillinen, mitattu vaihe ohjelmoijan toteutuksen ja mittauksen jälkeen, eikä arvoa muuteta tämän speksin yhteydessä. Kalibroinnin vaihe 3 (syötöt) odottaa tätä mittausta.
 
@@ -667,6 +695,7 @@ Numeroarvot ovat paikkamerkkejä (`_placeholders`), jotka kalibroidaan simulaati
 | `checks.loosePuck.extraPlayerRadius` | 1 | `extraPlayer`-laskennan säde (M-6) |
 | `checks.loosePuck.modifiers.distancePerNode` | 0,5 | Logit per solmu kamppailijoiden etäisyyserosta (M-6) |
 | `pressure.underPressureNodes` | 0 | Paineen alla -säde (M-7, D-056; kalibrointi Q-032). Jerryn asettama, ei paikkamerkki |
+| `pressure.presserReactionNodes` | 1 | Painostajan askeleet onnistuneen syötön jälkeisessä tahdissa (D-074). Jerryn asettama, ei paikkamerkki. Odottaa lataajaa (O-16) |
 | `checks.pass.modifiers.underPressure` | −0,9 | Entinen `checks.pass.modifiers.pressure`, nimetty uudelleen (D-049), arvo ennallaan |
 | `time.secondsPerAction.systemStep` | 2 | Järjestelmätilan askel: kiekollinen joukkue pitää kiekkoa (D-036) tai irtokiekko jäi ilman voittajaa (M-6) |
 | `loosePuckSpots` | ks. yllä | Irtokiekon paikat (D-044). Data ja lataajan tuki commitoidaan yhdessä (D-030) |
@@ -762,7 +791,7 @@ Jokaisella joukkueella on skaalaariarvo O (0–1), joka kuvaa sen puolustusta. T
 - **Palautuminen:** joka pelisekunti O += `organization.recoveryPerSecond` × (1 + `organization.recoveryPerStatPoint` × (S̄ − `checkFormula.referenceValue`)), rajattuna enintään 1:een. S̄ on joukkueen viiden jäällä olevan kenttäpelaajan keskiarvo arvosta Σ `organization.recoveryWeights[stat]` × stat (Nopeus 0,5, Pelinluku 0,5). Palautuminen jatkuu aina, myös setupin, regroupin ja järjestelmätilan aikana.
 - **Vaikutus:** tarkistuksissa, joilla on `modifiers.organization`, M += arvo × (1 − O_puolustaja), aina hyökkääjän hyväksi: `pass` 0,6, `zoneEntryCarry` 0,8, `deke` 0,6, `breakout` 0,6, `shot` 0,7, `block` 0,5.
 - **Raja** `organization.organizedThreshold` (0,8): suorahyökkäys päättyy (O-7) ja laukaus ei ole enää suorahyökkäys (O-12), kun O_puolustaja ≥ raja.
-- **Puolustajien liike setupissa ja regroupissa:** puolustajat liikkuvat kohti järjestelmänsä kohteita enintään n = floor(t × `plays.maxNodesPerBeat` / `time.secondsPerAction.skate`) askelta, t = `setupSeconds` (6 s → 4 askelta) tai regroupissa `regroupSeconds` + `setupSeconds` (14 s → 9 askelta). Kohteet lasketaan kiekon solmusta ennen liikettä. Askeleet ja päätteet kuten Puolustusjärjestelmät, Liikkuminen (D-053, D-058). Tahdeissa liike on ennallaan (`maxNodesPerBeat` per tapahtuma, D-041). Näin M-8:n voimasuhde "N vs M" syntyy sijainneista.
+- **Puolustajien liike setupissa ja regroupissa:** puolustajat liikkuvat kohti järjestelmänsä kohteita enintään n = floor(t × `plays.maxNodesPerBeat` / `time.secondsPerAction.skate`) askelta, t = `setupSeconds` (6 s → 4 askelta) tai regroupissa `regroupSeconds` + `setupSeconds` (14 s → 9 askelta). Kohteet lasketaan kiekon solmusta ennen liikettä. Askeleet ja päätteet kuten Puolustusjärjestelmät, Liikkuminen (D-053, D-058). Tahdeissa liike on ennallaan (`maxNodesPerBeat` per tapahtuma, D-041), paitsi painostajan reaktioviive onnistuneen syötön jälkeen (D-074, Puolustusjärjestelmät, Painostajan reaktioviive). Näin M-8:n voimasuhde "N vs M" syntyy sijainneista.
 - **Esimerkki:** hyökkäysalueella menetetty kiekko antaa O = 0,35; 8 s myöhemmin alueelle tullessa O ≈ 0,67 (suorahyökkäys). Regroupin ja setupin 14 s vie O:n n. 0,91:een (järjestäytynyt).
 
 ### O-7 Siirtymät (D-007, D-062)
@@ -872,6 +901,7 @@ Paikkamerkit ovat `_placeholders`-listassa ja kalibroidaan simulaatiolla. "Datas
 | `pressure.decayPerSecond` | 0,01 | odottaa lataajaa | Uusi, paikkamerkki |
 | `pressure.keepOnStoppage`, `energyDrainPerSecond`, `mentalToughnessReductionPerPoint` | 0,5, 0,002, 0,03 | datassa | Paikkamerkit |
 | `pressure.underPressureNodes` | 0 | datassa | D-056 |
+| `pressure.presserReactionNodes` | 1 | odottaa lataajaa | D-074 (Jerryn arvo, ei paikkamerkki) |
 | `familiarity.freeUses` | 2 | datassa | Uusi, paikkamerkki |
 | `familiarity.penaltyPerRepeat` | 0,08 | datassa | Entinen 0,1 |
 | `familiarity.maxPenalty` | 0,5 | datassa | |
@@ -901,6 +931,7 @@ Kaikki alla olevat avaimet ovat pakollisia (puuttuva = virhe), ja tuntematon ava
 | `organization.organizedThreshold` | ei välillä (0, 1] |
 | `pressure.gainOnZoneEntry`, `gainOnShot`, `gainPerSecondInZone`, `decayPerSecond`, `energyDrainPerSecond` | < 0 |
 | `pressure.keepOnStoppage` | ei välillä [0, 1] |
+| `pressure.presserReactionNodes` (D-074) | ei kokonaisluku, < 0 tai > `plays.maxNodesPerBeat` |
 | `familiarity.freeUses`, `penaltyPerRepeat`, `maxPenalty` | < 0 |
 | `familiarity.intermissionMultiplier` | ei välillä [0, 1] |
 | `transitions.rushMaxActions` | ei kokonaisluku tai < 1 |
@@ -934,3 +965,5 @@ Kaikki alla olevat avaimet ovat pakollisia (puuttuva = virhe), ja tuntematon ava
 Lisäksi lataajan tyypitys `energy`-osiolle: avain `energy.benchRecoveryPerSecond` on jo nimetty datassa uudelleen `energy.benchRecoveryRate` (eksponentiaalinen, 0,011) ja `energy.drainPerSecondOnIce` (0,0055) on lisätty; lataajan pitää vaatia nämä ja hylätä vanha nimi. Sama koskee `organization.recoveryPerSecond` (korvaa `recoveryPerEvent`), `organization.dropFactorOnShotOrDump`, `organization.dropPerCommittedPlayer`, `familiarity.freeUses` ja `familiarity.intermissionMultiplier`, jotka ovat jo datassa.
 
 `time`- ja `pressure`-osioihin avain lisätään olemassa olevien rinnalle, `transitions` on uusi ylimmän tason osio ja `chanceTypes` korvataan kokonaan (avain `rushOrganizationBelow` poistuu). `_placeholders`-listaan lisätään `time.stoppageChangeMinSeconds`, `pressure.decayPerSecond`, `transitions.rushMaxActions` ja `transitions.rushShotMinBaseXg`, ja siitä poistetaan `chanceTypes.rushOrganizationBelow`.
+
+**Painostajan reaktioviive (D-074).** `pressure.presserReactionNodes` lisätään `pressure`-osion sallittuihin ja pakollisiin avaimiin (`PressureConfig`) ja dataan samassa commitissa (D-030), olemassa olevien avainten rinnalle `underPressureNodes`-avaimen jälkeen: `"presserReactionNodes": 1`. Arvo ei ole paikkamerkki (Jerryn päätös), joten sitä ei lisätä `_placeholders`-listaan. Osion `_notes`-tekstiin lisätään: "presserReactionNodes: after a successful pass the presser (M-7 selector, evaluated before the defenders' move) moves at most this many nodes before the next action instead of plays.maxNodesPerBeat (D-074)."
