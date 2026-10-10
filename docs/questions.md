@@ -14,18 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-053 · 2026-10-10 · kirjaaja: game-designer
-**Kysymys:** D-070:n ja D-071:n toteutuksessa on tarkennuksia, joita päätökset eivät kata. Hyväksytkö designerin suositukset?
-**Konteksti:** `data-schema.md`, M-7 (Laukaus heti syötöstä) ja targets.json (Mittarit ja niiden laskenta, Automaattinen vertailu).
-**Suositukset (designer, eivät ole hyväksyttyjä):**
-1. M-7, vapaa vastaanottaja: käytetään samaa sädettä `pressure.underPressureNodes` kuin muussa paineessa. Arvolla 0 sama kuin D-070:n "ei vastaanottajan solmussa", mutta pysyy johdonmukaisena, jos säde kalibroidaan (Q-032).
-2. M-7: poikkeus koskee kaikkia syöttö → laukaus -pareja: kuviot, D-036:n aloitussyöttö, aloituskuviot ja suorahyökkäys (O-7). Ei koske toista yritystä eikä aloitusvoitosta suoraan laukaisevaa.
-3. M-7: poikkeus muuttaa vain laukaustapahtuman `underPressure`-kentän ja raportin. Laukaukselle ei lisätä `underPressure`-muokkaajaa (se olisi uusi mekaniikka).
-4. `smartVsRandomWinRate`: voitot / ottelut, tasapeli ei ole voitto (tiukin tulkinta; tasapelien osuus näytetään erikseen). Vaihtoehto: tasapeli = puoli voittoa.
-5. `shotXgTypical` (haarukka 0,003–0,05): raportti näyttää laukausten xG:n 10., 50. ja 90. persentiilin. TOO LOW, jos 10. persentiili < `min`; TOO HIGH, jos 90. persentiili > `max`; muuten OK.
-6. Automaattinen vertailu tehdään AI-pareittain yhteisarvolle (molemmat joukkueet). Realismia verrataan järkevien AI:den pariin (rulebased vs. rulebased), koska satunnainen AI vääristää lukuja.
-**Ehdotettu oletus:** suositukset 1–6, kunnes Jerry päättää.
-
 ### Q-050 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** sisältävätkö Wisehockeyn laukausyritykset blokatut laukaukset? Simulaation laukausyritykset sisältävät ne.
 **Konteksti:** `targets.json` `shotAttempts` (D-071).
@@ -41,6 +29,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Kysymys veljelle:** miten Wisehockey määrittelee "paineen alla" (etäisyys metreinä, aikaikkuna ennen laukausta)? Verkon solmu on noin 5–6 m leveä, joten säde 0 voi olla analyysin määritelmää väljempi.
 **Ehdotettu oletus:** järjestelmädataa ei muuteta tämän vuoksi. Vaihe 3 (syötöt) voi edetä, koska syöttöjen paineosuus (67,2 %) on jo lähellä tavoitetta.
 **Vastaus (Jerry, 2026-10-10):** toteutetaan vaihtoehto 1. Designer tarkentaa M-7:n `data-schema.md`:hen ensin, programmer toteuttaa, mitataan 200 ottelulla. Jos laukauksista paineen alla on edelleen yli 80 %, vaihtoehto 2 tuodaan Jerrylle päätettäväksi. Vaihtoehto 3 myöhemmin. Vaihe 3 (syötöt) odottaa tämän mittausta. Kysymys veljelle Wisehockeyn paineen alla -määritelmästä (metrit, aikaikkuna) jää auki. Kirjattu: D-070.
+**Vastaus (Jerry, 2026-10-10, mittauksen jälkeen):** vaihtoehto 1 laski osuuden vain 99,8 %:sta 97,9 %:iin, joten vaihtoehto 2 hyväksytty: paineen antaa vain kiekolliseen pelaava puolustaja (järjestelmäkohde `puckOffset`), sekä laukauksissa että syötöissä. Kun järjestelmä ei ohjaa liikettä (esim. suorahyökkäys), painostaja on kiekollista lähin puolustaja. Jos laukausten tai syöttöjen paineosuus putoaa alle 68 %:n, designer saa nostaa säteen arvoon 1. Kysymys veljelle jää auki. Kirjattu: D-072.
 
 ### Q-048 · 2026-10-10 · kirjaaja: Jerry
 **Kysymys:** montako aloitusta ottelussa on? Oikeassa kiekossa tyypillisesti noin 55–65, simulaatiossa noin 47.
@@ -109,6 +98,19 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-053 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys:** D-070:n ja D-071:n toteutuksessa on tarkennuksia, joita päätökset eivät kata. Hyväksytkö designerin suositukset?
+**Konteksti:** `data-schema.md`, M-7 (Laukaus heti syötöstä) ja targets.json (Mittarit ja niiden laskenta, Automaattinen vertailu).
+**Suositukset (designer, eivät ole hyväksyttyjä):**
+1. M-7, vapaa vastaanottaja: käytetään samaa sädettä `pressure.underPressureNodes` kuin muussa paineessa. Arvolla 0 sama kuin D-070:n "ei vastaanottajan solmussa", mutta pysyy johdonmukaisena, jos säde kalibroidaan (Q-032).
+2. M-7: poikkeus koskee kaikkia syöttö → laukaus -pareja: kuviot, D-036:n aloitussyöttö, aloituskuviot ja suorahyökkäys (O-7). Ei koske toista yritystä eikä aloitusvoitosta suoraan laukaisevaa.
+3. M-7: poikkeus muuttaa vain laukaustapahtuman `underPressure`-kentän ja raportin. Laukaukselle ei lisätä `underPressure`-muokkaajaa (se olisi uusi mekaniikka).
+4. `smartVsRandomWinRate`: voitot / ottelut, tasapeli ei ole voitto (tiukin tulkinta; tasapelien osuus näytetään erikseen). Vaihtoehto: tasapeli = puoli voittoa.
+5. `shotXgTypical` (haarukka 0,003–0,05): raportti näyttää laukausten xG:n 10., 50. ja 90. persentiilin. TOO LOW, jos 10. persentiili < `min`; TOO HIGH, jos 90. persentiili > `max`; muuten OK.
+6. Automaattinen vertailu tehdään AI-pareittain yhteisarvolle (molemmat joukkueet). Realismia verrataan järkevien AI:den pariin (rulebased vs. rulebased), koska satunnainen AI vääristää lukuja.
+**Ehdotettu oletus:** suositukset 1–6, kunnes Jerry päättää.
+**Vastaus (Jerry, 2026-10-10):** suositukset 1–3, 5 ja 6 hyväksytty. Kohta 4 muutettu: `smartVsRandomWinRate` laskee tasapelin puoleksi voitoksi, ja raportti näyttää voitot, tasapelit ja tappiot erikseen. Ohjelmoijan lisäoletukset (tasakentällinen = yhtä monta kenttäpelaajaa, hyökkäysalueaika koko ottelusta kun ei erikoistilanteita) hyväksytty. Kirjattu: D-073.
 
 ### Q-052 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** kirjataanko jatkoajalle menneiden otteluiden luvut jatkoaikoineen?
