@@ -164,7 +164,9 @@ Simulaation pitää osua oikean kiekon haarukkaan. Alla on otteluanalyysien luvu
 | Syöttöjen onnistuminen paineen alla | – | 69 % / 68 % | Kalibrointi (`targets.json`) |
 | Laukaukset paineen alla (osuus) | – | 68 % / 76 % | Kalibrointi (`targets.json`) |
 | Kiekkokamppailut (voitto / ei voittajaa / häviö) | 36 % / 22 % / 41 % | Kirjataan | Kalibrointi (`targets.json`) |
-| Laukaukset 5v5 | – | 45 / 18 | Kalibrointi (`targets.json`) |
+| Laukausyritykset per joukkue, koko ottelu | – | n. 33–60 (Wisehockeyn erätaulukko) | Kalibrointi (`targets.json`), simulaation laukausmäärän vertailukohta (D-069) |
+| Laukaukset maalia kohti per joukkue, koko ottelu | – | n. 24–39 (Wisehockeyn erätaulukko) | Kalibrointi (`targets.json`), simulaation vertailukohta (D-069) |
+| Laukaukset 5v5 | – | 45 / 18 | Vain 5v5-erittelyyn, ei koko ottelun vertailuun (D-069) |
 | Laukaukset 5v5: suorahyökkäys / päätypeli / riisto | – | 12 / 26 / 9 ja 9 / 8 / 3 | Kalibrointi (`targets.json`) |
 | Maalipaikat 5v5: huippu / hyvä / kohtalainen | – | 7 / 3 / 12 ja 0 / 0 / 3 | Kalibrointi (`targets.json`) |
 | Maalipaikat per joukkue, kaikki | 14 / 13 | – | Kalibrointi (`targets.json`) |
