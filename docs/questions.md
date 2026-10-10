@@ -14,13 +14,25 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-042 · 2026-10-10 · kirjaaja: Jerry (virstanpylväs 4)
+**Kysymys:** pitkä kiekko (icing) ja sääntö, ettei sen tehnyt ketju pääse vaihtoon.
+**Konteksti:** katkon syy "pitkä kiekko" on jo tapahtumaskeemassa, mutta sitä ei mallinneta.
+
+### Q-041 · 2026-10-10 · kirjaaja: Jerry
+**Kysymys:** sallitaanko toinen yritys (D-065) myös solmuista (8,1) ja (8,3) heikommalla xG:llä?
+**Konteksti:** päätetään raportin perusteella.
+
+### Q-040 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys veljelle:** missä aloitus on, kun hyökkääjä on laukonut kiekon ulos hyökkäysalueella?
+**Ehdotettu oletus:** lähin piste samalla alueella.
+
+### Q-039 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys veljelle:** luokitellaanko keskialueen riistosta alkanut suorahyökkäys riistoksi vai suorahyökkäykseksi?
+**Ehdotettu oletus:** riisto ensin.
+
 ### Q-032 · 2026-10-10 · kirjaaja: Jerry
 **Kysymys:** kalibroidaan paineen alla -säde (M-7, `pressure.underPressureNodes`) raportin perusteella.
 **Konteksti:** laukausten osuutta paineen alla verrataan Wisehockeyn 68–76 %:iin (`stats-and-checks.md`, tavoitearvot). Virstanpylväs 5.
-
-### Q-031 · 2026-10-10 · kirjaaja: Jerry
-**Kysymys:** miten maalin edessä oleva puolustaja vaikuttaa maskiin (M-4)?
-**Konteksti:** virstanpylväässä 2 puolustaja ei poista maskia. Otetaan uudelleen esille virstanpylväässä 3.
 
 ### Q-030 · 2026-10-10 · kirjaaja: Jerry
 **Kysymys veljelle:** miten Wisehockey määrittelee Royal Road -syötön?
@@ -31,54 +43,20 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Konteksti:** D-023 (kolmikot ja parit erikseen), `tuning.json` `chemistry`. Tarvitaan virstanpylväässä 3.
 **Ehdotettu oletus:** vain yksikön sisällä.
 **Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
-
-### Q-020 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** lasketaanko väärän puolen miinus kerran puolta kohden vai jokaisesta väärällä puolella pelaavasta pelaajasta?
-**Konteksti:** D-024, `tuning.json` `positions.offSideCheckModifier`.
-**Ehdotettu oletus:** kerran puolta kohden.
-**Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
+**Ajoitus (Jerry, 2026-10-10):** siirretty virstanpylvään 3 jälkeen (D-067).
 
 ### Q-019 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** saavatko muut paikkavaihdot miinuksen (esim. sentteri laidassa, hyökkääjä pakkina)?
 **Konteksti:** D-024 määrittelee vain väärän puolen (LW↔RW, LD↔RD).
 **Ehdotettu oletus:** ei miinusta, kunnes päätetään.
 **Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
-
-### Q-015 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-012:sta)
-**Kysymys veljelle:** mitkä alueet lasketaan slotiksi?
-**Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan solmut. Q-012:n järjestelmäosa on ratkaistu (D-021).
-**Ehdotettu oletus:** slotti on keskikaista aloituspisteiden välissä maalin edestä ympyröiden yläreunaan.
+**Ajoitus (Jerry, 2026-10-10):** päätetään draftin yhteydessä (D-067).
 
 ### Q-014 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-009:stä)
 **Kysymys:** lasketaanko xG laukausyritystä kohden (myös blokatut ja ohi menneet) vai maalia kohti mennyttä laukausta kohden, ja mihin xG-mittakaava sidotaan, jotta ottelussa syntyy 4–7 maalia?
 **Konteksti:** `tuning.json` `checks.shot.baseXg`. Ratkaisee, onko `baseXg` maalitarkistuksen p0 sellaisenaan. Q-009:n rajakysymys on ratkaistu (D-014:n tarkennus).
 **Kysymys veljelle (liittyy Q-004):** mitä laukauksia analyysityökalun xG kattaa (kaikki yritykset, blokkaamattomat vai maalia kohti menneet)?
 **Ehdotettu oletus:** `baseXg` on maalin todennäköisyys maalia kohti menneestä laukauksesta, raportin xG on yrityksen kokonaistodennäköisyys (läpi × maalia kohti × maali). Mittakaava kalibroidaan maalimäärään 4–7.
-
-### Q-011 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** jaetaanko puolustusjärjestelmän roolit (F1 painostaja, F2, F3, D1, D2) etäisyyden mukaan kiekkoon vai kiinteästi pelipaikan mukaan?
-**Konteksti:** `docs/data-schema.md`, Puolustusjärjestelmät. Oikeassa kiekossa ensimmäinen karvaaja on se, joka on lähimpänä, ei aina sentteri.
-**Ehdotettu oletus:** etäisyyden mukaan joka tapahtuman jälkeen. Hyökkääjistä lähin on F1, tasatilanteessa järjestys C, LW, RW. Pakeista lähin on D1.
-
-### Q-010 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** missä järjestyksessä laukauksen lopputulokset (blokattu, ohi, torjuttu, maali) ratkaistaan?
-**Konteksti:** tapahtumaskeeman laukauksella on neljä lopputulosta, mutta tarkistustaulukossa on vain blokki ja laukaus. Ohi menneille laukauksille ei ole sääntöä.
-**Ehdotettu oletus:** blokki (`checks.block`) → maalia kohti vai ohi (`checks.shot.onTargetShare`, alustavasti 0,55, ei statseja) → maalitarkistus (`checks.shot`). Myöhemmin Laukaisutarkkuus voi vaikuttaa ohilaukauksiin, mutta se on uusi mekaniikka ja vaatii hyväksynnän.
-
-### Q-008 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** ovatko kaikki muokkaajat (järjestäytyneisyys, paine, energia, poikittaissyöttö jne.) logit-yksiköitä, jotka lisätään kaavan summaan M?
-**Konteksti:** `docs/stats-and-checks.md` sanoo vain, että M on muokkaajien summa. Yksikkö ratkaisee, miten `tuning.json`:n arvot luetaan.
-**Ehdotettu oletus:** kyllä, logit. Esimerkki: syötön p0 0,85 ja paineen muokkaaja −0,9 antavat n. 70 %, mikä vastaa analyysin 13–15 %-yksikön pudotusta. Tilaan sidotut muokkaajat skaalautuvat lineaarisesti (`docs/data-schema.md`, Yleiset käytännöt). Tämä on dokumentoitu oletukseksi `data-schema.md`:hen.
-
-### Q-007 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** onko irtokiekon perusjakauma tasaväkisille pelaajille 39 / 22 / 39 (voitto / ei voittajaa / häviö)?
-**Konteksti:** analyysin jakauma 36 / 22 / 41 on yhden joukkueen luku, eikä se sovi perustasoksi, koska tasaväkisten jakauman pitää olla symmetrinen.
-**Ehdotettu oletus:** `noWinnerShare` 0,22 analyysista, loput 0,78 jaetaan logistisella tarkistuksella, jonka p0 on 0,5. Statsiero siirtää osuutta voiton ja häviön välillä, "ei voittajaa" pysyy 22 %:ssa.
-
-### Q-006 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** kuinka paljon aikaa kuluu, kun pelaajat asettuvat kuvion lähtösolmuihin (setup) tai kokoavat hyökkäyksen siirtymässä (regroup)?
-**Konteksti:** kuvion lähtöasetelma ei yleensä vastaa pelaajien sijaintia edellisen tapahtuman jälkeen. Siirtymäohje "kokoaminen" antaa puolustuksen järjestäytyä (stats-and-checks.md), mutta aikaa ei ole määritelty.
-**Ehdotettu oletus:** kiinteät ajat `time.setupSeconds` 6 ja `time.regroupSeconds` 8 (paikanpitäjiä). Aika palauttaa puolustuksen järjestäytyneisyyttä normaalisti tapahtumien tapaan.
 
 ### Q-004 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys veljelle:** millä xG-rajoilla otteluanalyysi jakaa paikat huippu-, hyviin ja kohtalaisiin?
@@ -94,6 +72,54 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-031 · 2026-10-10 · kirjaaja: Jerry
+**Kysymys:** miten maalin edessä oleva puolustaja vaikuttaa maskiin (M-4)?
+**Konteksti:** virstanpylväässä 2 puolustaja ei poista maskia. Otetaan uudelleen esille virstanpylväässä 3.
+**Vastaus (Jerry, 2026-10-10):** `screenContested` 0,15, kun puolustaja on samassa maalin edustan solmussa. Kirjattu: D-062.
+
+### Q-020 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** lasketaanko väärän puolen miinus kerran puolta kohden vai jokaisesta väärällä puolella pelaavasta pelaajasta?
+**Konteksti:** D-024, `tuning.json` `positions.offSideCheckModifier`.
+**Ehdotettu oletus:** kerran puolta kohden.
+**Ajoitus (Jerry, 2026-10-09):** siirretty virstanpylvääseen 3.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty (kerran puolta kohden). Kirjattu: D-067.
+
+### Q-015 · 2026-10-09 · kirjaaja: game-designer (siirretty Q-012:sta)
+**Kysymys veljelle:** mitkä alueet lasketaan slotiksi?
+**Konteksti:** `data/rink.json` merkitsee slotiksi (`isSlot`) hyökkäyspään keskikaistan solmut. Q-012:n järjestelmäosa on ratkaistu (D-021).
+**Ehdotettu oletus:** slotti on keskikaista aloituspisteiden välissä maalin edestä ympyröiden yläreunaan.
+**Vastaus (Jerry, 2026-10-10):** slotti xG:lle = (7,2) ja (8,2). Kirjattu: D-062. Jatkokysymys: Q-041.
+
+### Q-011 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** jaetaanko puolustusjärjestelmän roolit (F1 painostaja, F2, F3, D1, D2) etäisyyden mukaan kiekkoon vai kiinteästi pelipaikan mukaan?
+**Konteksti:** `docs/data-schema.md`, Puolustusjärjestelmät. Oikeassa kiekossa ensimmäinen karvaaja on se, joka on lähimpänä, ei aina sentteri.
+**Ehdotettu oletus:** etäisyyden mukaan joka tapahtuman jälkeen. Hyökkääjistä lähin on F1, tasatilanteessa järjestys C, LW, RW. Pakeista lähin on D1.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-067.
+
+### Q-010 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** missä järjestyksessä laukauksen lopputulokset (blokattu, ohi, torjuttu, maali) ratkaistaan?
+**Konteksti:** tapahtumaskeeman laukauksella on neljä lopputulosta, mutta tarkistustaulukossa on vain blokki ja laukaus. Ohi menneille laukauksille ei ole sääntöä.
+**Ehdotettu oletus:** blokki (`checks.block`) → maalia kohti vai ohi (`checks.shot.onTargetShare`, alustavasti 0,55, ei statseja) → maalitarkistus (`checks.shot`). Myöhemmin Laukaisutarkkuus voi vaikuttaa ohilaukauksiin, mutta se on uusi mekaniikka ja vaatii hyväksynnän.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-067.
+
+### Q-008 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** ovatko kaikki muokkaajat (järjestäytyneisyys, paine, energia, poikittaissyöttö jne.) logit-yksiköitä, jotka lisätään kaavan summaan M?
+**Konteksti:** `docs/stats-and-checks.md` sanoo vain, että M on muokkaajien summa. Yksikkö ratkaisee, miten `tuning.json`:n arvot luetaan.
+**Ehdotettu oletus:** kyllä, logit. Esimerkki: syötön p0 0,85 ja paineen muokkaaja −0,9 antavat n. 70 %, mikä vastaa analyysin 13–15 %-yksikön pudotusta. Tilaan sidotut muokkaajat skaalautuvat lineaarisesti (`docs/data-schema.md`, Yleiset käytännöt). Tämä on dokumentoitu oletukseksi `data-schema.md`:hen.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty (logit). Kirjattu: D-067.
+
+### Q-007 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** onko irtokiekon perusjakauma tasaväkisille pelaajille 39 / 22 / 39 (voitto / ei voittajaa / häviö)?
+**Konteksti:** analyysin jakauma 36 / 22 / 41 on yhden joukkueen luku, eikä se sovi perustasoksi, koska tasaväkisten jakauman pitää olla symmetrinen.
+**Ehdotettu oletus:** `noWinnerShare` 0,22 analyysista, loput 0,78 jaetaan logistisella tarkistuksella, jonka p0 on 0,5. Statsiero siirtää osuutta voiton ja häviön välillä, "ei voittajaa" pysyy 22 %:ssa.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty (39 / 22 / 39). Kirjattu: D-067.
+
+### Q-006 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** kuinka paljon aikaa kuluu, kun pelaajat asettuvat kuvion lähtösolmuihin (setup) tai kokoavat hyökkäyksen siirtymässä (regroup)?
+**Konteksti:** kuvion lähtöasetelma ei yleensä vastaa pelaajien sijaintia edellisen tapahtuman jälkeen. Siirtymäohje "kokoaminen" antaa puolustuksen järjestäytyä (stats-and-checks.md), mutta aikaa ei ole määritelty.
+**Ehdotettu oletus:** kiinteät ajat `time.setupSeconds` 6 ja `time.regroupSeconds` 8 (paikanpitäjiä). Aika palauttaa puolustuksen järjestäytyneisyyttä normaalisti tapahtumien tapaan.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-067.
 
 ### Q-038 · 2026-10-10 · kirjaaja: programmer
 **Kysymys:** pitääkö reboundin voittajan voida laukoa heti, ennen uuden kuvion valintaa?

@@ -88,7 +88,7 @@ Simulaation tapahtumaloki noudattaa oikean otteluanalyysin aikajanan rakennetta,
 | Laukaus | Laukoja, torjuja tai blokkaaja, xG, paikkaluokka, paikkatyyppi, paineen alla (kyllä/ei, D-050), laukausnopeus (tyhjä virstanpylvääseen 3 asti, D-052), lopputulos (maali, torjuttu, blokattu, ohi) |
 | Kiekonmenetys / riisto | Menettäjä, riistäjä, sijainti |
 | Kamppailu | Osallistujat, lopputulos (voitto, ei voittajaa, häviö) |
-| Pelikatko | Syy (maalivahti sulki kiekon, pitkä kiekko, paitsio, jäähy, maali) |
+| Pelikatko | Syy (maalivahti sulki kiekon, pitkä kiekko, paitsio, jäähy, maali, kiekko ulos kaukalosta (D-063), erän loppu (D-064)) |
 | Vaihto | Ketju ulos, ketju sisään |
 
 ## Järjestäytyneisyys, paine ja paikkatyypit
