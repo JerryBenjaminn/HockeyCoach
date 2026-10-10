@@ -111,15 +111,33 @@ namespace HockeyCoach.Sim.State
         /// <summary>Player id of the skater playing <paramref name="position"/>.</summary>
         public int PlayerId(TeamSide team, Position position)
         {
+            return SkaterAt(team, position).Id;
+        }
+
+        /// <summary>The skater playing <paramref name="position"/> for <paramref name="team"/>.</summary>
+        public Skater SkaterAt(TeamSide team, Position position)
+        {
             OnIceSkaters unit = _units[(int)team];
             switch (position)
             {
-                case Position.LeftWing: return unit.Forwards.LeftWing.Id;
-                case Position.Center: return unit.Forwards.Center.Id;
-                case Position.RightWing: return unit.Forwards.RightWing.Id;
-                case Position.LeftDefence: return unit.Defence.LeftDefence.Id;
-                default: return unit.Defence.RightDefence.Id;
+                case Position.LeftWing: return unit.Forwards.LeftWing;
+                case Position.Center: return unit.Forwards.Center;
+                case Position.RightWing: return unit.Forwards.RightWing;
+                case Position.LeftDefence: return unit.Defence.LeftDefence;
+                default: return unit.Defence.RightDefence;
             }
+        }
+
+        /// <summary>The on-ice unit of <paramref name="team"/>.</summary>
+        public OnIceSkaters UnitOf(TeamSide team)
+        {
+            return _units[(int)team];
+        }
+
+        /// <summary>The goalie id of <paramref name="team"/>.</summary>
+        public int GoalieId(TeamSide team)
+        {
+            return _goalieIds[(int)team];
         }
 
         /// <summary>Moves a skater (home view). Throws for a node outside the grid or a goal node (D-033).</summary>
