@@ -42,6 +42,7 @@ namespace HockeyCoach.Sim.Tactics
 
                 ValidateCondition(path + ".when", rule.When, system.MirrorY, rink, errors);
                 ValidateTargets(path + ".targets", rule, rink, errors);
+                ValidateDistinctTargets(path + ".targets", rule, errors);
             }
 
             return errors;
@@ -77,6 +78,33 @@ namespace HockeyCoach.Sim.Tactics
             if (range.Min < 0 || range.Max > max)
             {
                 errors.Add(path + ": " + range + " is outside the grid (0.." + max + ")");
+            }
+        }
+
+        /// <summary>
+        /// D-058 (D-062): two roles with the same fixed <c>node</c>, or the same <c>puckOffset</c>, would always put two
+        /// teammates on one node. Targets that meet only for some puck nodes are resolved at run time (OccupancyResolver).
+        /// </summary>
+        private static void ValidateDistinctTargets(string path, SystemRule rule, List<string> errors)
+        {
+            var seen = new List<KeyValuePair<SystemRole, SystemTarget>>();
+            foreach (SystemRole role in SystemNames.AllRoles)
+            {
+                if (!rule.Targets.TryGetValue(role, out SystemTarget target))
+                {
+                    continue;
+                }
+
+                foreach (KeyValuePair<SystemRole, SystemTarget> other in seen)
+                {
+                    if (other.Value.IsPuckOffset == target.IsPuckOffset && other.Value.Value.Equals(target.Value))
+                    {
+                        errors.Add(path + ": " + SystemNames.ToName(other.Key) + " and " + SystemNames.ToName(role) + " have the same target ("
+                            + target + "); one skater per team per node (D-058)");
+                    }
+                }
+
+                seen.Add(new KeyValuePair<SystemRole, SystemTarget>(role, target));
             }
         }
 

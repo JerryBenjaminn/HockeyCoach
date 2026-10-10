@@ -100,7 +100,7 @@ namespace HockeyCoach.Sim.Shift
             {
                 TeamSide winner = outcome == BattleOutcome.Win ? attacker : defender;
                 Position winnerPosition = outcome == BattleOutcome.Win ? attackerPosition : defenderPosition;
-                _state.Place(winner, winnerPosition, spot);
+                MoveSkaters(winner, new[] { new KeyValuePair<Position, GridPoint>(winnerPosition, TeamFrame.ToTeamView(spot, winner, _rink)) });
                 _state.GivePuckTo(winner, winnerPosition);
             }
 

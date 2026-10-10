@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-043 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** D-058:n ratkaisusäännön kaksi tarkennusta. (1) Lähimmän vapaan solmun renkaassa "lähempänä omaa maalia": millä etäisyydellä, ja mikä ratkaisee, jos kaikki designerin kriteerit ovat tasan (esim. (0, 2) ja (2, 2) ovat yhtä lähellä maalia (1, 2), samalla kaistalla ja samalla y:llä)? (2) Validointivirhe (D-062): hylätäänkö järjestelmä vain, kun kaksi roolia osuu samaan solmuun aina (sama `node` tai sama `puckOffset` samassa säännössä), vai myös, kun `puckOffset` osuu kiinteään solmuun vain joillakin kiekon sijainneilla?
+**Konteksti:** designerin hyväksytty M3-suunnitelma (D-062), kohta D-058, `Sim.Tactics.OccupancyResolver` ja `SystemValidator`. Kohta (2): F1 `puckOffset` [0, 0] osuu molempien nykyisten järjestelmien kiinteisiin kohteisiin joillakin kiekon sijainneilla, joten tiukka tulkinta hylkäisi käytännössä jokaisen painostavan järjestelmän.
+**Ehdotettu oletus (toteutettu):** (1) Chebyshev-etäisyys omaan maalisolmuun, sitten Manhattan-etäisyys samaan, sitten etäisyys keskikaistaan, sitten pienempi y, sitten pienempi x (joukkueen omassa näkökulmassa). (2) Vain aina osuvat kohteet hylätään. Kiekon sijainnista riippuvat osumat ratkaistaan ajon aikana resolverilla. Kuvioiden lähtö- ja tahtisolmut hylättiin jo ennestään.
+
 ### Q-042 · 2026-10-10 · kirjaaja: Jerry (virstanpylväs 4)
 **Kysymys:** pitkä kiekko (icing) ja sääntö, ettei sen tehnyt ketju pääse vaihtoon.
 **Konteksti:** katkon syy "pitkä kiekko" on jo tapahtumaskeemassa, mutta sitä ei mallinneta.

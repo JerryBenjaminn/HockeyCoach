@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HockeyCoach.Sim.Model;
 
 namespace HockeyCoach.Sim.Tactics
@@ -18,11 +19,22 @@ namespace HockeyCoach.Sim.Tactics
         /// <param name="rink">The rink.</param>
         public static GridPoint Advance(GridPoint from, GridPoint target, GridPoint puck, int maxSteps, Rink rink)
         {
+            IReadOnlyList<GridPoint> path = Path(from, target, puck, maxSteps, rink);
+            return path[path.Count - 1];
+        }
+
+        /// <summary>
+        /// The nodes visited by <see cref="Advance"/>: <paramref name="from"/> first, the reached node last (D-058 backs
+        /// up along this path).
+        /// </summary>
+        public static IReadOnlyList<GridPoint> Path(GridPoint from, GridPoint target, GridPoint puck, int maxSteps, Rink rink)
+        {
             if (rink == null)
             {
                 throw new ArgumentNullException(nameof(rink));
             }
 
+            var path = new List<GridPoint> { from };
             GridPoint current = from;
             for (int i = 0; i < maxSteps && !current.Equals(target); i++)
             {
@@ -33,9 +45,10 @@ namespace HockeyCoach.Sim.Tactics
                 }
 
                 current = next;
+                path.Add(current);
             }
 
-            return current;
+            return path;
         }
 
         /// <summary>

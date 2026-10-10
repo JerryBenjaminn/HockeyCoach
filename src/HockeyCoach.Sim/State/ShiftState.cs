@@ -9,7 +9,8 @@ namespace HockeyCoach.Sim.State
     /// <summary>
     /// Positions of the ten skaters and the puck during a shift, stored in the fixed rink frame (home team's view).
     /// Invariants: every skater stands on a non-goal node (D-033); the puck has exactly one carrier or is loose on a
-    /// non-goal node. Goalies stand on their own goal node. Two skaters may share a node.
+    /// non-goal node. Goalies stand on their own goal node. At most one skater of a team per node; opponents may share
+    /// (D-058). Multi-skater moves go through <see cref="OccupancyResolver"/>.
     /// </summary>
     public sealed class ShiftState
     {
@@ -140,11 +141,50 @@ namespace HockeyCoach.Sim.State
             return _goalieIds[(int)team];
         }
 
-        /// <summary>Moves a skater (home view). Throws for a node outside the grid or a goal node (D-033).</summary>
+        /// <summary>
+        /// Puts a skater on <paramref name="node"/> (home view) without resolution. Throws for a node outside the grid, a
+        /// goal node (D-033) or a node a teammate already stands on (D-058).
+        /// </summary>
         public void Place(TeamSide team, Position position, GridPoint node)
         {
             RequireSkaterNode(node, nameof(node));
+            foreach (KeyValuePair<Position, GridPoint> entry in _nodes[(int)team])
+            {
+                if (entry.Key != position && entry.Value.Equals(node))
+                {
+                    throw new InvalidOperationException(
+                        Positions.ToName(entry.Key) + " already stands on " + node + "; one skater per team per node (D-058).");
+                }
+            }
+
             _nodes[(int)team][position] = node;
+        }
+
+        /// <summary>
+        /// Moves skaters of <paramref name="team"/> toward targets given in that team's own view, in the given order, each
+        /// at most <paramref name="maxSteps"/> steps by the movement rules (D-053), with D-058 conflicts resolved by
+        /// <see cref="OccupancyResolver"/>. Skaters not listed stay put.
+        /// </summary>
+        /// <param name="team">The moving team.</param>
+        /// <param name="orderedTargets">Position → target node (team's own view), in processing order.</param>
+        /// <param name="maxSteps">Most steps per mover.</param>
+        public void Move(TeamSide team, IReadOnlyList<KeyValuePair<Position, GridPoint>> orderedTargets, int maxSteps)
+        {
+            if (orderedTargets == null)
+            {
+                throw new ArgumentNullException(nameof(orderedTargets));
+            }
+
+            GridPoint puck = TeamFrame.ToTeamView(PuckNode, team, _rink);
+            IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(team);
+            var moves = new List<OccupancyMove>();
+            foreach (KeyValuePair<Position, GridPoint> target in orderedTargets)
+            {
+                RequireSkaterNode(target.Value, nameof(orderedTargets));
+                moves.Add(new OccupancyMove(target.Key, SystemMovement.Path(skaters[target.Key], target.Value, puck, maxSteps, _rink)));
+            }
+
+            SetTeam(team, OccupancyResolver.Resolve(skaters, moves, _rink));
         }
 
         /// <summary>Gives the puck to a skater.</summary>
@@ -164,7 +204,8 @@ namespace HockeyCoach.Sim.State
 
         /// <summary>
         /// Moves the defending team per its system (D-041: the defence moves every beat): evaluates the system in the
-        /// defending team's view and advances every defender up to <paramref name="maxSteps"/> steps toward its target.
+        /// defending team's view and advances every defender up to <paramref name="maxSteps"/> steps toward its target,
+        /// in role order F1, D1, D2, F2, F3 with D-058 conflicts resolved by <see cref="OccupancyResolver"/>.
         /// </summary>
         /// <returns>The evaluated targets (defending team's view).</returns>
         public SystemTargets ApplySystem(TeamSide defending, DefensiveSystem system, int maxSteps)
@@ -172,12 +213,14 @@ namespace HockeyCoach.Sim.State
             GridPoint puck = TeamFrame.ToTeamView(PuckNode, defending, _rink);
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(defending);
             SystemTargets targets = SystemTargetResolver.Resolve(system, _rink, puck, PuckState, skaters);
-            foreach (KeyValuePair<Position, GridPoint> target in targets.Targets)
+            var ordered = new List<KeyValuePair<Position, GridPoint>>();
+            foreach (SystemRole role in OccupancyResolver.SystemOrder)
             {
-                GridPoint reached = SystemMovement.Advance(skaters[target.Key], target.Value, puck, maxSteps, _rink);
-                Place(defending, target.Key, TeamFrame.ToRink(reached, defending, _rink));
+                Position position = targets.Roles[role];
+                ordered.Add(new KeyValuePair<Position, GridPoint>(position, targets.Targets[position]));
             }
 
+            Move(defending, ordered, maxSteps);
             return targets;
         }
 
@@ -223,7 +266,32 @@ namespace HockeyCoach.Sim.State
 
                 GridPoint rinkNode = TeamFrame.ToRink(node, team, _rink);
                 RequireSkaterNode(rinkNode, paramName);
+                if (_nodes[(int)team].ContainsValue(rinkNode))
+                {
+                    throw new ArgumentException("Two skaters start on " + node + "; one skater per team per node (D-058).", paramName);
+                }
+
                 _nodes[(int)team][position] = rinkNode;
+            }
+        }
+
+        /// <summary>Sets all of a team's nodes at once (team's own view in, stored in the home view).</summary>
+        private void SetTeam(TeamSide team, IReadOnlyDictionary<Position, GridPoint> teamView)
+        {
+            var seen = new HashSet<GridPoint>();
+            foreach (KeyValuePair<Position, GridPoint> entry in teamView)
+            {
+                GridPoint rinkNode = TeamFrame.ToRink(entry.Value, team, _rink);
+                RequireSkaterNode(rinkNode, nameof(teamView));
+                if (!seen.Add(rinkNode))
+                {
+                    throw new InvalidOperationException("Two skaters on " + entry.Value + " after a move (D-058).");
+                }
+            }
+
+            foreach (KeyValuePair<Position, GridPoint> entry in teamView)
+            {
+                _nodes[(int)team][entry.Key] = TeamFrame.ToRink(entry.Value, team, _rink);
             }
         }
 

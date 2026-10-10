@@ -103,4 +103,69 @@ public class ShiftStateTests
         Assert.Equal(Position.RightWing, targets.Roles[SystemRole.F1]);
         Assert.Equal(new GridPoint(4, 4), awayView[Position.RightWing]);
     }
+
+    [Fact]
+    public void Place_RejectsATeammatesNode_ButAllowsAnOpponentsNode()
+    {
+        ShiftState state = Build();
+        GridPoint homeLw = state.NodeOf(TeamSide.Home, Position.LeftWing);
+        GridPoint awayC = state.NodeOf(TeamSide.Away, Position.Center); // (5,3), free for home
+
+        Assert.Throws<InvalidOperationException>(() => state.Place(TeamSide.Home, Position.Center, homeLw));
+        state.Place(TeamSide.Home, Position.Center, awayC);
+
+        Assert.Equal(awayC, state.NodeOf(TeamSide.Home, Position.Center));
+    }
+
+    [Fact]
+    public void Constructor_RejectsTwoTeammatesOnOneNode()
+    {
+        Team home = TestPlayers.Team("Home", 1);
+        Team away = TestPlayers.Team("Away", 101);
+        Dictionary<Position, GridPoint> stacked = Formation();
+        stacked[Position.Center] = stacked[Position.LeftWing];
+
+        Assert.Throws<ArgumentException>(() => new ShiftState(
+            Rink,
+            new OnIceSkaters(home.ForwardLines[0], home.DefencePairs[0]),
+            new OnIceSkaters(away.ForwardLines[0], away.DefencePairs[0]),
+            home.Goalies[0].Id,
+            away.Goalies[0].Id,
+            stacked,
+            Formation(),
+            new GridPoint(5, 2)));
+    }
+
+    [Fact]
+    public void Move_ResolvesTeammatesAimingAtOneNode()
+    {
+        ShiftState state = Build();
+        var targets = new List<KeyValuePair<Position, GridPoint>>
+        {
+            new(Position.Center, new GridPoint(7, 2)),
+            new(Position.LeftWing, new GridPoint(7, 2)),
+        };
+
+        state.Move(TeamSide.Home, targets, 30);
+
+        Assert.Equal(new GridPoint(7, 2), state.NodeOf(TeamSide.Home, Position.Center));
+        Assert.Equal(new GridPoint(6, 1), state.NodeOf(TeamSide.Home, Position.LeftWing)); // backs up its path (5,0) → (6,1) → (7,2)
+        Assert.Equal(5, state.NodesInTeamView(TeamSide.Home).Values.Distinct().Count());
+    }
+
+    [Fact]
+    public void ApplySystem_KeepsTheDefenceOnDistinctNodes_WhenTargetsMeet()
+    {
+        ShiftState state = Build();
+        state.GivePuckTo(TeamSide.Home, Position.LeftDefence); // home (3,1) = away view (7,3)
+        // Every role aims at the puck carrier.
+        var onPuck = TestPlays.Targets(SystemTarget.PuckOffset(0, 0), SystemTarget.PuckOffset(0, 0), SystemTarget.PuckOffset(0, 0), SystemTarget.PuckOffset(0, 0), SystemTarget.PuckOffset(0, 0));
+        var system = new DefensiveSystem("swarm", "Swarm", false, new[] { new SystemRule(SystemCondition.Always, onPuck) });
+
+        state.ApplySystem(TeamSide.Away, system, 30);
+
+        IReadOnlyDictionary<Position, GridPoint> awayView = state.NodesInTeamView(TeamSide.Away);
+        Assert.Equal(5, awayView.Values.Distinct().Count());
+        Assert.Contains(new GridPoint(7, 3), awayView.Values);
+    }
 }

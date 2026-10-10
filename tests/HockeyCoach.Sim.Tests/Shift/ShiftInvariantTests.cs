@@ -32,6 +32,27 @@ public class ShiftInvariantTests
         }
     }
 
+    [Theory]
+    [InlineData("forecheck212", "trap122")]
+    [InlineData("trap122", "forecheck212")]
+    [InlineData("forecheck212", "forecheck212")]
+    [InlineData("trap122", "trap122")]
+    public void EveryEvent_HasAtMostOneSkaterPerTeamPerNode(string home, string away)
+    {
+        var setup = ShiftTestData.Setup(home: home, away: away);
+        for (ulong seed = 1; seed <= Seeds; seed++)
+        {
+            foreach (SimEvent e in ShiftTestData.Run(seed, setup).Log.Events)
+            {
+                foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    var nodes = e.Context.Placement.Players.Where(x => !x.IsGoalie && x.Team == team).Select(x => x.NodeId).ToList();
+                    Assert.True(nodes.Distinct().Count() == nodes.Count, "two " + team + " skaters on one node (D-058), seed " + seed + ", " + e.GetType().Name);
+                }
+            }
+        }
+    }
+
     [Fact]
     public void Shift_StartsWithAFaceoff_AndEndsWithItsOnlyStoppage()
     {

@@ -91,4 +91,21 @@ public class SystemValidatorTests
 
         Assert.Contains(Validate(true, new SystemRule(SystemCondition.Always, targets)), e => e.StartsWith("rules[0].targets.D1.node: (" + x + "," + y + ") " + message, StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void TwoRolesWithTheSameFixedNodeOrOffset_AreRejected()
+    {
+        var sameNode = Fixed().Select(t => t.Key == SystemRole.D2 ? new KeyValuePair<SystemRole, SystemTarget>(SystemRole.D2, SystemTarget.Node(new GridPoint(2, 1))) : t);
+        var sameOffset = Fixed().Select(t => t.Key == SystemRole.F2 ? new KeyValuePair<SystemRole, SystemTarget>(SystemRole.F2, SystemTarget.PuckOffset(0, 0)) : t);
+
+        Assert.Contains("rules[0].targets: D1 and D2 have the same target (node (2,1)); one skater per team per node (D-058)", Validate(true, new SystemRule(SystemCondition.Always, sameNode)));
+        Assert.Contains("rules[0].targets: F1 and F2 have the same target (puckOffset (0,0)); one skater per team per node (D-058)", Validate(true, new SystemRule(SystemCondition.Always, sameOffset)));
+    }
+
+    [Fact]
+    public void PuckOffsetMeetingAFixedNode_IsResolvedAtRunTime_NotRejected()
+    {
+        // F1 on the puck meets F2's (3, 1) whenever the puck is there; the OccupancyResolver handles it.
+        Assert.Empty(Validate(true, new SystemRule(SystemCondition.Always, Fixed())));
+    }
 }

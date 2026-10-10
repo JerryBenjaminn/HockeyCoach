@@ -202,14 +202,9 @@ namespace HockeyCoach.Sim.Shift
         private void Setup(TeamSide team, Play play)
         {
             _time += _tuning.Time.SetupSeconds;
-            foreach (KeyValuePair<Position, GridPoint> start in play.StartPositions)
-            {
-                _state.Place(team, start.Key, TeamFrame.ToRink(start.Value, team, _rink));
-                _droveNet[(int)team, (int)start.Key] = false;
-            }
-
+            MoveSkaters(team, play.StartPositions);
             TeamSide defending = TeamSides.Opponent(team);
-            _state.ApplySystem(defending, Team(defending).Plan.System, _rink.Length * _rink.Width);
+            _state.ApplySystem(defending, Team(defending).Plan.System, Unbounded);
             ClearActionHistory();
         }
 
@@ -235,11 +230,7 @@ namespace HockeyCoach.Sim.Shift
         {
             TeamSide team = _attacker;
             Beat beat = _play.Beats[_beat];
-            foreach (KeyValuePair<Position, GridPoint> move in beat.Moves)
-            {
-                _state.Place(team, move.Key, TeamFrame.ToRink(move.Value, team, _rink));
-                _droveNet[(int)team, (int)move.Key] = false;
-            }
+            MoveSkaters(team, beat.Moves);
 
             TeamSide defending = TeamSides.Opponent(team);
             _state.ApplySystem(defending, Team(defending).Plan.System, _tuning.Plays.MaxNodesPerBeat);
@@ -343,8 +334,7 @@ namespace HockeyCoach.Sim.Shift
             ClearActionHistory();
             if (result.Success)
             {
-                _state.Place(team, carrier, TeamFrame.ToRink(target, team, _rink));
-                _droveNet[(int)team, (int)carrier] = false;
+                MoveSkaters(team, new[] { new KeyValuePair<Position, GridPoint>(carrier, target) });
                 if (entry)
                 {
                     _log.Append(new ControlledZoneEntryEvent(Context(), carrierSkater.Id, numbers, ZoneEntryMethod.Carry, ZoneEntryOutcome.Kept));
@@ -458,8 +448,8 @@ namespace HockeyCoach.Sim.Shift
         /// <summary><c>driveNet</c> (D-020, D-033): to the net front, no check, no event.</summary>
         private void DriveNet(TeamSide team, Position player)
         {
-            _state.Place(team, player, TeamFrame.ToRink(_rink.NetFrontOf(_rink.OpponentGoal), team, _rink));
-            _droveNet[(int)team, (int)player] = true;
+            MoveSkaters(team, new[] { new KeyValuePair<Position, GridPoint>(player, _rink.NetFrontOf(_rink.OpponentGoal)) });
+            _droveNet[(int)team, (int)player] = _state.NodeOf(team, player).Equals(TeamFrame.ToRink(_rink.NetFrontOf(_rink.OpponentGoal), team, _rink));
             _time += _tuning.Time.GetSecondsPerAction("driveNet");
             ClearActionHistory();
         }
@@ -476,6 +466,35 @@ namespace HockeyCoach.Sim.Shift
         }
 
         // ---------------------------------------------------------------- helpers
+
+        /// <summary>No step limit: a placement that reaches its target whatever the distance.</summary>
+        private int Unbounded
+        {
+            get { return _rink.Length * _rink.Width; }
+        }
+
+        /// <summary>
+        /// Moves skaters of the team to targets in its own view (D-058 order: carrier first, then C, LW, RW, LD, RD). Anyone who
+        /// moves is no longer the one who drove the net (D-047).
+        /// </summary>
+        private void MoveSkaters(TeamSide team, IEnumerable<KeyValuePair<Position, GridPoint>> targets)
+        {
+            var byPosition = new SortedDictionary<Position, GridPoint>();
+            foreach (KeyValuePair<Position, GridPoint> target in targets)
+            {
+                byPosition.Add(target.Key, target.Value);
+            }
+
+            Position? carrier = _state.HasCarrier && _state.CarrierTeam == team ? _state.CarrierPosition : null;
+            var ordered = new List<KeyValuePair<Position, GridPoint>>();
+            foreach (Position position in OccupancyResolver.AttackOrder(carrier, byPosition.Keys))
+            {
+                ordered.Add(new KeyValuePair<Position, GridPoint>(position, byPosition[position]));
+                _droveNet[(int)team, (int)position] = false;
+            }
+
+            _state.Move(team, ordered, Unbounded);
+        }
 
         private TeamShiftSetup Team(TeamSide side)
         {
