@@ -238,15 +238,15 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 | `evenStrengthXgShareZonePlay` | share / perTeam | Sama, alueella pelaaminen |
 | `evenStrengthXgShareFaceoff` | share / perTeam | Tasakentällinen xG, paikkatyyppi aloitus / kaikkien neljän luokan tasakentällinen xG |
 | `shotXgTypical` | xg / perShot | Raportti näyttää laukausten xG:n 10., 50. ja 90. persentiilin. TOO LOW, jos 10. persentiili < `min`; TOO HIGH, jos 90. persentiili > `max`; muuten OK (D-073) |
-| `shotsUnderPressureShare` | share / perTeam | Laukaukset, joissa `underPressure` (M-7, myös D-070:n poikkeus) / laukaukset |
+| `shotsUnderPressureShare` | share / perTeam | Laukaukset, joissa `underPressure` (M-7, myös D-070:n poikkeus) / laukaukset. Analyysin laukausten paineosuuden (68 % / 76 %) vertailumittari (D-075); paineen määritelmä odottaa Q-049:ää |
 | `shots5v5` | count / perTeamPerMatch | Laukaukset 5 vs 5 |
 | `shots5v5Rush`, `shots5v5Turnover`, `shots5v5ZonePlay` | count / perTeamPerMatch | Laukaukset 5 vs 5 paikkatyypin mukaan (aloituslaukaukset eivät kuulu mihinkään näistä) |
 | `chances5v5Top`, `chances5v5Good`, `chances5v5Moderate` | count / perTeamPerMatch | Laukaukset 5 vs 5 paikkaluokan mukaan (Q-004) |
 | `chancesAll` | count / perTeamPerMatch | Laukaukset, joilla on paikkaluokka (huippu + hyvä + kohtalainen), kaikki pelitilanteet |
 | `passSuccessAll` | share / perTeam | Onnistuneet syötöt / syötöt (Syöttö-tapahtumat, myös avaussyötöt) |
 | `passSuccess5v5` | share / perTeam | Sama, vain 5 vs 5 |
-| `passSuccessUnderPressure` | share / perTeam | Onnistuneet paineen alla / syötöt paineen alla |
-| `passesUnderPressureShare` | share / perTeam | Syötöt paineen alla / syötöt |
+| `passSuccessUnderPressure` | share / perTeam | Onnistuneet paineen alla / syötöt paineen alla. Diagnostiikkamittari: analyysin 69 % / 68 % ei ole tämä luku vaan paineosuus (`passesUnderPressureShare`, D-075, Q-056), eikä tälle mittarille ole vielä analyysin havaintoa |
+| `passesUnderPressureShare` | share / perTeam | Syötöt paineen alla / syötöt. Analyysin syöttöjen paineosuuden (69 % / 68 %) vertailumittari (D-075, Q-056) |
 | `puckBattleWinShare`, `puckBattleNoWinnerShare`, `puckBattleLossShare` | share / perTeam | Joukkueen kamppailuvoitot, ei voittajaa, häviöt / joukkueen kamppailut. Kamppailut = Kamppailu-tapahtumat ja Kiekko päätyyn -tapahtumien kamppailut, molemmille joukkueille |
 | `faceoffsPerMatch` | count / perMatch | Aloitus-tapahtumat ottelussa (erien aloitukset mukaan lukien) |
 | `meanTimeBetweenStoppages` | seconds / perMatch | Ottelun arvo = 3 600 / ottelun aloitukset (sama laskutapa kuin Jerryn keruupohjassa), keskiarvo otteluista |

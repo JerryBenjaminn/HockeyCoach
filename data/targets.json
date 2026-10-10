@@ -13,9 +13,9 @@
 
     "passSuccessAll": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "passSuccess5v5": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "passSuccessUnderPressure": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "passesUnderPressureShare": {"_note": "Optional. Passes under pressure / all passes.", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
-    "shotsUnderPressureShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "passSuccessUnderPressure": {"_note": "Diagnostic. Completed passes under pressure / passes under pressure. Not the analysis pressure figure: that figure is a share of passes and belongs to passesUnderPressureShare (D-075, Q-056). No analysis observation for this metric yet.", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "Diagnostic, no analysis observation (D-075)"},
+    "passesUnderPressureShare": {"_note": "Passes under pressure / all passes. Source metric for the analysis pass pressure share (Wisehockey, D-075, Q-056); range filled by Jerry.", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot, Syötöt paineen alla (D-071, D-075)"},
+    "shotsUnderPressureShare": {"_note": "Shots under pressure / all shots. Source metric for the analysis shot pressure share (Wisehockey, D-075); the pressure definition waits for Q-049.", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot, Laukaukset paineen alla (D-075, Q-049)"},
 
     "puckBattleWinShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "puckBattleNoWinnerShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
