@@ -3,7 +3,7 @@
   "_notes": "Only source of target ranges (D-016). Only ranges, never raw match data (CLAUDE.md rule 5). status: approved = range set by Jerry; placeholder = range not yet known (min/max null), filled after 3-5 match analyses. Observations behind each metric: docs/stats-and-checks.md, Tavoitearvot. Faceoff win rate and first-line ice time are deliberately not here: they are not calibration targets. Schema: docs/data-schema.md.",
   "metrics": {
     "smartVsRandomWinRate": {"unit": "share", "scope": "perMatchup", "min": 0.75, "max": 0.85, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
-    "goalsPerMatch": {"unit": "count", "scope": "perMatch", "min": 4, "max": 7, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
+    "goalsPerMatch": {"_note": "Both teams combined: home goals + away goals per match, mean over all matches of the batch (vision.md: Ottelussa syntyy keskimäärin 4–7 maalia). Regulation 3 x 1200 s; ties allowed in milestone 3, no overtime.", "unit": "count", "scope": "perMatch", "min": 4, "max": 7, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
 
     "passSuccessAll": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "passSuccess5v5": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
