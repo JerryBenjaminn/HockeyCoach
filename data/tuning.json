@@ -499,7 +499,7 @@
     "organizedThreshold": 0.8
   },
   "pressure": {
-    "_notes": "0..1 per attacking team. underPressureNodes: a player is under pressure when an opposing skater is within this Chebyshev distance (definitions M-7, D-049); 0 = same node (D-056), calibrated later against the analysis (Q-032). Physical pressure, not the team pressure state.",
+    "_notes": "0..1 per attacking team. underPressureNodes: a player is under pressure when an opposing skater is within this Chebyshev distance (definitions M-7, D-049); 0 = same node (D-056), calibrated later against the analysis (Q-032). Physical pressure, not the team pressure state. presserReactionNodes: after a successful pass the presser (M-7 selector, evaluated before the defenders' move) moves at most this many nodes before the next action instead of plays.maxNodesPerBeat (D-074).",
     "gainOnZoneEntry": 0.1,
     "gainOnShot": 0.08,
     "gainPerSecondInZone": 0.005,
@@ -507,6 +507,7 @@
     "energyDrainPerSecond": 0.002,
     "mentalToughnessReductionPerPoint": 0.03,
     "underPressureNodes": 0,
+    "presserReactionNodes": 1,
     "decayPerSecond": 0.01
   },
   "form": {

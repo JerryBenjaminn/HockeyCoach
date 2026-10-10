@@ -246,11 +246,13 @@ public static class TuningLoader
         }
 
         reader.RejectUnknown(
-            "underPressureNodes", "gainOnZoneEntry", "gainOnShot", "gainPerSecondInZone", "decayPerSecond", "keepOnStoppage", "energyDrainPerSecond",
+            "underPressureNodes", "presserReactionNodes", "gainOnZoneEntry", "gainOnShot", "gainPerSecondInZone", "decayPerSecond", "keepOnStoppage", "energyDrainPerSecond",
             "mentalToughnessReductionPerPoint");
         int? nodes = reader.Int("underPressureNodes");
+        int? reaction = reader.Int("presserReactionNodes");
         var pressure = new PressureConfig(
             nodes ?? 0,
+            reaction ?? 0,
             reader.Double("gainOnZoneEntry"),
             reader.Double("gainOnShot"),
             reader.Double("gainPerSecondInZone"),
@@ -258,7 +260,7 @@ public static class TuningLoader
             reader.Double("keepOnStoppage"),
             reader.Double("energyDrainPerSecond"),
             reader.Double("mentalToughnessReductionPerPoint"));
-        return nodes.HasValue ? pressure : null;
+        return nodes.HasValue && reaction.HasValue ? pressure : null;
     }
 
     private static LoosePuckSpotsConfig? MapLoosePuckSpots(JsonReader? reader)

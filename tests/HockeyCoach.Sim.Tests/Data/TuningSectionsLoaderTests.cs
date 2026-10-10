@@ -101,6 +101,7 @@ public class TuningLoosePuckAndPressureTests
         TuningConfig tuning = TuningLoader.Parse(Fixtures.Read("tuning-small.json"), Fixtures.SmallRinkXgZones).Value!;
 
         Assert.Equal(1, tuning.Pressure.UnderPressureNodes);
+        Assert.Equal(1, tuning.Pressure.PresserReactionNodes);
         Assert.Equal(LoosePuckRule.NetFront, tuning.LoosePuckSpots.ReboundSlot);
         Assert.Equal(LoosePuckRule.ShooterSideCorner, tuning.LoosePuckSpots.ReboundCorner);
         Assert.Equal(LoosePuckRule.EndRowShooterLane, tuning.LoosePuckSpots.MissedShot);
@@ -123,6 +124,49 @@ public class TuningLoosePuckAndPressureTests
         Assert.Contains("pressure.underPressureNodes: missing", Load(r => r["pressure"]!.AsObject().Remove("underPressureNodes")).Errors);
         Assert.Contains("pressure.radius: unknown key", Load(r => r["pressure"]!["radius"] = 1).Errors);
         Assert.Contains("pressure.underPressureNodes: must be >= 0, was -1", Load(r => r["pressure"]!["underPressureNodes"] = -1).Errors);
+    }
+
+    [Fact]
+    public void PresserReactionNodes_IsRequired()
+    {
+        Assert.Contains("pressure.presserReactionNodes: missing", Load(r => r["pressure"]!.AsObject().Remove("presserReactionNodes")).Errors);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(3)]
+    public void PresserReactionNodes_OutsideZeroToMaxNodesPerBeat_IsRejected(int value)
+    {
+        Assert.Contains(
+            "pressure.presserReactionNodes: must be between 0 and plays.maxNodesPerBeat (2), was " + value,
+            Load(r => r["pressure"]!["presserReactionNodes"] = value).Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public void PresserReactionNodes_AtTheRangeEnds_IsAccepted(int value)
+    {
+        LoadResult<TuningConfig> result = Load(r => r["pressure"]!["presserReactionNodes"] = value);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(value, result.Value!.Pressure.PresserReactionNodes);
+    }
+
+    [Fact]
+    public void PresserReactionNodes_MustBeAnInteger()
+    {
+        Assert.Contains(Load(r => r["pressure"]!["presserReactionNodes"] = 1.5).Errors, e => e.StartsWith("pressure.presserReactionNodes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void RepositoryTuning_PresserReactionNodesIsOne_AndNotAPlaceholder()
+    {
+        TuningConfig tuning = GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning;
+
+        Assert.Equal(1, tuning.Pressure.PresserReactionNodes);
+        string json = File.ReadAllText(Path.Combine(Fixtures.RepoRoot(), "data", "tuning.json"));
+        Assert.DoesNotContain("\"pressure.presserReactionNodes\"", json, StringComparison.Ordinal);
     }
 
     [Fact]

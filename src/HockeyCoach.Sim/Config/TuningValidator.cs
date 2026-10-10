@@ -46,7 +46,7 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Plays));
             errors.AddRange(Validate(tuning.ChanceTypes));
             errors.AddRange(Validate(tuning.ChanceClasses));
-            errors.AddRange(Validate(tuning.Pressure, tuning.Stats, tuning.CheckFormula));
+            errors.AddRange(Validate(tuning.Pressure, tuning.Stats, tuning.CheckFormula, tuning.Plays));
             errors.AddRange(Validate(tuning.LoosePuckSpots));
             errors.AddRange(Validate(tuning.Energy, tuning.Stats, tuning.CheckFormula));
             errors.AddRange(Validate(tuning.Organization, tuning.Stats, tuning.CheckFormula));
@@ -66,8 +66,11 @@ namespace HockeyCoach.Sim.Config
             return errors;
         }
 
-        /// <summary>Validates <c>pressure</c> (O-16): gains, decay and drain at least 0, keepOnStoppage in [0, 1], radius at least 0, goalie factor positive.</summary>
-        public static IReadOnlyList<string> Validate(PressureConfig pressure, StatsConfig stats, CheckFormulaConfig formula)
+        /// <summary>
+        /// Validates <c>pressure</c> (O-16): gains, decay and drain at least 0, keepOnStoppage in [0, 1], radius at least 0,
+        /// presser reaction steps in 0 … <c>plays.maxNodesPerBeat</c> (D-074), goalie factor positive.
+        /// </summary>
+        public static IReadOnlyList<string> Validate(PressureConfig pressure, StatsConfig stats, CheckFormulaConfig formula, PlaysConfig plays)
         {
             var errors = new List<string>();
             if (pressure == null)
@@ -79,6 +82,12 @@ namespace HockeyCoach.Sim.Config
             if (pressure.UnderPressureNodes < 0)
             {
                 errors.Add("pressure.underPressureNodes: must be >= 0, was " + pressure.UnderPressureNodes);
+            }
+
+            if (pressure.PresserReactionNodes < 0 || (plays != null && pressure.PresserReactionNodes > plays.MaxNodesPerBeat))
+            {
+                errors.Add("pressure.presserReactionNodes: must be between 0 and plays.maxNodesPerBeat"
+                    + (plays != null ? " (" + plays.MaxNodesPerBeat + ")" : string.Empty) + ", was " + pressure.PresserReactionNodes);
             }
 
             RequireNonNegative("pressure.gainOnZoneEntry", pressure.GainOnZoneEntry, errors);
