@@ -180,7 +180,7 @@ Simulaation pitää osua oikean kiekon haarukkaan. Alla on otteluanalyysien luvu
 | Alueelle tulojen onnistuminen tavoittain | Kirjataan | Kirjataan | Kalibrointi (`targets.json`) |
 | Ykkösketjun jääaika | – | n. 21,5 min (nelosketju 0 min) | Väsymysmekaniikan vertailukohta |
 
-Ottelun 1 xG-osuudet on laskettu tasakentällisen kokonais-xG:stä (A 2,41, B 2,33). Ottelu 2 päättyi jatkoajalla, ja sen laukausjakauma painottui päätypeliin, joten paikkojen määrä ja vaarallisuus pitää raportoida erikseen.
+Ottelun 1 xG-osuudet on laskettu tasakentällisen kokonais-xG:stä (A 2,41, B 2,33). Osuudet on laskettu vain kolmesta luokasta (suorahyökkäys, riisto, alueella pelaaminen), vaikka analyysissa on myös aloitusluokka. Simulaation osuuksia verrataan siksi toistaiseksi ilman aloituksia (Q-051), kunnes Jerry täyttää osuudet kaikkine luokkineen. Haarukat koskevat varsinaista peliaikaa 3 × 20 min, jatkoaikaa ei kirjata (Q-052). Ottelu 2 päättyi jatkoajalla, ja sen laukausjakauma painottui päätypeliin, joten paikkojen määrä ja vaarallisuus pitää raportoida erikseen.
 
 ## Avoimet kysymykset
 
