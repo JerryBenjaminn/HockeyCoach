@@ -193,11 +193,11 @@
       "interceptionShare": 0.6,
       "modifiers": {
         "laneDefenderDistance": [
-          -1.2,
-          -0.5,
-          0.0
+          -0.4,
+          0.2,
+          0.5
         ],
-        "crossIce": -0.4,
+        "crossIce": -0.2,
         "underPressure": -0.9,
         "organization": 0.6
       }
