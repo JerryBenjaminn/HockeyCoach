@@ -103,7 +103,7 @@ Uudet säännöt peilausta ja maalisolmuja varten (D-033, D-034; lataaja ei viel
 
 Kaikki tasapainoarvot (CLAUDE.md, sääntö 2).
 
-**Sallitut ylimmän tason avaimet.** Lataaja hylkää tiedoston, jos sen ylimmällä tasolla on avain, jota ei ole tässä listassa (`_`-alkuisia meta-avaimia lukuun ottamatta): `schemaVersion`, `stats`, `checkFormula`, `checks`, `positions`, `time`, `energy`, `organization`, `pressure`, `form`, `chemistry`, `familiarity`, `plays`, `chanceTypes`, `chanceClasses`, `loosePuckSpots`, `transitions`. Lista vastaa lataajan sallittujen osioiden listaa. `transitions` (virstanpylväs 3) lisätään lataajaan ja dataan samassa commitissa (ks. Ottelu ja tilat, Lataajan muutokset). Osiot, joiden virstanpylväs ei ole vielä käynnissä, hyväksytään ja ohitetaan, kunnes koodi alkaa käyttää niitä.
+**Sallitut ylimmän tason avaimet.** Lataaja hylkää tiedoston, jos sen ylimmällä tasolla on avain, jota ei ole tässä listassa (`_`-alkuisia meta-avaimia lukuun ottamatta): `schemaVersion`, `stats`, `checkFormula`, `checks`, `positions`, `time`, `energy`, `organization`, `pressure`, `form`, `chemistry`, `familiarity`, `plays`, `chanceTypes`, `chanceClasses`, `loosePuckSpots`, `transitions`, `ai`. Lista vastaa lataajan sallittujen osioiden listaa. `transitions` (virstanpylväs 3) lisätään lataajaan ja dataan samassa commitissa (ks. Ottelu ja tilat, Lataajan muutokset). `ai` (virstanpylväs 4) lisätään samoin (ks. Valmentaja-AI:t ja aikalisä, AI-6). Osiot, joiden virstanpylväs ei ole vielä käynnissä, hyväksytään ja ohitetaan, kunnes koodi alkaa käyttää niitä.
 
 **Uuden osion lisääminen.**
 
@@ -118,7 +118,7 @@ Ylimmän tason osiot:
 | `stats` | 1 | `min`, `max` (1, 20), `grades` (A–E-rajat, `[min, max]`) |
 | `checkFormula` | 1 | `k` (0,15), `minProbability` (0,02), `maxProbability` (0,98) (D-014: koskee vain tarkistuksia, ei laukauksen maalintodennäköisyyttä eikä xG:tä), `referenceValue` (10,5: yksipuolisen tarkistuksen puuttuva puoli ja `...PerPoint`-muokkaajien nollakohta, D-019) |
 | `checks` | 1 | Tarkistukset, ks. alla |
-| `time` | 2–3 | `periods`, `periodSeconds`, `forwardShiftSeconds`, `defenceShiftSeconds` (kolmikot ja pakkiparit vaihtuvat erikseen, D-023), `stoppageChangeMinSeconds` (virstanpylväs 3, O-2), `secondsPerAction` (myös `systemStep`: järjestelmätilan askel, D-036), `setupSeconds`, `regroupSeconds` (Q-006) |
+| `time` | 2–3 | `periods`, `periodSeconds`, `forwardShiftSeconds`, `defenceShiftSeconds` (kolmikot ja pakkiparit vaihtuvat erikseen, D-023), `stoppageChangeMinSeconds` (virstanpylväs 3, O-2), `secondsPerAction` (myös `systemStep`: järjestelmätilan askel, D-036), `setupSeconds`, `regroupSeconds` (Q-006), `timeoutsPerTeamPerMatch` ja `timeoutRestSeconds` (virstanpylväs 4, AI-4) |
 | `energy` | 3 | `start`, `drainPerSecondOnIce`, `costPerAction`, `enduranceCostReductionPerPoint`, `benchRecoveryRate` (eksponentiaalinen), `checkModifierAtZero`. Ks. O-5 |
 | `positions` | 2 | `offSideCheckModifier`: väärän puolen miinus (D-024), ks. Pelaajat, pelipaikat ja ketjut |
 | `organization` | 3 | `dropOnTurnover` alueittain, `dropFactorOnShotOrDump`, `dropPerCommittedPlayer`, `recoveryPerSecond`, `recoveryWeights`, `recoveryPerStatPoint`, `organizedThreshold`. Ks. O-6 |
@@ -130,6 +130,7 @@ Ylimmän tason osiot:
 | `chanceTypes` | 2–3 | `turnoverWindowSeconds`. Suorahyökkäyksen raja on `organization.organizedThreshold` (O-12); `rushOrganizationBelow` poistuu |
 | `chanceClasses` | 4 | Paikkaluokkien xG-rajat (Q-004) |
 | `loosePuckSpots` | 2 | Irtokiekon paikkasäännöt (D-044, D-049), ks. Määritelmät, Irtokiekon paikat. Data ja lataajan tuki commitoidaan yhdessä (D-030) |
+| `ai` | 4 | Valmentaja-AI:den kynnysarvot (`random`, `estimate`, `rulebased`, `adaptive`), ks. Valmentaja-AI:t ja aikalisä, AI-3 |
 
 ### Tarkistus (`checks.<nimi>`)
 
@@ -725,7 +726,7 @@ Tämä osio on virstanpylvään 3 toteutusspeksi: ottelun rakenne, vaihdot, ener
 
 - **Erän loppu:** kello asetetaan arvoon `periodSeconds`. Jäljellä oleva aika kuluu tilojen osalta normaalisti (O-14: energia, järjestäytyneisyys, paine, jääaika, hyökkäysalueaika). Lokiin kirjataan Pelikatko, syy "erän loppu" (D-064), myös viimeisen erän lopussa. Kiekon tila hylätään.
 - **Erätauko:** kaikkien kenttäpelaajien ja maalivahtien energia = `energy.start`, molempien joukkueiden paine = 0, järjestäytyneisyys = 1 ja tuttuuslaskurit kerrotaan arvolla `familiarity.intermissionMultiplier` (O-11). Yksiköiden vuorot alkavat alusta, joten valmentaja saa valita yksiköt erän alkuun ilman `stoppageChangeMinSeconds`-rajaa.
-- **Ottelun loppu:** viimeisen erän jälkeen. Tasapeli sallitaan, jatkoaikaa ei ole (D-062). Aikalisä ja maalivahdin vetäminen tulevat virstanpylväässä 4.
+- **Ottelun loppu:** viimeisen erän jälkeen. Tasapeli sallitaan, jatkoaikaa ei ole (D-062). Aikalisä: ks. Valmentaja-AI:t ja aikalisä, AI-4 (virstanpylväs 4). Maalivahdin vetäminen tulee erikoistilanteiden kanssa (D-077).
 
 ### O-2 Vaihdot (D-062)
 
@@ -757,7 +758,7 @@ Rajapinta (`ICoach`) on Simissä, oletusvalmentaja `RotationCoach` AI-projektiss
 - **katkolla ja erän alussa:** valmentaja palauttaa kolmikon ja parin (vain vaihtokelpoiset yksiköt saa vaihtaa, O-2), kuviot prioriteettijärjestyksessä, puolustusjärjestelmän, siirtymäohjeen (`rush` tai `regroup`) ja järjestelmätilan ohjeet (O-10);
 - **lennosta vaihdon hetkellä:** kun kiekollisella joukkueella on vaihtokelpoinen yksikkö turvallisella hetkellä, valmentaja palauttaa sisään tulevan yksikön tai jatkaa nykyisellä.
 
-**`RotationCoach`:** vaihtaa jokaisen vaihtokelpoisen yksikön aina, kolmikot järjestyksessä 1 → 2 → 3 → 4 → 1 ja parit 1 → 2 → 3 → 1. Pelikirjan järjestys: tässä ottelussa vähiten käytetty kuvio ensin (O-11:n laskuri), tasatilanteessa latausjärjestys. Siirtymäohje `rush` (D-062). Järjestelmätilan ohjeet virstanpylvään 2 oletuksilla: `netFrontAfterShot` false, `looseChasers` 1, `pinch` false. Puolustusjärjestelmä tulee Harnessin parametrista. Valmentaja ei saa satunnaisgeneraattoria ennen virstanpylvästä 4.
+**`RotationCoach`:** vaihtaa jokaisen vaihtokelpoisen yksikön aina, kolmikot järjestyksessä 1 → 2 → 3 → 4 → 1 ja parit 1 → 2 → 3 → 1. Pelikirjan järjestys: tässä ottelussa vähiten käytetty kuvio ensin (O-11:n laskuri), tasatilanteessa latausjärjestys. Siirtymäohje `rush` (D-062). Järjestelmätilan ohjeet virstanpylvään 2 oletuksilla: `netFrontAfterShot` false, `looseChasers` 1, `pinch` false. Puolustusjärjestelmä tulee Harnessin parametrista. Valmentaja ei saa satunnaisgeneraattoria ennen virstanpylvästä 4. Virstanpylvään 4 AI:t, aikalisä ja päätösolio: ks. Valmentaja-AI:t ja aikalisä (AI-1–AI-6).
 
 ### O-5 Energia (D-062)
 
@@ -967,3 +968,191 @@ Lisäksi lataajan tyypitys `energy`-osiolle: avain `energy.benchRecoveryPerSecon
 `time`- ja `pressure`-osioihin avain lisätään olemassa olevien rinnalle, `transitions` on uusi ylimmän tason osio ja `chanceTypes` korvataan kokonaan (avain `rushOrganizationBelow` poistuu). `_placeholders`-listaan lisätään `time.stoppageChangeMinSeconds`, `pressure.decayPerSecond`, `transitions.rushMaxActions` ja `transitions.rushShotMinBaseXg`, ja siitä poistetaan `chanceTypes.rushOrganizationBelow`.
 
 **Painostajan reaktioviive (D-074).** `pressure.presserReactionNodes` lisätään `pressure`-osion sallittuihin ja pakollisiin avaimiin (`PressureConfig`) ja dataan samassa commitissa (D-030), olemassa olevien avainten rinnalle `underPressureNodes`-avaimen jälkeen: `"presserReactionNodes": 1`. Arvo ei ole paikkamerkki (Jerryn päätös), joten sitä ei lisätä `_placeholders`-listaan. Osion `_notes`-tekstiin lisätään: "presserReactionNodes: after a successful pass the presser (M-7 selector, evaluated before the defenders' move) moves at most this many nodes before the next action instead of plays.maxNodesPerBeat (D-074)."
+
+## Valmentaja-AI:t ja aikalisä (virstanpylväs 4) – D-077
+
+Tämä osio on virstanpylvään 4 toteutusspeksi: `ai`-osio `tuning.json`:iin (Q-057 a, D-030:n prosessi), AI:den tarkat säännöt, aikalisä ja valmentajan päätösolio. Koordinaatit ja näkökulma kuten Määritelmissä. **Ottelusekunti** = (erä − 1) × `time.periodSeconds` + kello. **Viimeinen erä** = erä `time.periods`. **Jäljellä** = `time.periodSeconds` − kello. **Johto** = omat maalit − vastustajan maalit (julkinen loki).
+
+**Taito vai tuuri (D-077 kohdat 4 ja 8).** Arvoja ei säädetä voittoprosenttia kohti ennen ensimmäistä batch-raporttia. Alla olevat luvut ovat kiekkotietoon perustuvia alkuarvauksia (`_placeholders`), eivät viritettyjä. Ensisijainen mittaus on `rulebased` vs `random`, ja `adaptive` raportoidaan rinnalla.
+
+### AI-1 Julkinen tieto ja satunnaisuus (D-077 kohdat 1 ja 3)
+
+- **Valmentaja näkee vain julkisen tiedon:** kummankin joukkueen jäällä olevat yksiköt, kello, erä, maalitilanne, oman joukkueen yksiköiden jää- ja penkkiajat, julkinen tapahtumaloki (tapahtumaskeeman tapahtumat kenttineen, ei raporttimerkintöjä eikä jäljityksiä), käytettävissä olevat aikalisät, oman joukkueen kokoonpano ja statsit sekä ladatut kuviot ja järjestelmät. **Todellinen energia, järjestäytyneisyys ja painetila eivät ole julkisia** (Q-058).
+- **Energia-arvio.** Sääntöpohjaiset AI:t arvioivat oman pelaajan energian julkisesta tiedosta (vaihtotapahtumat ja kello). Arvio Ê_p on erän alussa `energy.start`. Jäällä t sekuntia: Ê −= (`energy.drainPerSecondOnIce` + `ai.estimate.extraDrainPerSecondOnIce`) × f_p × t (f_p kuten O-5; oma Kestävyys on oman joukkueen tietoa). Penkillä t sekuntia: Ê ← 1 − (1 − Ê) × exp(−`energy.benchRecoveryRate` × t). Aikalisä kuten AI-4. Arvio rajataan välille 0–1. Yksikön arvio Ê_u on sen pelaajien arvioiden keskiarvo. `extraDrainPerSecondOnIce` kattaa keskimäärin tarkistusmaksut ja paineen kulutuksen, joita valmentaja ei näe.
+- **Satunnaisuus.** Valmentaja saa oman `Sim.Random`-virran, joka johdetaan ottelun siemenestä (CLAUDE.md sääntö 1, D-077 kohta 1). `rulebased` ja `adaptive` eivät arvo mitään. Arvonnat: kokonaisluku välillä [0, n) = `NextInt(n)`, totuusarvo = `NextInt(2) == 1`, todennäköisyys p = `Chance(p)`. Satunnainen järjestys = Fisher–Yates: i = n − 1 … 1, j = `NextInt(i + 1)`, vaihda i ja j.
+- **Kandidaattien järjestys** ennen arvontaa tai tasatilanteen ratkaisua: yksiköt indeksin mukaan, kuviot latausjärjestyksessä, järjestelmät `id`:n ordinaalijärjestyksessä, siirtymäohjeet `rush`, `regroup`.
+
+### AI-2 Säännöt AI-tyypeittäin
+
+Jokainen AI toteuttaa `ICoach`-rajapinnan (AI-5). Ketjut ja taktiikka ovat erillisiä osia, joita diagnostiikkavariantit yhdistelevät (D-077 kohta 2):
+
+| AI | Ketjut (katkolla ja lennosta) | Taktiikka (kuviot, järjestelmä, siirtymä, järjestelmätilan ohjeet, aikalisä) |
+| --- | --- | --- |
+| `random` | satunnainen (R-L) | satunnainen (R-T) |
+| `randomTactics` | `RotationCoach`-kierto (O-4) | satunnainen (R-T) |
+| `randomLines` | satunnainen (R-L) | sääntöpohjainen (S-T) |
+| `rulebased` | sääntöpohjainen (S-L) | sääntöpohjainen (S-T) |
+| `adaptive` | sääntöpohjainen (S-L) | sopeutuva (A-T) |
+| `rotation` (`RotationCoach`) | kierto | O-4, ei aikalisää |
+
+**R-L Satunnaiset ketjut.**
+
+- **Katkolla:** jos kolmikko saa vaihtua, uusi kolmikko = `NextInt(kolmikoiden määrä)` kaikista kolmikoista. Nykyinen on mukana, joten pysyminen on yksi tulos. Sitten sama pareille. Vaihtokelvoton yksikkö pysyy ilman arvontaa.
+- **Lennosta:** kummallekin vaihtokelpoiselle yksikkötyypille (kolmikko, sitten pari) `Chance(ai.random.onTheFlyChangeProbability)`. Jos tosi, uusi yksikkö = `NextInt(penkillä olevien määrä)` penkillä olevista indeksijärjestyksessä. Erillinen todennäköisyys tarvitaan, koska lennosta vaihdon tilaisuuksia on vuoron aikana monta.
+
+**R-T Satunnainen taktiikka** (katkolla, arvontajärjestys kiinteä):
+
+1. Aikalisä: vain jos aikalisä on käytettävissä (AI-4), `Chance(ai.random.timeoutProbabilityPerStoppage)`.
+2. Ketjut (R-L, jos AI käyttää satunnaisia ketjuja).
+3. Kuviot: koko kirjasto satunnaisessa järjestyksessä (Fisher–Yates latausjärjestyksestä).
+4. Järjestelmä: `NextInt(järjestelmien määrä)`.
+5. Siirtymäohje: `NextInt(2)` → `rush` / `regroup`.
+6. `netFrontAfterShot`: totuusarvo.
+7. `looseChasers`: 1 + `NextInt(2)`.
+8. `pinch`: totuusarvo.
+
+`randomTactics`-valmentajalla kohta 2 on kierto (ei arvontaa). Aikalisän jälkeisellä kierroksella (AI-4) kohta 1 ohitetaan. Lennosta vaihdossa R-T ei arvo mitään, koska suunnitelma pysyy seuraavaan katkoon.
+
+**S-L Sääntöpohjaiset ketjut** (kolmikko ja pari erikseen, kolmikko ensin; sama sääntö katkolla ja lennosta):
+
+1. Jos yksikkö ei saa vaihtua (O-2), se pysyy.
+2. Paras penkkiyksikkö b = suurin Ê_u. Tasatilanteessa kiertojärjestyksessä seuraava nykyisestä ((nykyinen + k) mod n, pienin k ≥ 1). Jos nykyinen on −1 (ottelun alku), pienin indeksi, eli ottelun ensimmäiseen aloitukseen tulevat yksiköt 0.
+3. Vaihda b:hen, jos Ê_nykyinen < `ai.rulebased.changeEnergyThreshold` tai Ê_b − Ê_nykyinen ≥ `ai.rulebased.freshnessMargin`. Muuten pysy.
+
+**S-T Sääntöpohjainen taktiikka** (katkolla):
+
+1. **Tila.** Viimeisessä erässä, kun jäljellä ≤ `ai.rulebased.lateGameSeconds`: johto ≥ `protectLeadGoals` → `protect`; johto ≤ −`chaseDeficitGoals` → `chase`. Muuten `normal`. Järjestelmä, siirtymäohje ja järjestelmätilan ohjeet luetaan suoraan `ai.rulebased.modes.<tila>`-objektista.
+2. **Vastustajan järjestelmä s.** Viimeisin julkinen tapahtuma, jossa vastustaja puolusti ja jolla on järjestelmän id (D-045). Jos sellaista ei ole, s puuttuu ja kaikki bonukset ovat 0.
+3. **Kuviot.** Pisteet kuviolle k: B(k) = `playBonusBySystem[s][k]` (puuttuva = 0) − L(u_k + 1), jossa L on O-11:n tuttuusrangaistus ja u_k oma käyttölaskuri (julkinen: tapahtumien kuvio-id:t). Järjestys: suurempi B, sitten pienempi u_k, sitten latausjärjestys. Koko kirjasto palautetaan. Samoilla bonuksilla tämä on O-4:n kierto, joten tuttuus ohjaa vaihtelua. Bonus on logit-yksikköä, jotta se on verrannollinen tuttuusrangaistukseen.
+4. **Aikalisä:** AI-4, Sääntöpohjainen laukaisu.
+
+**A-T Sopeutuva taktiikka.** Kuten S-T kahdella erolla. Ikkuna = julkiset tapahtumat, joiden ottelusekunti on > nykyhetki − `ai.adaptive.windowSeconds`.
+
+1. **Vastustajan järjestelmäjakauma** S-T:n kohdan 2 yhden havainnon sijaan. n_s = ikkunan tapahtumat, joissa vastustaja puolusti järjestelmällä s; N = Σ n_s; S = ladattujen järjestelmien määrä. P(s) = (n_s + `priorWeight` / S) / (N + `priorWeight`). Kuvion bonus = Σ_s P(s) × `playBonusBySystem[s][k]`; muuten S-T:n kohta 3 ennallaan.
+2. **Oma järjestelmä tilassa `normal`.** Tilat `protect` ja `chase` käyttävät `modes`-arvoja kuten S-T. Vastustajan hallittujen alueelle tulojen osuus ikkunassa: c = vastustajan Hallittu alueelletuonti -tapahtumat (tapa kuljetus tai syöttö), d = vastustajan Kiekko päätyyn -tapahtumat; q = (c + `priorWeight` × 0,5) / (c + d + `priorWeight`). Jos q ≥ `controlledEntryShareForPassive` → `passiveSystem`; jos q ≤ `controlledEntryShareForAggressive` → `aggressiveSystem`; muuten edellinen oma valinta (hystereesi; ensimmäisellä kerralla `modes.normal.system`). Peruste: trap pysäyttää keskialueen kuljetukset ja pakottaa kiekon päätyyn, ja kiekkoa päätyyn pelaavaa vastustajaa vastaan karvaus kannattaa.
+3. Siirtymäohje, järjestelmätilan ohjeet, ketjut ja aikalisä kuten `rulebased`.
+
+### AI-3 `ai`-osio (`tuning.json`, uusi ylimmän tason osio)
+
+Kaikki avaimet ovat pakollisia, ja tuntematon avain hylätään (tyypitetty osio). Kaikki arvot ovat paikkamerkkejä, paitsi `passiveSystem` ja `aggressiveSystem`.
+
+| Polku | Oletus | Yksikkö | Hylätään, jos | Käyttäjä |
+| --- | --- | --- | --- | --- |
+| `ai.random.onTheFlyChangeProbability` | 0,5 | todennäköisyys per tilaisuus ja yksikkötyyppi | ei välillä [0, 1] | `random`, `randomLines` |
+| `ai.random.timeoutProbabilityPerStoppage` | 0,02 | todennäköisyys per sallittu katko (n. 47 aloitusta → aikalisä n. 60 %:ssa otteluista) | ei välillä [0, 1] | `random`, `randomTactics` |
+| `ai.estimate.extraDrainPerSecondOnIce` | 0,0011 | energiaa per pelisekunti (45 s vuoro: 0,25 + 0,05 ≈ O-5:n 0,30) | < 0 tai > 1 | S-L, AI-4 |
+| `ai.rulebased.changeEnergyThreshold` | 0,7 | energia 0–1 | ei välillä [0, 1] | S-L |
+| `ai.rulebased.freshnessMargin` | 0,15 | energia 0–1 | ei välillä [0, 1] | S-L |
+| `ai.rulebased.lateGameSeconds` | 300 | pelisekuntia | ≤ 0 tai > `time.periodSeconds` | S-T, A-T |
+| `ai.rulebased.protectLeadGoals`, `chaseDeficitGoals` | 1, 1 | maaleja | ei kokonaisluku tai < 1 | S-T, A-T |
+| `ai.rulebased.modes` | ks. JSON | tila → `system`, `transition`, `netFrontAfterShot`, `looseChasers`, `pinch` | avaimet eivät ole tasan `normal`, `protect`, `chase`; kentästä puuttuu tai on ylimääräinen; tuntematon järjestelmä; `transition` ei `rush`/`regroup`; `looseChasers` ∉ {1, 2}; totuusarvo ei bool | S-T, A-T |
+| `ai.rulebased.playBonusBySystem` | ks. JSON | järjestelmä → kuvio → logit | tuntematon järjestelmä tai kuvio; arvo ei välillä [−2, 2] | S-T, A-T |
+| `ai.rulebased.timeout.tiredEnergy` | 0,5 | energia 0–1 | ei välillä [0, 1] | AI-4 |
+| `ai.rulebased.timeout.lateGameSeconds` | 120 | pelisekuntia | ≤ 0 tai > `time.periodSeconds` | AI-4 |
+| `ai.rulebased.timeout.minDeficitGoals`, `maxDeficitGoals` | 1, 2 | maaleja | ei kokonaislukuja, min < 1 tai max < min | AI-4 |
+| `ai.adaptive.windowSeconds` | 600 | ottelusekunteja | ≤ 0 | A-T |
+| `ai.adaptive.priorWeight` | 10 | näennäistapahtumia | < 0 | A-T |
+| `ai.adaptive.passiveSystem`, `aggressiveSystem` | `trap122`, `forecheck212` | järjestelmän id | tuntematon järjestelmä tai sama id molemmissa | A-T |
+| `ai.adaptive.controlledEntryShareForPassive`, `controlledEntryShareForAggressive` | 0,6, 0,4 | osuus | ei välillä [0, 1] tai aggressive ≥ passive | A-T |
+
+Järjestelmä- ja kuviotunnukset tarkistetaan ladattuja `data/systems`- ja `data/plays`-tiedostoja vasten samassa `validate`-ajossa (ristiintarkistus).
+
+**`playBonusBySystem`-alkuarvot (kiekkoperuste):** 2-1-2-karvausta vastaan nopea vastasuuntainen avaus (`breakoutReverse` +0,2) karistaa kaksi karvaajaa, ja laitaa pitkin avaaminen (`breakoutUpWall` −0,1) ajaa karvaajien ansaan. 1-2-2-trappia vastaan kiekko päätyyn (`dumpAndChase` +0,2) on klassinen vastalääke, ja laidan kuljetus (`wideCarryDrive` −0,1) menee suoraan trapin ohjaamaan laitaan.
+
+### AI-4 Aikalisä (D-062 muutettu, D-077 kohta 6)
+
+- **Kuka ja milloin.** Valmentaja päätöksessään (AI-5) katkolla, jonka syy on maali, maalivahti pitää kiekon tai kiekko ulos kaukalosta (myöhemmin myös pitkä kiekko ja paitsio). Ei erän alussa eikä syyllä "erän loppu".
+- **Määrä.** Enintään `time.timeoutsPerTeamPerMatch` (1) per joukkue per ottelu (IIHF ja NHL: yksi). Käytettävissä = joukkueen käyttämät < raja. Ei siirry erästä toiseen eikä palaudu.
+- **Järjestys katkolla:**
+  1. Pelikatko-tapahtuma, paine × `keepOnStoppage` (O-13).
+  2. Molemmat valmentajat päättävät samanaikaisesti (D-077 kohta 5): ketjut, suunnitelma ja aikalisä.
+  3. Jos kumpikaan ei ottanut aikalisää, päätökset pannaan toimeen kuten ennen.
+  4. Muuten jokaisesta aikalisästä (kotijoukkue ensin) kirjataan Aikalisä-tapahtuma ja sovelletaan vaikutus. Sen jälkeen **molempia valmentajia kutsutaan uudelleen** (aikalisän jälkeinen kierros), ja kierroksen päätökset korvaavat ensimmäiset. Uudella kierroksella aikalisää ei voi ottaa.
+  5. Katkovaihdot ja aloitusasettelu (O-2, O-3).
+- **Vaikutus.** Kello on pysähdyksissä: aikaa ei kulu, kokonaisuuden kestoa (O-1) ei ole, jääaika ei kasva eikä vaihtokelpoisuus (`stoppageChangeMinSeconds`) muutu. Jokaisen kenttäpelaajan energia molemmissa joukkueissa, jäällä ja penkillä: E ← 1 − (1 − E) × exp(−`energy.benchRecoveryRate` × `time.timeoutRestSeconds`). Penkkipelaajilla tämä tulee kertyneen penkkiajan päälle (laiska laskenta realisoidaan ensin). Maalivahdin energia, paine, järjestäytyneisyys (aloituksessa joka tapauksessa 1) ja tuttuus eivät muutu. Kaksi aikalisää samalla katkolla = vaikutus kahdesti peräkkäin (Q-059).
+- **Aloitus.** Aloituspiste ja kiekon saaja kuten ilman aikalisää (O-3, D-060).
+- **Sääntöpohjainen laukaisu** (`rulebased`, `adaptive`, `randomLines`): ota aikalisä, jos se on käytettävissä ja jompikumpi pätee:
+  1. **Väsynyt yksikkö jumissa:** oma jäällä oleva kolmikko tai pari ei saa vaihtua (O-2), ja sen Ê_u < `ai.rulebased.timeout.tiredEnergy`. Tulee merkittäväksi, kun pitkä kiekko estää vaihdon (D-077 kohta 7); silloin noudatetaan oikeaa sääntöä, ettei pitkän kiekon tehnyt joukkue saa vaihtaa aikalisän jälkeenkään.
+  2. **Kirimisen aikalisä:** viimeinen erä, jäljellä ≤ `ai.rulebased.timeout.lateGameSeconds` ja `minDeficitGoals` ≤ −johto ≤ `maxDeficitGoals`.
+
+  Aikalisän jälkeisellä kierroksella S-L arvioi yksiköt levon jälkeisillä Ê-arvioilla.
+- **Tapahtuma Aikalisä:** joukkue (`home`/`away`), erä ja kello sekä kaikille tapahtumille yhteiset kentät (voimasuhteet, sijainnit katkon hetkellä, kuvio- ja järjestelmä-id, tyhjä jos ei ole). Lisäkenttiä ei tarvita, koska kesto ja lepo johdetaan `tuning.json`:sta. Tapahtuma kuuluu julkiseen lokiin.
+
+| Polku | Oletus | Yksikkö | Hylätään, jos | Tila |
+| --- | --- | --- | --- | --- |
+| `time.timeoutsPerTeamPerMatch` | 1 | kpl | ei kokonaisluku tai < 0 | sääntö (IIHF, NHL, vision.md), ei paikkamerkki |
+| `time.timeoutRestSeconds` | 30 | sekuntia todellista aikaa, ei pelikelloa | ≤ 0 | sääntö (IIHF, NHL), ei paikkamerkki |
+
+30 sekuntia palauttaa n. 28 % energiavajeesta (1 − exp(−0,011 × 30)).
+
+### AI-5 Valmentajan päätös (ohjelmoijalle)
+
+`ICoach.AtStoppage(view)` palauttaa **`CoachDecision`**:
+
+| Kenttä | Sisältö | Validointi (rikkomus = poikkeus, ohjelmointivirhe) |
+| --- | --- | --- |
+| `Units` (`LineChoice`) | Kolmikon ja parin indeksit | Vaihtokelvoton yksikkö ei saa muuttua (O-2); indeksi kokoonpanon rajoissa |
+| `Plan.Plays` | Kuviot prioriteettijärjestyksessä (D-036) | Vain ladattuja kuvioita, ei kaksoiskappaleita; tyhjä lista sallittu (joukkue pelaa järjestelmätilassa) |
+| `Plan.System` | Puolustusjärjestelmä | Ladattu järjestelmä |
+| `Plan.Transition` | `rush` tai `regroup` (O-7) | |
+| `Plan.Instructions` | `netFrontAfterShot` (bool), `looseChasers` (1 tai 2), `pinch` (bool) (O-10) | `looseChasers` ∈ {1, 2} |
+| `CallTimeout` (bool, uusi) | Aikalisä tällä katkolla (AI-4) | Tosi vain, jos aikalisä on käytettävissä, katkon syy sallii sen eikä kyse ole aikalisän jälkeisestä kierroksesta |
+
+`ICoach.OnTheFly(view)` palauttaa vain `LineChoice`:n; suunnitelma pysyy seuraavaan katkoon.
+
+**`CoachView`** sisältää AI-1:n julkisen tiedon: oma puoli, erä, kello, maalit, katkon syy (tai erän alku), kummankin joukkueen jäällä olevat yksikköindeksit, oman joukkueen jokaisen yksikön nykyinen jääaika (jos jäällä), penkkiaika ja kertynyt jääaika, vaihtokelpoisuus (`CanChangeForwards`, `CanChangeDefence`), omat ja vastustajan käytettävissä olevat aikalisät, tieto aikalisän jälkeisestä kierroksesta, oma kuviolaskuri (`PlayUses`) ja julkinen tapahtumaloki tähän asti (vain luku). **Nykyinen `Energy`-kenttä (todellinen energia) poistetaan** (D-077 kohta 3); `RotationCoach` ei käytä sitä. Valmentajan satunnaisvirta annetaan konstruktorissa, ei näkymässä.
+
+**`rulebased` ja `adaptive` ovat deterministisiä ilman satunnaisvirtaa:** sama julkinen tila → sama päätös. Testit: jokaiselle säännölle yksikkötesti (S-L:n kynnykset ja tasatilanteet, S-T:n tilat, A-T:n hystereesi, AI-4:n laukaisut); aikalisä ei kuluta kelloa eikä muuta vaihtokelpoisuutta; aikalisän jälkeinen kierros kutsuu molempia valmentajia; `random` tuottaa saman lokin samalla siemenellä, eikä valmentajan arvonta siirrä simulaation virtaa.
+
+### AI-6 Lataajan muutokset
+
+`ai` lisätään sallittuihin ylimmän tason osioihin ja `time`-osioon avaimet `timeoutsPerTeamPerMatch` ja `timeoutRestSeconds`, samassa commitissa datan kanssa (D-030). Kaikki AI-3:n taulukon `ai.*`-polut lisätään `_placeholders`-listaan, paitsi `ai.adaptive.passiveSystem` ja `ai.adaptive.aggressiveSystem`. Taulukkomaiset `ai.rulebased.modes` ja `ai.rulebased.playBonusBySystem` listataan yhtenä polkuna. `time.timeoutsPerTeamPerMatch` ja `time.timeoutRestSeconds` eivät ole paikkamerkkejä.
+
+**Data, joka lisätään samassa commitissa lataajan tuen kanssa** (`time`-avaimet olemassa olevien rinnalle, `ai` uutena osiona):
+
+```json
+"time": {
+  "timeoutsPerTeamPerMatch": 1,
+  "timeoutRestSeconds": 30
+},
+"ai": {
+  "_notes": "Coach AI thresholds (data-schema.md AI-1..AI-6, D-077). Not tuned for win rate before the first batch report (D-077 item 8). Coaches see public info only; energy is estimated from ice and bench time.",
+  "random": {
+    "onTheFlyChangeProbability": 0.5,
+    "timeoutProbabilityPerStoppage": 0.02
+  },
+  "estimate": {
+    "extraDrainPerSecondOnIce": 0.0011
+  },
+  "rulebased": {
+    "changeEnergyThreshold": 0.7,
+    "freshnessMargin": 0.15,
+    "lateGameSeconds": 300,
+    "protectLeadGoals": 1,
+    "chaseDeficitGoals": 1,
+    "modes": {
+      "normal": { "system": "forecheck212", "transition": "rush", "netFrontAfterShot": true, "looseChasers": 1, "pinch": false },
+      "protect": { "system": "trap122", "transition": "regroup", "netFrontAfterShot": false, "looseChasers": 1, "pinch": false },
+      "chase": { "system": "forecheck212", "transition": "rush", "netFrontAfterShot": true, "looseChasers": 2, "pinch": true }
+    },
+    "playBonusBySystem": {
+      "forecheck212": { "breakoutReverse": 0.2, "breakoutUpWall": -0.1 },
+      "trap122": { "dumpAndChase": 0.2, "wideCarryDrive": -0.1 }
+    },
+    "timeout": {
+      "tiredEnergy": 0.5,
+      "lateGameSeconds": 120,
+      "minDeficitGoals": 1,
+      "maxDeficitGoals": 2
+    }
+  },
+  "adaptive": {
+    "windowSeconds": 600,
+    "priorWeight": 10,
+    "passiveSystem": "trap122",
+    "aggressiveSystem": "forecheck212",
+    "controlledEntryShareForPassive": 0.6,
+    "controlledEntryShareForAggressive": 0.4
+  }
+}
+```

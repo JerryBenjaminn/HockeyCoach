@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-059 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys veljelle:** (1) Voivatko molemmat joukkueet ottaa aikalisän saman katkon aikana, ja jos voivat, onko käytäntö peräkkäiset 30 sekunnin aikalisät? (2) Katkaiseeko aikalisä käytännössä vastustajan painostusvaiheen ("momentum") enemmän kuin tavallinen katko?
+**Konteksti:** `data-schema.md`, AI-4 (D-077 kohta 6). Kohta (2) olisi uusi vaikutus (esim. vastustajan painetilan lisäkerroin aikalisässä), joten se vaatii Jerryn päätöksen; nyt aikalisä vaikuttaa vain energiaan.
+**Ehdotettu oletus:** (1) molemmat saavat ottaa, vaikutus sovelletaan kahdesti peräkkäin; (2) ei painevaikutusta, katkon `keepOnStoppage` riittää.
+
+### Q-058 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys:** näkeekö valmentaja oman joukkueensa pelaajien todellisen energian? D-077 kohta 3 luettelee julkiseksi tiedoksi jäällä olevat yksiköt, kellon, oman jääajan ja julkisen tapahtumalokin, ei energiaa.
+**Konteksti:** `data-schema.md`, AI-1 ja AI-5. Nykyinen `CoachView` antaa todellisen energian. Oikea valmentaja näkee väsymyksen, mutta ei tarkkaa lukua.
+**Ehdotettu oletus:** ei näe. Sääntöpohjaiset AI:t laskevat energia-arvion jää- ja penkkiajasta (`ai.estimate.extraDrainPerSecondOnIce`), ja `CoachView.Energy` poistetaan. Jos Jerry sallii energian, arvio korvataan todellisella arvolla eikä muu speksi muutu. Myöhemmin käyttöliittymässä energia voidaan näyttää karkeana tasona.
+
 ### Q-057 · 2026-10-11 · kirjaaja: koordinaattori
 **Kysymys:** virstanpylvään 4 suunnitelman kohdat, joita D-077 ei ratkaissut: (a) AI:n kynnysarvot uuteen `ai`-osioon `tuning.json`:iin; (b) `batch --matches N` on otteluiden määrä per AI-pari; (c) kokoonpanot johdetaan parin siemenestä (ei aina siemenet 1 ja 2), ja lisäksi peilikokoonpano järjestelmävertailuun.
 **Konteksti:** ohjelmoijan suunnitelman kysymykset K4, K6, K7.
