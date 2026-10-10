@@ -23,6 +23,12 @@ namespace HockeyCoach.Sim.Events
             get { return _events.Count; }
         }
 
+        /// <summary>A read-only snapshot of the events logged so far; later appends do not change it.</summary>
+        public EventLogSnapshot Snapshot()
+        {
+            return new EventLogSnapshot(_events, _events.Count);
+        }
+
         /// <summary>Appends an event. Throws if it is earlier than the last event.</summary>
         public void Append(SimEvent simEvent)
         {

@@ -2,52 +2,107 @@ using System;
 using System.Collections.Generic;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Model;
+using HockeyCoach.Sim.Shift;
 
 namespace HockeyCoach.Sim.Match
 {
-    /// <summary>A read-only snapshot of the match for a coach (O-4). Coaches get no random generator before milestone 4.</summary>
+    /// <summary>
+    /// What a coach sees when asked (O-4, D-077): public information only. The own roster, the units on the ice for both
+    /// teams, the clock and score, why the coach is asked, the own ice and bench time, the own play-use counter and the public event log. No energy,
+    /// organization, pressure, opponent plan or random state. The view is a snapshot: it does not change after it is
+    /// made, and both coaches' views at a stoppage are made before either coach decides (simultaneous decisions).
+    /// </summary>
     public sealed class CoachView
     {
         /// <summary>Creates the view.</summary>
+        /// <param name="side">The coach's team side.</param>
+        /// <param name="team">The coach's own roster.</param>
+        /// <param name="clock">Period and time.</param>
+        /// <param name="call">Why the coach is asked.</param>
+        /// <param name="stoppageReason">The stoppage reason when <paramref name="call"/> is <see cref="CoachCall.Stoppage"/>, otherwise null.</param>
+        /// <param name="ownGoals">Own goals.</param>
+        /// <param name="opponentGoals">Opponent goals.</param>
+        /// <param name="onIce">Own trio and pair on the ice (−1 before the first faceoff).</param>
+        /// <param name="opponentOnIce">Opponent trio and pair on the ice (−1 before the first faceoff).</param>
+        /// <param name="canChangeForwards">The own trio may change now (O-2).</param>
+        /// <param name="canChangeDefence">The own pair may change now (O-2).</param>
+        /// <param name="iceTime">Own ice time per unit.</param>
+        /// <param name="playUses">Own play uses this match (O-11 counter), by play id; copied.</param>
+        /// <param name="events">The public event log so far; must not change afterwards (e.g. <see cref="EventLog.Snapshot"/>).</param>
         public CoachView(
             TeamSide side,
             Team team,
-            int period,
-            double time,
+            CoachClock clock,
+            CoachCall call,
+            StoppageReason? stoppageReason,
             int ownGoals,
             int opponentGoals,
-            int forwardIndex,
-            int pairIndex,
+            LineChoice onIce,
+            LineChoice opponentOnIce,
             bool canChangeForwards,
             bool canChangeDefence,
+            IceTimeView iceTime,
             IReadOnlyDictionary<string, double> playUses,
-            IReadOnlyDictionary<int, double> energy)
+            IReadOnlyList<SimEvent> events)
         {
             Side = side;
             Team = team ?? throw new ArgumentNullException(nameof(team));
-            Period = period;
-            Time = time;
+            Clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            if ((call == CoachCall.Stoppage) != stoppageReason.HasValue)
+            {
+                throw new ArgumentException("A stoppage reason is given exactly when the coach is asked at a stoppage.", nameof(stoppageReason));
+            }
+
+            Call = call;
+            StoppageReason = stoppageReason;
             OwnGoals = ownGoals;
             OpponentGoals = opponentGoals;
-            ForwardIndex = forwardIndex;
-            PairIndex = pairIndex;
+            OnIce = onIce ?? throw new ArgumentNullException(nameof(onIce));
+            OpponentOnIce = opponentOnIce ?? throw new ArgumentNullException(nameof(opponentOnIce));
             CanChangeForwards = canChangeForwards;
             CanChangeDefence = canChangeDefence;
-            PlayUses = playUses ?? throw new ArgumentNullException(nameof(playUses));
-            Energy = energy ?? throw new ArgumentNullException(nameof(energy));
+            IceTime = iceTime ?? throw new ArgumentNullException(nameof(iceTime));
+            if (playUses == null)
+            {
+                throw new ArgumentNullException(nameof(playUses));
+            }
+
+            var uses = new SortedDictionary<string, double>(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, double> entry in playUses)
+            {
+                uses.Add(entry.Key, entry.Value);
+            }
+
+            PlayUses = uses;
+            Events = events ?? throw new ArgumentNullException(nameof(events));
         }
 
         /// <summary>The coach's team side.</summary>
         public TeamSide Side { get; }
 
-        /// <summary>The coach's team.</summary>
+        /// <summary>The coach's own roster.</summary>
         public Team Team { get; }
 
-        /// <summary>Period number.</summary>
-        public int Period { get; }
+        /// <summary>Period and time.</summary>
+        public CoachClock Clock { get; }
 
-        /// <summary>Period time.</summary>
-        public double Time { get; }
+        /// <summary>Period number (same as <see cref="CoachClock.Period"/>).</summary>
+        public int Period
+        {
+            get { return Clock.Period; }
+        }
+
+        /// <summary>Period time (same as <see cref="CoachClock.Time"/>).</summary>
+        public double Time
+        {
+            get { return Clock.Time; }
+        }
+
+        /// <summary>Why the coach is asked.</summary>
+        public CoachCall Call { get; }
+
+        /// <summary>The stoppage reason at a stoppage, otherwise null.</summary>
+        public StoppageReason? StoppageReason { get; }
 
         /// <summary>Own goals.</summary>
         public int OwnGoals { get; }
@@ -55,22 +110,37 @@ namespace HockeyCoach.Sim.Match
         /// <summary>Opponent goals.</summary>
         public int OpponentGoals { get; }
 
-        /// <summary>Trio on the ice, −1 before the first faceoff.</summary>
-        public int ForwardIndex { get; }
+        /// <summary>Own trio and pair on the ice, −1 before the first faceoff.</summary>
+        public LineChoice OnIce { get; }
 
-        /// <summary>Pair on the ice, −1 before the first faceoff.</summary>
-        public int PairIndex { get; }
+        /// <summary>Opponent trio and pair on the ice, −1 before the first faceoff.</summary>
+        public LineChoice OpponentOnIce { get; }
 
-        /// <summary>The trio may change now (O-2).</summary>
+        /// <summary>Own trio on the ice, −1 before the first faceoff.</summary>
+        public int ForwardIndex
+        {
+            get { return OnIce.ForwardIndex; }
+        }
+
+        /// <summary>Own pair on the ice, −1 before the first faceoff.</summary>
+        public int PairIndex
+        {
+            get { return OnIce.PairIndex; }
+        }
+
+        /// <summary>The own trio may change now (O-2).</summary>
         public bool CanChangeForwards { get; }
 
-        /// <summary>The pair may change now (O-2).</summary>
+        /// <summary>The own pair may change now (O-2).</summary>
         public bool CanChangeDefence { get; }
 
-        /// <summary>Play uses this match (O-11 counter), by play id.</summary>
+        /// <summary>Own ice and bench time per unit.</summary>
+        public IceTimeView IceTime { get; }
+
+        /// <summary>Own play uses this match (O-11 counter), by play id, in ordinal order.</summary>
         public IReadOnlyDictionary<string, double> PlayUses { get; }
 
-        /// <summary>Current energy of the team's players, by id.</summary>
-        public IReadOnlyDictionary<int, double> Energy { get; }
+        /// <summary>The public event log up to this moment.</summary>
+        public IReadOnlyList<SimEvent> Events { get; }
     }
 }

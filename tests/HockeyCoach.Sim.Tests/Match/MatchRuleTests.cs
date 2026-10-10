@@ -121,7 +121,7 @@ public class MatchRuleTests
         IReadOnlyList<Play> library = ShiftTestData.Data.Plays;
         var coach = new RotationCoach(library, ShiftTestData.Data.Systems[0]);
         var uses = new Dictionary<string, double> { { library[0].Id, 3 }, { library[2].Id, 0.5 } };
-        CoachView View(int f, int p, bool cf, bool cd) => new(TeamSide.Home, team, 1, 0, 0, 0, f, p, cf, cd, uses, new Dictionary<int, double>());
+        CoachView View(int f, int p, bool cf, bool cd) => TestCoachViews.Make(team, f, p, cf, cd, uses);
 
         CoachDecision start = coach.AtStoppage(View(-1, -1, true, true));
         Assert.Equal(0, start.Units.ForwardIndex);

@@ -13,6 +13,8 @@ namespace HockeyCoach.Sim.State
         private readonly double[] _pairSeconds;
         private readonly int[] _forwardShifts;
         private readonly int[] _pairShifts;
+        private readonly double[] _forwardOffAt;
+        private readonly double[] _pairOffAt;
 
         /// <summary>Creates the lineup with no unit on the ice yet.</summary>
         public LineupState(Team team, Goalie goalie)
@@ -28,6 +30,8 @@ namespace HockeyCoach.Sim.State
             _pairSeconds = new double[team.DefencePairs.Count];
             _forwardShifts = new int[team.ForwardLines.Count];
             _pairShifts = new int[team.DefencePairs.Count];
+            _forwardOffAt = new double[team.ForwardLines.Count];
+            _pairOffAt = new double[team.DefencePairs.Count];
             ForwardIndex = -1;
             PairIndex = -1;
         }
@@ -72,6 +76,11 @@ namespace HockeyCoach.Sim.State
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
+            if (ForwardIndex >= 0 && ForwardIndex != index)
+            {
+                _forwardOffAt[ForwardIndex] = time;
+            }
+
             ForwardIndex = index;
             ForwardSince = time;
             _forwardShifts[index]++;
@@ -83,6 +92,11 @@ namespace HockeyCoach.Sim.State
             if (index < 0 || index >= Team.DefencePairs.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (PairIndex >= 0 && PairIndex != index)
+            {
+                _pairOffAt[PairIndex] = time;
             }
 
             PairIndex = index;
@@ -102,6 +116,28 @@ namespace HockeyCoach.Sim.State
             {
                 SetPair(PairIndex, time);
             }
+        }
+
+        /// <summary>A new period starts (O-1): every unit's bench clock restarts from period time 0.</summary>
+        public void StartPeriodBenchClocks()
+        {
+            Array.Clear(_forwardOffAt, 0, _forwardOffAt.Length);
+            Array.Clear(_pairOffAt, 0, _pairOffAt.Length);
+        }
+
+        /// <summary>
+        /// Period time when trio <paramref name="index"/> last left the ice in this period, or 0 when it has not left the
+        /// ice this period. Not meaningful for the trio on the ice.
+        /// </summary>
+        public double ForwardOffAt(int index)
+        {
+            return _forwardOffAt[index];
+        }
+
+        /// <summary>Period time when pair <paramref name="index"/> last left the ice in this period, or 0 (see <see cref="ForwardOffAt"/>).</summary>
+        public double PairOffAt(int index)
+        {
+            return _pairOffAt[index];
         }
 
         /// <summary>Adds ice time to the units on the ice.</summary>

@@ -70,7 +70,7 @@ namespace HockeyCoach.Sim.Match
 
             public LineChoice OnTheFly(TeamSide team, bool forwardsEligible, bool defenceEligible, double time)
             {
-                return _coaches[(int)team].OnTheFly(View(team, time, forwardsEligible, defenceEligible));
+                return _coaches[(int)team].OnTheFly(View(team, time, forwardsEligible, defenceEligible, CoachCall.OnTheFly, null));
             }
 
             internal MatchResult Play()
@@ -86,7 +86,7 @@ namespace HockeyCoach.Sim.Match
 
                     double time = 0.0;
                     string spot = FaceoffSpots.Center;
-                    LineChoice[] units = Decide(time, true);
+                    LineChoice[] units = Decide(time, true, null);
                     while (true)
                     {
                         segments++;
@@ -115,7 +115,7 @@ namespace HockeyCoach.Sim.Match
                         _state.SetPressure(TeamSide.Home, _state.Pressure(TeamSide.Home) * _tuning.Pressure.KeepOnStoppage);
                         _state.SetPressure(TeamSide.Away, _state.Pressure(TeamSide.Away) * _tuning.Pressure.KeepOnStoppage);
                         spot = FaceoffSpots.After(_setup.Rink, result);
-                        units = Decide(time, false);
+                        units = Decide(time, false, Reason(result.EndReason));
                     }
 
                     if (!stalled)
@@ -127,7 +127,22 @@ namespace HockeyCoach.Sim.Match
                 return new MatchResult(_log, _goals[(int)TeamSide.Home], _goals[(int)TeamSide.Away], stalled, _periods, _state);
             }
 
-            /// <summary>O-1 intermission: energy to start, pressure 0, organization 1, play uses × intermissionMultiplier.</summary>
+            private static StoppageReason Reason(ShiftEndReason end)
+            {
+                switch (end)
+                {
+                    case ShiftEndReason.Goal:
+                        return StoppageReason.Goal;
+                    case ShiftEndReason.GoalieFreeze:
+                        return StoppageReason.GoalieFreeze;
+                    case ShiftEndReason.OutOfPlay:
+                        return StoppageReason.OutOfPlay;
+                    default:
+                        throw new InvalidOperationException("No stoppage for segment end " + end + ".");
+                }
+            }
+
+            /// <summary>O-1 intermission: energy to start, pressure 0, organization 1, play uses × intermissionMultiplier; bench clocks restart.</summary>
             private void Intermission()
             {
                 _state.Energy.ResetAll(_tuning.Energy.Start, 0.0);
@@ -138,19 +153,49 @@ namespace HockeyCoach.Sim.Match
                 }
 
                 _state.Familiarity.Multiply(_tuning.Familiarity.IntermissionMultiplier);
+                _state.Lineup(TeamSide.Home).StartPeriodBenchClocks();
+                _state.Lineup(TeamSide.Away).StartPeriodBenchClocks();
             }
 
-            /// <summary>Asks both coaches; at a period start every unit may change and kept units start a new shift.</summary>
-            private LineChoice[] Decide(double time, bool periodStart)
+            /// <summary>
+            /// Asks both coaches; at a period start every unit may change and kept units start a new shift. Decisions are
+            /// simultaneous (D-077): both views are made before either coach is asked, and no decision is applied until
+            /// both coaches have answered.
+            /// </summary>
+            private LineChoice[] Decide(double time, bool periodStart, StoppageReason? reason)
             {
                 var units = new LineChoice[2];
+                var forwardsEligible = new bool[2];
+                var defenceEligible = new bool[2];
+                var views = new CoachView[2];
                 foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
                 {
                     LineupState lineup = _state.Lineup(team);
                     double minimum = _tuning.Time.StoppageChangeMinSeconds;
-                    bool forwards = periodStart || time - lineup.ForwardSince >= minimum - 1e-9;
-                    bool defence = periodStart || time - lineup.PairSince >= minimum - 1e-9;
-                    CoachDecision decision = _coaches[(int)team].AtStoppage(View(team, time, forwards, defence));
+                    forwardsEligible[(int)team] = periodStart || time - lineup.ForwardSince >= minimum - 1e-9;
+                    defenceEligible[(int)team] = periodStart || time - lineup.PairSince >= minimum - 1e-9;
+                    views[(int)team] = View(
+                        team,
+                        time,
+                        forwardsEligible[(int)team],
+                        defenceEligible[(int)team],
+                        periodStart ? CoachCall.PeriodStart : CoachCall.Stoppage,
+                        periodStart ? null : reason);
+                }
+
+                var decisions = new CoachDecision[2];
+                foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    decisions[(int)team] = _coaches[(int)team].AtStoppage(views[(int)team])
+                        ?? throw new InvalidOperationException("The coach returned no decision.");
+                }
+
+                foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    LineupState lineup = _state.Lineup(team);
+                    bool forwards = forwardsEligible[(int)team];
+                    bool defence = defenceEligible[(int)team];
+                    CoachDecision decision = decisions[(int)team];
                     if (decision.Units.ForwardIndex != lineup.ForwardIndex && !forwards)
                     {
                         throw new InvalidOperationException("The coach changed a forward trio that is not eligible at this stoppage (O-2).");
@@ -204,22 +249,58 @@ namespace HockeyCoach.Sim.Match
                 return new TeamShiftSetup(onIce, lineup.Goalie, _plans[(int)team]);
             }
 
-            private CoachView View(TeamSide team, double time, bool forwards, bool defence)
+            private CoachView View(TeamSide team, double time, bool forwards, bool defence, CoachCall call, StoppageReason? reason)
             {
                 LineupState lineup = _state.Lineup(team);
+                LineupState opponent = _state.Lineup(TeamSides.Opponent(team));
                 return new CoachView(
                     team,
                     lineup.Team,
-                    _period,
-                    time,
+                    new CoachClock(_period, time, _tuning.Time.Periods, _tuning.Time.PeriodSeconds),
+                    call,
+                    reason,
                     _goals[(int)team],
                     _goals[(int)TeamSides.Opponent(team)],
-                    lineup.ForwardIndex,
-                    lineup.PairIndex,
+                    new LineChoice(lineup.ForwardIndex, lineup.PairIndex),
+                    new LineChoice(opponent.ForwardIndex, opponent.PairIndex),
                     forwards,
                     defence,
-                    new SortedDictionary<string, double>(ToDictionary(_state.Familiarity.UsesOf(team)), StringComparer.Ordinal),
-                    TeamEnergy(lineup, time));
+                    IceTime(lineup, time),
+                    _state.Familiarity.UsesOf(team),
+                    _log.Snapshot());
+            }
+
+            /// <summary>
+            /// Own ice and bench time. Units still on the ice from the previous period at a period start count 0 s of
+            /// shift; bench time is measured within the period.
+            /// </summary>
+            private static IceTimeView IceTime(LineupState lineup, double time)
+            {
+                var trios = new UnitIceTime[lineup.Team.ForwardLines.Count];
+                for (int i = 0; i < trios.Length; i++)
+                {
+                    bool on = i == lineup.ForwardIndex;
+                    trios[i] = new UnitIceTime(
+                        lineup.ForwardSeconds(i),
+                        lineup.ForwardShifts(i),
+                        on,
+                        on ? Math.Max(0.0, time - lineup.ForwardSince) : 0.0,
+                        on ? 0.0 : Math.Max(0.0, time - lineup.ForwardOffAt(i)));
+                }
+
+                var pairs = new UnitIceTime[lineup.Team.DefencePairs.Count];
+                for (int i = 0; i < pairs.Length; i++)
+                {
+                    bool on = i == lineup.PairIndex;
+                    pairs[i] = new UnitIceTime(
+                        lineup.PairSeconds(i),
+                        lineup.PairShifts(i),
+                        on,
+                        on ? Math.Max(0.0, time - lineup.PairSince) : 0.0,
+                        on ? 0.0 : Math.Max(0.0, time - lineup.PairOffAt(i)));
+                }
+
+                return new IceTimeView(trios, pairs);
             }
 
             private static IDictionary<string, double> ToDictionary(IReadOnlyDictionary<string, double> source)
@@ -231,19 +312,6 @@ namespace HockeyCoach.Sim.Match
                 }
 
                 return copy;
-            }
-
-            /// <summary>Energy of the team's players as of <paramref name="time"/>, bench recovery applied.</summary>
-            private SortedDictionary<int, double> TeamEnergy(LineupState lineup, double time)
-            {
-                var energy = new SortedDictionary<int, double>();
-                foreach (Skater skater in lineup.Team.Skaters)
-                {
-                    energy[skater.Id] = CurrentEnergy(skater.Id, time);
-                }
-
-                energy[lineup.Goalie.Id] = _state.Energy.Get(lineup.Goalie.Id);
-                return energy;
             }
 
             private double CurrentEnergy(int id, double time)
