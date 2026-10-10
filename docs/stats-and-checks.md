@@ -161,8 +161,8 @@ Simulaation pitää osua oikean kiekon haarukkaan. Alla on otteluanalyysien luvu
 | --- | --- | --- | --- |
 | Syöttöjen onnistuminen, kaikki | 84,8 % / 84,6 % | 84 % / 81 % | Kalibrointi (`targets.json`) |
 | Syöttöjen onnistuminen, 5v5 | – | 83 % / 78 % | Kalibrointi (`targets.json`) |
-| Syöttöjen onnistuminen paineen alla | – | 69 % / 68 % | Kalibrointi (`targets.json`) |
-| Laukaukset paineen alla (osuus) | – | 68 % / 76 % | Kalibrointi (`targets.json`) |
+| Syötöt paineen alla (osuus syötöistä) | – | 69 % / 68 % | Kalibrointi (`targets.json`). Osuus, ei onnistumisprosentti (D-075, Q-056) |
+| Laukaukset paineen alla (osuus laukauksista) | – | 68 % / 76 % | Kalibrointi (`targets.json`). Paineen määritelmä odottaa Q-049:ää (D-075) |
 | Kiekkokamppailut (voitto / ei voittajaa / häviö) | 36 % / 22 % / 41 % | Kirjataan | Kalibrointi (`targets.json`) |
 | Laukausyritykset per joukkue, koko ottelu | – | n. 33–60 (Wisehockeyn erätaulukko) | Kalibrointi (`targets.json`), simulaation laukausmäärän vertailukohta (D-069) |
 | Laukaukset maalia kohti per joukkue, koko ottelu | – | n. 24–39 (Wisehockeyn erätaulukko) | Kalibrointi (`targets.json`), simulaation vertailukohta (D-069) |

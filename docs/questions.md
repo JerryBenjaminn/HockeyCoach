@@ -14,18 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-055 · 2026-10-11 · kirjaaja: game-designer
-**Kysymys:** hyväksytkö designerin tarkennukset D-074:n reaktioviiveeseen?
-**Konteksti:** `data-schema.md`, Puolustusjärjestelmät, Painostajan reaktioviive. D-074 sanoo "kun kiekko liikkuu syötöllä" ja "seuraavan toiminnon edellä", mutta ei ratkaise alla olevia tapauksia.
-**Suositukset (designer, eivät ole hyväksyttyjä, kirjoitettu speksiin oletuksina):**
-1. Vain onnistunut syöttö laukaisee viiveen. Syötönkatkossa kiekko vaihtaa joukkuetta, ja irtokiekko ratkaistaan kamppailulla (M-6), jonka liikkeet eivät ole tahdin puolustajaliike.
-2. Viive koskee täsmälleen syöttöä seuraavan toiminnon D-041:n vaihetta 2 ja raukeaa, jos väliin tulee järjestelmätilan askel, setup, regroup, katko tai vaihto (esim. kuvion viimeinen tahti on syöttö, tai suorahyökkäys päättyy syötön jälkeen). Perustelu: viive on yhden tahdin reaktio, ja näissä painostajalla on aikaa.
-3. D-036:n aloitussyöttö (setupin jälkeen) ja avaussyöttö omalta alueelta (`breakout`) laukaisevat viiveen kuten muutkin syötöt. Aloitusvoitto ei ole syöttö.
-4. Painostaja tunnistetaan M-7:n valitsimella ennen vaiheen 2 liikettä (vastaanottaja kiekollisena). Toiminnon hetken paine (M-7) arvioidaan edelleen erikseen liikkeen jälkeen, joten se voi osua eri pelaajaan, jos roolit vaihtuvat.
-5. Tasapainoarvo `pressure.presserReactionNodes` (1), sallittu 0 … `plays.maxNodesPerBeat`. Ei paikkamerkki, koska arvo on Jerryn päätöksestä.
-**Ehdotettu oletus:** suositukset 1–5, kunnes Jerry päättää. Ohjelmoija toteuttaa niiden mukaan.
-**Vastaus:** (Jerry täyttää)
-
 ### Q-050 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** sisältävätkö Wisehockeyn laukausyritykset blokatut laukaukset? Simulaation laukausyritykset sisältävät ne.
 **Konteksti:** `targets.json` `shotAttempts` (D-071).
@@ -111,6 +99,24 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-056 · 2026-10-11 · kirjaaja: Jerry
+**Kysymys:** ovatko Wisehockeyn paineluvut (syötöt 69 % / 68 %, laukaukset 68 % / 76 %) osuuksia vai onnistumisprosentteja?
+**Konteksti:** kalibroinnin vaihe 3 (D-069), E-004.
+**Vastaus (Jerry, 2026-10-11):** osuuksia. Jokereiden syötöistä 69 % ja HIFK:n syötöistä 68 % annettiin paineen alla. Sama koskee laukauksia: 68 % / 76 % on laukausten osuus paineen alla. Kirjattu: D-075.
+
+### Q-055 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys:** hyväksytkö designerin tarkennukset D-074:n reaktioviiveeseen?
+**Konteksti:** `data-schema.md`, Puolustusjärjestelmät, Painostajan reaktioviive. D-074 sanoo "kun kiekko liikkuu syötöllä" ja "seuraavan toiminnon edellä", mutta ei ratkaise alla olevia tapauksia.
+**Suositukset (designer, eivät ole hyväksyttyjä, kirjoitettu speksiin oletuksina):**
+1. Vain onnistunut syöttö laukaisee viiveen. Syötönkatkossa kiekko vaihtaa joukkuetta, ja irtokiekko ratkaistaan kamppailulla (M-6), jonka liikkeet eivät ole tahdin puolustajaliike.
+2. Viive koskee täsmälleen syöttöä seuraavan toiminnon D-041:n vaihetta 2 ja raukeaa, jos väliin tulee järjestelmätilan askel, setup, regroup, katko tai vaihto (esim. kuvion viimeinen tahti on syöttö, tai suorahyökkäys päättyy syötön jälkeen). Perustelu: viive on yhden tahdin reaktio, ja näissä painostajalla on aikaa.
+3. D-036:n aloitussyöttö (setupin jälkeen) ja avaussyöttö omalta alueelta (`breakout`) laukaisevat viiveen kuten muutkin syötöt. Aloitusvoitto ei ole syöttö.
+4. Painostaja tunnistetaan M-7:n valitsimella ennen vaiheen 2 liikettä (vastaanottaja kiekollisena). Toiminnon hetken paine (M-7) arvioidaan edelleen erikseen liikkeen jälkeen, joten se voi osua eri pelaajaan, jos roolit vaihtuvat.
+5. Tasapainoarvo `pressure.presserReactionNodes` (1), sallittu 0 … `plays.maxNodesPerBeat`. Ei paikkamerkki, koska arvo on Jerryn päätöksestä.
+**Ehdotettu oletus:** suositukset 1–5, kunnes Jerry päättää. Ohjelmoija toteuttaa niiden mukaan.
+**Vastaus:** (Jerry täyttää)
+**Vastaus (Jerry, 2026-10-11):** oletukset hyväksytty, kunhan ne eivät muuta lukittuja päätöksiä. Kirjattu: D-075.
 
 ### Q-054 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** hyväksytkö designerin tarkennukset D-072:n painostajaan (M-7)?
