@@ -40,7 +40,61 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Plays));
             errors.AddRange(Validate(tuning.ChanceTypes));
             errors.AddRange(Validate(tuning.ChanceClasses));
+            if (tuning.Pressure.UnderPressureNodes < 0)
+            {
+                errors.Add("pressure.underPressureNodes: must be >= 0, was " + tuning.Pressure.UnderPressureNodes);
+            }
+
+            errors.AddRange(Validate(tuning.LoosePuckSpots));
             return errors;
+        }
+
+        /// <summary>
+        /// Validates that each loose-puck situation uses a rule whose reference node exists in that situation:
+        /// <c>blockerNode</c> only for <c>blockedShot</c>, <c>laneDefenderNode</c> only for <c>failedPass</c>, and the
+        /// shooter-based rules only for shot situations. <c>netFront</c> fits everywhere.
+        /// </summary>
+        public static IReadOnlyList<string> Validate(LoosePuckSpotsConfig spots)
+        {
+            var errors = new List<string>();
+            if (spots == null)
+            {
+                errors.Add("loosePuckSpots: missing");
+                return errors;
+            }
+
+            RequireRuleFits("reboundSlot", spots.ReboundSlot, true, false, false, errors);
+            RequireRuleFits("reboundCorner", spots.ReboundCorner, true, false, false, errors);
+            RequireRuleFits("missedShot", spots.MissedShot, true, false, false, errors);
+            RequireRuleFits("blockedShot", spots.BlockedShot, true, true, false, errors);
+            RequireRuleFits("failedPass", spots.FailedPass, false, false, true, errors);
+            return errors;
+        }
+
+        private static void RequireRuleFits(string key, LoosePuckRule rule, bool hasShooter, bool hasBlocker, bool hasLaneDefender, List<string> errors)
+        {
+            bool fits;
+            switch (rule)
+            {
+                case LoosePuckRule.ShooterSideCorner:
+                case LoosePuckRule.EndRowShooterLane:
+                    fits = hasShooter;
+                    break;
+                case LoosePuckRule.BlockerNode:
+                    fits = hasBlocker;
+                    break;
+                case LoosePuckRule.LaneDefenderNode:
+                    fits = hasLaneDefender;
+                    break;
+                default:
+                    fits = true;
+                    break;
+            }
+
+            if (!fits)
+            {
+                errors.Add("loosePuckSpots." + key + ": rule " + rule + " has no reference node in this situation");
+            }
         }
 
         /// <summary>

@@ -174,6 +174,13 @@ namespace HockeyCoach.Sim.Tactics
                         return carrier;
                     }
 
+                    GridPoint passer = nodes[action.Actor];
+                    GridPoint receiver = nodes[action.Receiver.Value];
+                    if (ThroughGoal(passer, receiver, rink.OwnGoal, rink) || ThroughGoal(passer, receiver, rink.OpponentGoal, rink))
+                    {
+                        errors.Add(path + ": pass " + passer + " → " + receiver + " goes straight through a goal (D-051)");
+                    }
+
                     return action.Receiver.Value;
 
                 case PlayActionType.DriveNet:
@@ -213,6 +220,14 @@ namespace HockeyCoach.Sim.Tactics
                 default:
                     return carrier;
             }
+        }
+
+        /// <summary>D-051: both ends on the middle lane and on opposite sides of the goal node along x.</summary>
+        private static bool ThroughGoal(GridPoint a, GridPoint b, GridPoint goal, Rink rink)
+        {
+            int lane = rink.CentreLaneY;
+            return a.Y == lane && b.Y == lane && goal.Y == lane
+                && ((a.X < goal.X && b.X > goal.X) || (a.X > goal.X && b.X < goal.X));
         }
 
         private static bool ValidateSkaterNode(string path, GridPoint node, Rink rink, List<string> errors)

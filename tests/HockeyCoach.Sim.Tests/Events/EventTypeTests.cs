@@ -33,7 +33,7 @@ public class EventTypeTests
         yield return new object[] { new ControlledZoneEntryEvent(c, 1, new EntryNumbers(2, 2), ZoneEntryMethod.Carry, ZoneEntryOutcome.Kept), "ControlledZoneEntry" };
         yield return new object[] { new DumpInEvent(c, 1, BattleOutcome.NoWinner), "DumpIn" };
         yield return new object[] { new PassEvent(c, 1, 2, true, false), "Pass" };
-        yield return new object[] { new ShotEvent(c, 1, 16, 0.05, ChanceClass.Moderate, ChanceType.OffensiveZone, null, ShotOutcome.Saved), "Shot" };
+        yield return new object[] { new ShotEvent(c, 1, 16, 0.05, ChanceClass.Moderate, ChanceType.OffensiveZone, true, null, ShotOutcome.Saved), "Shot" };
         yield return new object[] { new TurnoverEvent(c, 1, 11, 27), "Turnover" };
         yield return new object[] { new PuckBattleEvent(c, new[] { 1 }, new[] { 11, 12 }, BattleOutcome.Loss), "PuckBattle" };
         yield return new object[] { new StoppageEvent(c, StoppageReason.Goal), "Stoppage" };
@@ -63,7 +63,7 @@ public class EventTypeTests
     [InlineData(ShotOutcome.Missed, 16)]
     public void Shot_StoppedByMatchesOutcome(ShotOutcome outcome, int? stoppedBy)
     {
-        Assert.Throws<ArgumentException>(() => new ShotEvent(EventTestData.Context(), 1, stoppedBy, 0.1, null, ChanceType.Rush, null, outcome));
+        Assert.Throws<ArgumentException>(() => new ShotEvent(EventTestData.Context(), 1, stoppedBy, 0.1, null, ChanceType.Rush, false, null, outcome));
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public class EventTypeTests
     [InlineData(double.NaN)]
     public void Shot_RejectsXgOutsideUnitRange(double xg)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ShotEvent(EventTestData.Context(), 1, null, xg, null, ChanceType.Rush, null, ShotOutcome.Goal));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ShotEvent(EventTestData.Context(), 1, null, xg, null, ChanceType.Rush, false, null, ShotOutcome.Goal));
     }
 
     [Fact]

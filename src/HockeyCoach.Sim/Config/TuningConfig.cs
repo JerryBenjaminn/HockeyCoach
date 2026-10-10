@@ -5,7 +5,7 @@ namespace HockeyCoach.Sim.Config
 {
     /// <summary>
     /// Typed balance values from tuning.json for the sections used so far (stats, checkFormula, checks, positions,
-    /// time, plays, chanceTypes, chanceClasses). Sections for later milestones are added as they are implemented.
+    /// time, plays, chanceTypes, chanceClasses, pressure.underPressureNodes, loosePuckSpots). Sections for later milestones are added as they are implemented.
     /// </summary>
     public sealed class TuningConfig
     {
@@ -21,6 +21,8 @@ namespace HockeyCoach.Sim.Config
         /// <param name="plays">Play limits.</param>
         /// <param name="chanceTypes">Chance type classification.</param>
         /// <param name="chanceClasses">Chance class xG thresholds.</param>
+        /// <param name="pressure">Physical pressure radius.</param>
+        /// <param name="loosePuckSpots">Loose-puck spot rules.</param>
         public TuningConfig(
             StatsConfig stats,
             CheckFormulaConfig checkFormula,
@@ -30,12 +32,16 @@ namespace HockeyCoach.Sim.Config
             TimeConfig time,
             PlaysConfig plays,
             ChanceTypesConfig chanceTypes,
-            ChanceClassesConfig chanceClasses)
+            ChanceClassesConfig chanceClasses,
+            PressureConfig pressure,
+            LoosePuckSpotsConfig loosePuckSpots)
         {
             Time = time ?? throw new ArgumentNullException(nameof(time));
             Plays = plays ?? throw new ArgumentNullException(nameof(plays));
             ChanceTypes = chanceTypes ?? throw new ArgumentNullException(nameof(chanceTypes));
             ChanceClasses = chanceClasses ?? throw new ArgumentNullException(nameof(chanceClasses));
+            Pressure = pressure ?? throw new ArgumentNullException(nameof(pressure));
+            LoosePuckSpots = loosePuckSpots ?? throw new ArgumentNullException(nameof(loosePuckSpots));
             Stats = stats ?? throw new ArgumentNullException(nameof(stats));
             CheckFormula = checkFormula ?? throw new ArgumentNullException(nameof(checkFormula));
             Shot = shot ?? throw new ArgumentNullException(nameof(shot));
@@ -91,6 +97,12 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>Chance class xG thresholds.</summary>
         public ChanceClassesConfig ChanceClasses { get; }
+
+        /// <summary>Physical pressure radius (M-7).</summary>
+        public PressureConfig Pressure { get; }
+
+        /// <summary>Loose-puck spot rules (D-044).</summary>
+        public LoosePuckSpotsConfig LoosePuckSpots { get; }
 
         /// <summary>Returns a check by id; throws if it does not exist.</summary>
         public CheckDefinition GetCheck(string id)

@@ -70,5 +70,7 @@
   "plays": {"maxBeats": 4, "maxNodesPerBeat": 2},
   "chanceTypes": {"rushOrganizationBelow": 0.8, "turnoverWindowSeconds": 8},
   "chanceClasses": {"topMinXg": 0.15, "goodMinXg": 0.07, "moderateMinXg": 0.03},
+  "pressure": {"underPressureNodes": 1, "gainOnShot": 0.08},
+  "loosePuckSpots": {"reboundSlot": "netFront", "reboundCorner": "shooterSideCorner", "missedShot": "endRowShooterLane", "blockedShot": "blockerNode", "failedPass": "laneDefenderNode"},
   "energy": {"anythingForLater": {"x": 1}}
 }

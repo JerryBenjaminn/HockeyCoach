@@ -37,7 +37,7 @@ Tämä dokumentti on datatiedostojen skeemojen ainoa totuus (D-013). Designer om
 | Nimen muoto | Merkitys |
 | --- | --- |
 | `pressure`, `organization`, `goalieEnergy` (tilaan sidottu) | Logit täydellä vaikutuksella, lineaarisesti välissä. Järjestäytyneisyys: arvo × (1 − puolustuksen järjestäytyneisyys). Paine: arvo × paine. Energia: arvo × (1 − energia) |
-| `crossIce`, `royalRoad`, `screen`, `homeAdvantage` (ehto) | Logit, kun ehto on tosi, muuten 0 |
+| `crossIce`, `royalRoad`, `screen`, `underPressure`, `homeAdvantage` (ehto) | Logit, kun ehto on tosi, muuten 0 |
 | `...PerPoint` | Logit per stat-piste suhteessa `checkFormula.referenceValue`-arvoon |
 | `...PerNode` | Logit per solmu |
 | Taulukko, esim. `laneDefenderDistance` | Indeksi on etäisyys solmuina, viimeinen arvo pätee kaikkiin suurempiin |
@@ -89,7 +89,7 @@ Avaimet, joiden nimi päättyy `Probability` tai `Share`, ovat todennäköisyyks
 
 x ≤ 6 on `longRange`. `behindNet` = laukaus maaliviivan takaa (wraparound), hyvin pieni xG (`checks.shot.baseXg.behindNet`). `isSlot` on tosi solmuissa (7, 2) ja (8, 2). Slotin rajaus ja `point`-vyöhykkeen sijainti x = 7:llä (siniviiva on x ≈ 6,1) ovat 5-leveän verkon kompromisseja, ks. Q-015.
 
-**Maalisolmu ja `crease`** (D-033). (9, 2) on vastustajan maalisolmu: kukaan ei laukaise sieltä, joten se ei ole slottisolmu (`isSlot: false`), ja sen `xgZone`-arvo `crease` on vain nimilappu, jota laukaus ei koskaan käytä. Maalin edustan laukaukset lähtevät solmusta (8, 2) ja käyttävät `slot`-vyöhykettä. Solmu (8, 2) kattaa 22 jalan verkossa sekä maalin edustan että matalan slotin, eikä niitä voi erottaa sijainnilla. `checks.shot.baseXg.crease` ja `attackerByXgZone.crease` pysyvät datassa, mutta niitä ei käytetä, ennen kuin Jerry päättää, saavatko maalin edustan tilannelaukaukset (rebound, ohjaus maskista) `crease`-xG:n (ehdotus E-003).
+**Maalisolmu ja `crease`** (D-033). (9, 2) on vastustajan maalisolmu: kukaan ei laukaise sieltä, joten se ei ole slottisolmu (`isSlot: false`), ja sen `xgZone`-arvo `crease` on vain nimilappu, jota laukaus ei koskaan käytä. Maalin edustan laukaukset lähtevät solmusta (8, 2) ja käyttävät `slot`-vyöhykettä. Solmu (8, 2) kattaa 22 jalan verkossa sekä maalin edustan että matalan slotin, eikä niitä voi erottaa sijainnilla. Poikkeus: maalin edustan tilannelaukaukset (rebound ja syöttö maskiin ajaneelle) käyttävät `crease`-vyöhykettä (`checks.shot.baseXg.crease`, `attackerByXgZone.crease`), ks. Määritelmät, Maskin xG (D-047).
 
 **Aloituspisteet.** `center` (5, 2), `defensiveLeft` (2, 1), `defensiveRight` (2, 3), `neutralDefensiveLeft` (4, 1), `neutralDefensiveRight` (4, 3), `neutralOffensiveLeft` (6, 1), `neutralOffensiveRight` (6, 3), `offensiveLeft` (8, 1), `offensiveRight` (8, 3). Kierrossa `offensiveLeft` ↔ `defensiveRight`, `neutralOffensiveLeft` ↔ `neutralDefensiveRight` jne., `center` kiertyy itsekseen.
 
@@ -101,7 +101,7 @@ Uudet säännöt peilausta ja maalisolmuja varten (D-033, D-034; lataaja ei viel
 
 Kaikki tasapainoarvot (CLAUDE.md, sääntö 2).
 
-**Sallitut ylimmän tason avaimet.** Lataaja hylkää tiedoston, jos sen ylimmällä tasolla on avain, jota ei ole tässä listassa (`_`-alkuisia meta-avaimia lukuun ottamatta): `schemaVersion`, `stats`, `checkFormula`, `checks`, `positions`, `time`, `energy`, `organization`, `pressure`, `form`, `chemistry`, `familiarity`, `plays`, `chanceTypes`, `chanceClasses`. Lista vastaa lataajan sallittujen osioiden listaa. Osiot, joiden virstanpylväs ei ole vielä käynnissä, hyväksytään ja ohitetaan, kunnes koodi alkaa käyttää niitä.
+**Sallitut ylimmän tason avaimet.** Lataaja hylkää tiedoston, jos sen ylimmällä tasolla on avain, jota ei ole tässä listassa (`_`-alkuisia meta-avaimia lukuun ottamatta): `schemaVersion`, `stats`, `checkFormula`, `checks`, `positions`, `time`, `energy`, `organization`, `pressure`, `form`, `chemistry`, `familiarity`, `plays`, `chanceTypes`, `chanceClasses`, `loosePuckSpots`. Lista vastaa lataajan sallittujen osioiden listaa. Osiot, joiden virstanpylväs ei ole vielä käynnissä, hyväksytään ja ohitetaan, kunnes koodi alkaa käyttää niitä.
 
 **Uuden osion lisääminen.**
 
@@ -120,12 +120,12 @@ Ylimmän tason osiot:
 | `energy` | 3 | Kulutus, palautuminen penkillä, `checkModifierAtZero` (kaikkiin tarkistuksiin) |
 | `positions` | 2 | `offSideCheckModifier`: väärän puolen miinus (D-024), ks. Pelaajat, pelipaikat ja ketjut |
 | `organization` | 3 | Pudotus kiekonmenetyksessä alueittain, palautuminen, `organizedThreshold` |
-| `pressure` | 3 | Kasvu, säilyminen katkolla, energian kulutus, henkisen kestävyyden vaimennus. Lisäksi `underPressureNodes` (virstanpylväs 2): fyysisen paineen säde, ei joukkueen painetila (Määritelmät M-7, luonnos) |
+| `pressure` | 3 | Kasvu, säilyminen katkolla, energian kulutus, henkisen kestävyyden vaimennus. Lisäksi `underPressureNodes` (virstanpylväs 2): fyysisen paineen säde, ei joukkueen painetila (Määritelmät M-7, D-049) |
 | `form`, `chemistry`, `familiarity` | 3+ | Vire (±`maxStatDelta`), ketjukemia, tuttuus |
 | `plays` | 2 | `maxBeats` (4), `maxNodesPerBeat` |
 | `chanceTypes` | 2 | Paikkatyyppien luokittelu (suorahyökkäys, kiekonriisto) |
 | `chanceClasses` | 4 | Paikkaluokkien xG-rajat (Q-004) |
-| `loosePuckSpots` | 2 | **Ei vielä datassa, odottaa lataajan tukea (D-030).** Irtokiekon paikkasäännöt (D-044), ks. Määritelmät, Irtokiekon paikat |
+| `loosePuckSpots` | 2 | Irtokiekon paikkasäännöt (D-044, D-049), ks. Määritelmät, Irtokiekon paikat. Data ja lataajan tuki commitoidaan yhdessä (D-030) |
 
 ### Tarkistus (`checks.<nimi>`)
 
@@ -135,7 +135,7 @@ Ylimmän tason osiot:
   "p0": 0.85,
   "attacker": { "passer": { "passing": 0.6 }, "receiver": { "hands": 0.4 } },
   "defender": { "nearestDefender": { "awareness": 0.5, "positioning": 0.5 } },
-  "modifiers": { "crossIce": -0.4, "pressure": -0.9 }
+  "modifiers": { "crossIce": -0.4, "underPressure": -0.9 }
 }
 ```
 
@@ -165,7 +165,7 @@ Ylimmän tason osiot:
 
 - `shot`: ei `p0`- eikä `attacker`-kenttää. Perustaso on `baseXg[xgZone]` ja hyökkääjän painot `attackerByXgZone[xgZone]` (laukaisijan solmu hänen näkökulmastaan). Järjestys: blokki → `onTargetShare` (maalia kohti vai ohi) → maalitarkistus (Q-010). Omat todennäköisyysrajat `minProbability` ja `maxProbability` (D-014, Q-009).
 - `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007). `extraPlayerRadius` ja `modifiers.distancePerNode`: kamppailijat ja lisäpelaaja, ks. Määritelmät M-6.
-- `pass`: `interceptionShare` = epäonnistuneista syötöistä syötönkatkojen osuus, loput irtokiekkoja (D-040, ks. Määritelmät).
+- `pass`: `interceptionShare` = epäonnistuneista syötöistä syötönkatkojen osuus, loput irtokiekkoja (D-040, ks. Määritelmät). `modifiers.underPressure` on ehtomuokkaaja: syöttäjä on paineen alla (M-7, D-049). Se ei skaalaudu joukkueen painetilalla.
 - `block`: `maxLaneDistance` (blokkaajaehdokkaan suurin etäisyys laukauslinjasta) ja `modifiers.laneDistance` (taulukko), ks. Määritelmät M-5.
 - `rebound`: onnistuminen = rebound slottiin. Muuten maalivahti hallitsee kiekon: `controlledHoldShare` pitää (katko), loput kulmaan.
 
@@ -267,7 +267,7 @@ Peilauslippua ei ole: aiempi `mirrorable`-kenttä on poistettu, ja lataaja hylk�
 
 **Kulku.** Kun kuvio valitaan, pelaajat siirtyvät lähtösolmuihin (aika `time.setupSeconds`, Q-006). Tahdit suoritetaan järjestyksessä: ensin tahdin siirrot, sitten toiminto. Kiekollinen on tahdin alussa se, jolla kiekko on edellisen tahdin jälkeen (ensimmäisessä tahdissa `start.puckCarrier`). Epäonnistunut tarkistus päättää kuvion (kiekonmenetys tai irtokiekko), ja peli siirtyy järjestelmätilaan. `shoot` ja `dump` päättävät kuvion aina. Jos viimeinen tahti ei ole `shoot` tai `dump`, peli siirtyy järjestelmätilaan kiekko tallessa.
 
-**Maski.** `checks.shot.modifiers.screen` pätee, kun laukaus menee maalia kohti ja joku laukaisijan joukkuetoveri on vastustajan maalin edustalla (`netFront`). Kuviossa sinne pääsee vain `driveNet`-toiminnolla.
+**Maski.** `checks.shot.modifiers.screen` pätee, kun laukaus menee maalia kohti, joku laukaisijan joukkuetoveri on vastustajan maalin edustalla (`netFront`), laukaisija itse ei ole siellä ja laukaisija on maaliviivan edessä (Määritelmät M-4). Kuviossa maalin edustalle pääsee vain `driveNet`-toiminnolla.
 
 **Peilaus** (D-034, ehto 3). Jokaisen kuvion voi pelata peilattuna, eikä kuvio voi kieltää sitä. Peilattu kuvio saadaan muunnoksella (ks. Koordinaatit, Peilaus): solmut y → width − 1 − y, pelipaikat `LW` ↔ `RW` ja `LD` ↔ `RD`, `faceoffSpot` `...Left` ↔ `...Right`. Pelipaikat vaihtuvat, jotta vasen laituri pelaa peilikuvassakin vasenta laitaa eikä saa väärän puolen miinusta. Koska kaukalo on symmetrinen y-suunnassa, validin kuvion peilikuva on aina validi, eikä sitä validoida erikseen. Simulaatio valitsee puolen deterministisesti:
 
@@ -290,6 +290,7 @@ Peilauslippua ei ole: aiempi `mirrorable`-kenttä on poistettu, ja lataaja hylk�
 - siirto päättyy vastustajan maalin edustalle (`netFront`); sinne mennään `driveNet`-toiminnolla;
 - tahdissa ei ole tasan yhtä `action`-kenttää tai toiminnon tyyppi on tuntematon;
 - `skate.by`, `shoot.by`, `dump.by` tai `pass.from` ei ole tahdin alun kiekollinen; `pass.to` on sama kuin `pass.from`;
+- **syöttö menee suoraan maalin läpi** (D-051): syöttäjä ja vastaanottaja ovat molemmat keskikaistalla (y = (width − 1) / 2) ja saman maalisolmun eri puolilla (toisen x < maalisolmun x ja toisen x > maalisolmun x), kumman tahansa maalin. Solmut luetaan tahdin siirtojen jälkeen, kuten syötössä muutenkin. Muut syötöt saavat kulkea maalisolmun kautta (M-1), esim. vino syöttö maalin takaa (10, 1) slottiin (8, 3);
 - `driveNet.by` on kiekollinen, on jo maalin edustalla tai on siitä yli `plays.maxNodesPerBeat` solmun päässä;
 - `dump.to` ei ole hyökkäysalueella, tai `dump.by` on keskiviivan takana (x < keskiviiva: pitkä kiekko, jota ei kirjoiteta kuvioon);
 - `shoot`- tai `dump`-tahdin jälkeen on tahteja.
@@ -366,7 +367,16 @@ Järjestelmätiedostot kirjoitetaan virstanpylväässä 2. Alueella puolustamise
 - `node`: solmu sellaisenaan.
 - `puckOffset`: (kiekon x + dx, kiekon y + dy), jonka jälkeen x rajataan välille 0 … length − 1 ja y välille 0 … width − 1 erikseen. Jos tulos on maalisolmu (kumpi tahansa), se siirretään yhden askeleen keskiviivaa kohti x-suunnassa eli maalin edustalle (oma maali (1, 2) → (2, 2), vastustajan maali (9, 2) → (8, 2)).
 
-**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` askelta kohti kohdettaan. Askel on (sign(dx), sign(dy)), eli vinottain, kunnes toinen koordinaatti täsmää. Jos askel osuisi maalisolmuun: kun sign(dy) ≠ 0, otetaan askel (sign(dx), 0); kun sign(dy) = 0, otetaan askel (sign(dx), s), jossa s = +1, jos kiekko on oikealla (y > 2), muuten −1. Kaksi puolustajaa saa päätyä samaan solmuun. Järjestäytyneisyys johdetaan siitä, kuinka moni puolustaja on kohteessaan tai kiekon takana (stats-and-checks.md), ja sen tarkka kaava kuuluu virstanpylvääseen 3.
+**Liikkuminen.** Jokainen puolustaja liikkuu tapahtumaa kohden enintään `plays.maxNodesPerBeat` askelta kohti kohdettaan. Askel on (sign(dx), sign(dy)), eli vinottain, kunnes toinen koordinaatti täsmää. Jos askel osuisi maalisolmuun, puolustaja kiertää maalin (D-053, alla). Kaksi puolustajaa saa päätyä samaan solmuun. Järjestäytyneisyys johdetaan siitä, kuinka moni puolustaja on kohteessaan tai kiekon takana (stats-and-checks.md), ja sen tarkka kaava kuuluu virstanpylvääseen 3.
+
+**Maalin kierto** (D-053). Puolustaja, jonka askel osuisi maalisolmuun G = (gx, gy) (kumpi tahansa maali), kiertää maalin sille puolelle, jolla kiekko on. Kaikki koordinaatit luetaan samassa näkökulmassa (puolustajan oma näkökulma, kuten järjestelmän arvioinnissa). Puolustajan solmu on (x0, y0), ja estetty askel on (sx, sy) = (sign(dx), sign(dy)).
+
+1. **Kiertopuoli s:** kiekon y < gy → s = −1 (y − 1 -puoli); kiekon y > gy → s = +1 (y + 1 -puoli).
+2. **Tasatilanne, kiekko keskikaistalla** (kiekon y = gy): s on puolustajan oma puoli, eli y0 < gy → −1 ja y0 > gy → +1 (lyhin reitti, ei ylitystä maalin edestä). Jos myös puolustaja on keskikaistalla (y0 = gy, suoraan maalin edessä tai takana), s = −1, eli puolustajan näkökulmasta vasen puoli, samoin kuin roolien jaossa keskikaista lasketaan vasemmaksi.
+3. **Kun sx ≠ 0** (puolustaja ohittaisi maalin x-suunnassa): korvaava solmu on (gx, gy + s). Jos se on yhden askeleen päässä (|gy + s − y0| ≤ 1), askel otetaan sinne. Muuten puolustaja on maalin vastakkaisella puolella vinossa askeleessa, ja hän ottaa askeleen (0, s) solmuun (x0, gy) maalin eteen tai taakse. Seuraava askel jatkaa kiertoa.
+4. **Kun sx = 0** (puolustaja on maaliviivalla ja kohde maalin toisella puolella, Q-029): kierto kulkee maalin edestä, askel (c, sy), jossa c on keskiviivaa kohti (oma maali c = +1, vastustajan maali c = −1). Askel osuu maalin edustalle (`netFront`), ja seuraava askel vie kohteen puolelle. Kiekon puoli ei vaikuta tähän tapaukseen, koska kohde ratkaisee puolen.
+
+Korvaava solmu ei koskaan ole maalisolmu ja on aina verkon sisällä. Esimerkkejä (oma maali (1, 2)): puolustaja (2, 2), kohde (0, 2), kiekko (0, 3) → (1, 3). Sama, kiekko (0, 2) → (1, 1) (kohta 2, vasen). Puolustaja (0, 1), kohde (2, 3), kiekko (3, 4) → (0, 2), seuraavaksi (1, 3). Puolustaja (1, 1), kohde (1, 3) → (2, 2), seuraavaksi (1, 3).
 
 **Validointi.** Lataaja hylkää järjestelmän, jos:
 
@@ -377,9 +387,9 @@ Järjestelmätiedostot kirjoitetaan virstanpylväässä 2. Alueella puolustamise
 - säännöltä puuttuu jokin viidestä roolista tai siinä on tuntematon rooli, tai kohteella on muu kuin tasan yksi kentistä `node` ja `puckOffset`;
 - `node` on verkon ulkopuolella tai **maalisolmu** (kumpi tahansa, D-033). Kohdesolmut saavat olla oikealla puolella.
 
-## Määritelmät (D-048) – luonnos – odottaa Jerryn hyväksyntää
+## Määritelmät (D-048) – hyväksytty (D-049)
 
-Tämä osio määrittelee D-048:n käsitteet niin tarkasti, että ne voi toteuttaa deterministisesti 11 × 5 -verkossa. Programmer ei toteuta näitä ennen Jerryn hyväksyntää. Kaikki koordinaatit ovat **hyökkäävän joukkueen näkökulmasta** (vastustajan maali (9, 2), `netFront` (8, 2), keskikaista y = 2), ellei toisin mainita. Sijainnit luetaan sillä hetkellä, kun toiminto ratkaistaan, eli tahdin hyökkääjien siirtojen ja puolustajien järjestelmäliikkeen jälkeen (D-041). "Puolustaja" tarkoittaa puolustavan joukkueen viittä kenttäpelaajaa; maalivahti ei ole näissä säännöissä koskaan puolustaja. Säännöt eivät käytä satunnaisuutta, ellei sitä erikseen mainita.
+Tämä osio määrittelee D-048:n käsitteet niin tarkasti, että ne voi toteuttaa deterministisesti 11 × 5 -verkossa. Jerry hyväksyi määritelmät M-1–M-8 sellaisinaan virstanpylvääseen 2 (D-049), samoin D-040:n, D-044:n ja D-047:n tarkennukset. Kaikki koordinaatit ovat **hyökkäävän joukkueen näkökulmasta** (vastustajan maali (9, 2), `netFront` (8, 2), keskikaista y = 2), ellei toisin mainita. Sijainnit luetaan sillä hetkellä, kun toiminto ratkaistaan, eli tahdin hyökkääjien siirtojen ja puolustajien järjestelmäliikkeen jälkeen (D-041). "Puolustaja" tarkoittaa puolustavan joukkueen viittä kenttäpelaajaa; maalivahti ei ole näissä säännöissä koskaan puolustaja. Säännöt eivät käytä satunnaisuutta, ellei sitä erikseen mainita.
 
 ### M-1 Linjan solmut ja etäisyys linjasta
 
@@ -395,6 +405,8 @@ Sama sääntö koskee syöttölinjaa (syöttäjä → vastaanottaja), luistelure
 3. Linjan solmut ovat kaikkien näin saatujen solmujen joukko, päätepisteet mukaan lukien.
 
 Pääakselilla (pidempi koordinaattiero) jako menee aina tasan, joten kullakin i:llä syntyy yksi tai kaksi solmua. Puolivälin kaksi solmua tekevät säännöstä symmetrisen: linja on sama molempiin suuntiin, peilattuna ja kierrettynä, joten peilatun kuvion riskit ovat alkuperäisen peilikuva (D-034). Esimerkkejä: (8, 1) → (8, 3) = {(8, 1), (8, 2), (8, 3)}; (7, 1) → (9, 2) = {(7, 1), (8, 1), (8, 2), (9, 2)}; (10, 1) → (8, 3) = {(10, 1), (9, 2), (8, 3)}.
+
+**Maalisolmu linjalla** (D-051). Syöttölinja ja luistelureitti saavat kulkea maalisolmun kautta. Maalisolmussa ei ole puolustajaa, joten se ei vaikuta riskiin. Poikkeus: syöttö suoraan maalin läpi (syöttäjä ja vastaanottaja molemmat keskikaistalla maalin eri puolilla) hylätään kuvion validoinnissa (Kuviot, Validointi). Laukauslinjasta maalisolmu jätetään pois (M-5).
 
 **Etäisyys linjasta** puolustajalle = pienin Chebyshev-etäisyys puolustajan solmusta mihin tahansa linjan solmuun (0 = puolustaja on linjalla). **Linjan puolustaja** on se, jonka etäisyys on pienin; tasatilanteessa ratkaisee Chebyshev-etäisyys linjan viitesolmuun (syötössä vastaanottaja, luistelussa kohde, blokissa laukaisija, ks. M-5), sitten Manhattan-etäisyys samaan solmuun, sitten pelipaikkajärjestys `C`, `LW`, `RW`, `LD`, `RD`.
 
@@ -435,7 +447,7 @@ Laukauksen maalitarkistukseen lisätään `shot.modifiers.screen`, kun kaikki p�
 2. laukaisija itse ei ole `netFront`-solmussa;
 3. laukaisija on maaliviivan edessä (x < `opponentGoal.x`). Maalin takaa ei laukota maskin läpi.
 
-Muokkaaja on ehto, ei määrä: kaksi pelaajaa maskissa ei tuplaa sitä. Maskissa oleva puolustaja ei poista maskia virstanpylväässä 2. Hyväksyttynä korvaa Kuviot-osion Maski-kappaleen (sisältö on sama, ehdot 2 ja 3 ovat uusia).
+Muokkaaja on ehto, ei määrä: kaksi pelaajaa maskissa ei tuplaa sitä. Maskissa oleva puolustaja ei poista maskia virstanpylväässä 2. Kuviot-osion Maski-kappale on päivitetty vastaamaan tätä (D-049).
 
 ### M-5 Blokkaaja
 
@@ -461,8 +473,9 @@ Irtokiekko solmussa P (paikat: ks. Irtokiekon paikat alla).
 Pelaaja on **paineen alla**, kun ainakin yksi vastustajan kenttäpelaaja on enintään `pressure.underPressureNodes` (1) solmun päässä hänestä (Chebyshev) toiminnon hetkellä.
 
 - **Syöttö:** tapahtuman kenttä "paineen alla" = syöttäjä on paineen alla. Kun se on tosi, syöttötarkistukseen lisätään ehtomuokkaaja `pass.modifiers.underPressure` (−0,9; analyysi 85 % → n. 70 %).
-- **Nimimuutos hyväksynnän jälkeen:** nykyinen `pass.modifiers.pressure` nimetään `underPressure`:ksi (arvo ei muutu). Yleisten käytäntöjen mukaan `pressure`-niminen muokkaaja skaalautuu joukkueen painetilalla (hyökkäävän joukkueen momentum), eikä momentum saa heikentää hyökkäävän joukkueen omia syöttöjä. Analyysin "paineen alla" tarkoittaa fyysistä painetta syöttäjään. `underPressure` lisätään Yleisten käytäntöjen ehtomuokkaajien listaan.
-- **Laukaus:** sama ehto laukaisijalle. Virstanpylväässä 2 se vain kirjataan raporttia varten (mittari "Laukaukset paineen alla (osuus)") eikä muuta todennäköisyyksiä. Laukaustapahtumassa ei vielä ole tätä kenttää, ks. Q-026. `shot.modifiers.pressure` pysyy joukkueen painetilaan sidottuna.
+- **Nimimuutos (D-049):** `pass.modifiers.pressure` on nimetty `underPressure`:ksi (arvo ei muuttunut). Yleisten käytäntöjen mukaan `pressure`-niminen muokkaaja skaalautuu joukkueen painetilalla (hyökkäävän joukkueen momentum), eikä momentum saa heikentää hyökkäävän joukkueen omia syöttöjä. Analyysin "paineen alla" tarkoittaa fyysistä painetta syöttäjään. `underPressure` on Yleisten käytäntöjen ehtomuokkaajien listassa.
+- **Laukaus:** sama ehto laukaisijalle. Laukaustapahtuman kenttä `underPressure` (D-050, `stats-and-checks.md`, Tapahtumaskeema) = laukaisija on paineen alla, ja se kirjataan jokaiseen laukaukseen. Virstanpylväässä 2 se on vain raporttia varten (mittari "Laukaukset paineen alla (osuus)") eikä muuta todennäköisyyksiä. `shot.modifiers.pressure` pysyy joukkueen painetilaan sidottuna. Säteen kalibrointi: Q-032.
+- **Laukausnopeus** (D-052): laukaustapahtuman laukausnopeus on tyhjä (null) virstanpylvääseen 3 asti. Myöhemmin se johdetaan laukaisijan Laukaisuvoimasta pelkäksi näyttöarvoksi ilman pelivaikutusta. `tuning.json`:ssa ei ole sille arvoja.
 
 ### M-8 Alueelle tulon voimasuhde "N vs M"
 
@@ -476,7 +489,7 @@ Lasketaan toiminnon hetkellä ennen tarkistusta:
 
 ### Irtokiekon paikat (D-044) ja epäonnistunut syöttö (D-040)
 
-Paikkasäännöt kirjoitetaan `tuning.json`:n uuteen ylimmän tason osioon `loosePuckSpots` (D-044). Arvo on säännön nimi alla olevasta taulukosta. Osio vaatii lataajan tuen (D-030), joten se lisätään dataan samassa muutoksessa kuin lataajan tuki:
+Paikkasäännöt ovat `tuning.json`:n ylimmän tason osiossa `loosePuckSpots` (D-044, hyväksytty D-049). Arvo on säännön nimi alla olevasta taulukosta. Osio vaatii lataajan tuen (D-030), joten data ja lataajan tuki commitoidaan yhdessä:
 
 ```json
 "loosePuckSpots": {
@@ -510,11 +523,11 @@ Laukaus käyttää `crease`-vyöhykettä (`baseXg.crease`, `attackerByXgZone.cre
 1. **Rebound:** laukaisija voitti `reboundSlot`-irtokiekon kamppailun, ja laukaus on sitä seuraava kiekkotoiminto.
 2. **Ohjaus / syöttö maskiin:** laukaisija tuli `netFront`-solmuun `driveNet`-toiminnolla eikä ole liikkunut sen jälkeen, ja laukaus on onnistunutta syöttöä hänelle seuraava kiekkotoiminto (sama ehto kuin M-3:n kohdassa 1).
 
-Muut laukaukset solmusta (8, 2), esim. kiekollinen luistelee sinne ja laukoo, käyttävät `slot`-vyöhykettä. Maski (M-4) ei koskaan päde `crease`-laukaukseen, koska laukaisija on itse maskissa. Royal Road (M-3) voi päteä, jos syöttö maskiin oli poikittaissyöttö, mutta (8, 2) on keskikaistalla, joten käytännössä ei. Hyväksyttynä korvaa rink.json-osion kappaleen "Maalisolmu ja `crease`" viimeisen virkkeen, koska D-047 on hyväksytty.
+Muut laukaukset solmusta (8, 2), esim. kiekollinen luistelee sinne ja laukoo, käyttävät `slot`-vyöhykettä. Maski (M-4) ei koskaan päde `crease`-laukaukseen, koska laukaisija on itse maskissa. Royal Road (M-3) voi päteä, jos syöttö maskiin oli poikittaissyöttö, mutta (8, 2) on keskikaistalla, joten käytännössä ei. rink.json-osion kappaleen "Maalisolmu ja `crease`" viimeinen virke on korvattu tällä (D-047, D-049).
 
-### Uudet tasapainoarvot tälle luonnokselle
+### Määritelmien tasapainoarvot
 
-Kaikki ovat paikkamerkkejä (`_placeholders`). Ne eivät vaikuta mihinkään ennen toteutusta.
+Numeroarvot ovat paikkamerkkejä (`_placeholders`), jotka kalibroidaan simulaatiolla. `loosePuckSpots` ei ole paikkamerkki vaan hyväksytyt säännöt (D-044).
 
 | Polku | Arvo | Merkitys |
 | --- | --- | --- |
@@ -523,6 +536,7 @@ Kaikki ovat paikkamerkkejä (`_placeholders`). Ne eivät vaikuta mihinkään enn
 | `checks.block.modifiers.laneDistance` | [0,0, 1,0] | Logit laukaisijan hyväksi blokkaajan linjaetäisyyden mukaan (M-5) |
 | `checks.loosePuck.extraPlayerRadius` | 1 | `extraPlayer`-laskennan säde (M-6) |
 | `checks.loosePuck.modifiers.distancePerNode` | 0,5 | Logit per solmu kamppailijoiden etäisyyserosta (M-6) |
-| `pressure.underPressureNodes` | 1 | Paineen alla -säde (M-7) |
+| `pressure.underPressureNodes` | 1 | Paineen alla -säde (M-7, kalibrointi Q-032) |
+| `checks.pass.modifiers.underPressure` | −0,9 | Entinen `checks.pass.modifiers.pressure`, nimetty uudelleen (D-049), arvo ennallaan |
 | `time.secondsPerAction.systemStep` | 2 | Järjestelmätilan askel: kiekollinen joukkue pitää kiekkoa (D-036) tai irtokiekko jäi ilman voittajaa (M-6) |
-| `loosePuckSpots` | ks. yllä | Ei vielä datassa, odottaa lataajan tukea (D-030) |
+| `loosePuckSpots` | ks. yllä | Irtokiekon paikat (D-044). Data ja lataajan tuki commitoidaan yhdessä (D-030) |

@@ -17,12 +17,19 @@ public static class TuningLoader
     private static readonly string[] MappedSections =
     {
         "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "plays", "chanceTypes", "chanceClasses",
+        "pressure", "loosePuckSpots",
     };
 
     /// <summary>Top-level sections of later milestones (data-schema.md); accepted and not mapped yet.</summary>
     private static readonly string[] LaterSections =
     {
-        "energy", "organization", "pressure", "form", "chemistry", "familiarity",
+        "energy", "organization", "form", "chemistry", "familiarity",
+    };
+
+    /// <summary>Team pressure state keys of <c>pressure</c> (milestone 3): accepted, not mapped yet.</summary>
+    private static readonly string[] LaterPressureKeys =
+    {
+        "gainOnZoneEntry", "gainOnShot", "gainPerSecondInZone", "keepOnStoppage", "energyDrainPerSecond", "mentalToughnessReductionPerPoint",
     };
 
     private static readonly string[] CheckKeys = { "kind", "side", "p0", "attacker", "defender", "modifiers" };
@@ -70,6 +77,8 @@ public static class TuningLoader
         PlaysConfig? plays = MapPlays(root.Required("plays"));
         ChanceTypesConfig? chanceTypes = MapChanceTypes(root.Required("chanceTypes"));
         ChanceClassesConfig? chanceClasses = MapChanceClasses(root.Required("chanceClasses"));
+        PressureConfig? pressure = MapPressure(root.Required("pressure"));
+        LoosePuckSpotsConfig? loosePuckSpots = MapLoosePuckSpots(root.Required("loosePuckSpots"));
 
         var checks = new List<CheckDefinition>();
         ShotConfig? shot = null;
@@ -99,12 +108,58 @@ public static class TuningLoader
         }
 
         if (stats == null || formula == null || positions == null || shot == null || time == null || plays == null
-            || chanceTypes == null || chanceClasses == null)
+            || chanceTypes == null || chanceClasses == null || pressure == null || loosePuckSpots == null)
         {
             return null;
         }
 
-        return new TuningConfig(stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses);
+        return new TuningConfig(stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses, pressure, loosePuckSpots);
+    }
+
+    private static PressureConfig? MapPressure(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown(LaterPressureKeys.Append("underPressureNodes").ToArray());
+        int? nodes = reader.Int("underPressureNodes");
+        return nodes.HasValue ? new PressureConfig(nodes.Value) : null;
+    }
+
+    private static LoosePuckSpotsConfig? MapLoosePuckSpots(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown(LoosePuckSpotsConfig.Keys.ToArray());
+        var rules = new Dictionary<string, LoosePuckRule>(StringComparer.Ordinal);
+        foreach (string key in LoosePuckSpotsConfig.Keys)
+        {
+            string? name = reader.String(key);
+            if (name == null)
+            {
+                continue;
+            }
+
+            if (!LoosePuckSpotsConfig.TryParseRule(name, out LoosePuckRule rule))
+            {
+                reader.Error(key, "unknown rule " + name + " (expected netFront, shooterSideCorner, endRowShooterLane, blockerNode or laneDefenderNode)");
+                continue;
+            }
+
+            rules[key] = rule;
+        }
+
+        if (rules.Count != LoosePuckSpotsConfig.Keys.Count)
+        {
+            return null;
+        }
+
+        return new LoosePuckSpotsConfig(rules["reboundSlot"], rules["reboundCorner"], rules["missedShot"], rules["blockedShot"], rules["failedPass"]);
     }
 
     private static TimeConfig? MapTime(JsonReader? reader)

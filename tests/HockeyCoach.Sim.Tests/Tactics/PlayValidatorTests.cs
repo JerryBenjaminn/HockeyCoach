@@ -158,3 +158,35 @@ public class PlayValidatorTests
         Assert.Empty(Validate(new[] { shoot }, type: PlayType.Faceoff, spot: "offensiveLeft"));
     }
 }
+
+public class PassThroughGoalTests
+{
+    private static readonly Rink Rink = TestRinks.Standard();
+
+    private static Play Play(int px, int py, int rx, int ry)
+    {
+        return TestPlays.Build(
+            Position.Center,
+            new[]
+            {
+                TestPlays.At(Position.Center, px, py), TestPlays.At(Position.LeftWing, rx, ry), TestPlays.At(Position.RightWing, 7, 4),
+                TestPlays.At(Position.LeftDefence, 6, 0), TestPlays.At(Position.RightDefence, 6, 4),
+            },
+            new[] { new Beat(TestPlays.NoMoves, PlayAction.Pass(Position.Center, Position.LeftWing)) });
+    }
+
+    [Fact]
+    public void PassStraightThroughTheGoal_IsRejected()
+    {
+        Assert.Contains(PlayValidator.Validate(Play(10, 2, 8, 2), Rink, new PlaysConfig(4, 2)), e => e.Contains("goes straight through a goal (D-051)", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(10, 1, 8, 3)] // diagonal from behind the net: allowed
+    [InlineData(10, 2, 9, 3)]
+    [InlineData(8, 2, 7, 2)]  // same side of the goal
+    public void OtherPassesAroundTheGoal_AreAllowed(int px, int py, int rx, int ry)
+    {
+        Assert.Empty(PlayValidator.Validate(Play(px, py, rx, ry), Rink, new PlaysConfig(4, 2)));
+    }
+}

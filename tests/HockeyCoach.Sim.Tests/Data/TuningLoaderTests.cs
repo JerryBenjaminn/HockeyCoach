@@ -282,7 +282,7 @@ public class TuningLoaderTests
         string[] allowed =
         {
             "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "energy", "organization",
-            "pressure", "form", "chemistry", "familiarity", "plays", "chanceTypes", "chanceClasses",
+            "pressure", "form", "chemistry", "familiarity", "plays", "chanceTypes", "chanceClasses", "loosePuckSpots",
         };
 
         LoadResult<TuningConfig> result = Load(r =>

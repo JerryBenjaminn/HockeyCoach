@@ -88,3 +88,50 @@ public class TuningSectionsLoaderTests
         Assert.All(TimeConfig.PlayActionKeys, key => Assert.True(tuning.Time.GetSecondsPerAction(key) >= 0.0));
     }
 }
+
+public class TuningLoosePuckAndPressureTests
+{
+    private static LoadResult<TuningConfig> Load(Action<System.Text.Json.Nodes.JsonObject> edit)
+    {
+        return TuningLoader.Parse(Fixtures.Edit("tuning-small.json", edit), Fixtures.SmallRinkXgZones);
+    }
+
+    [Fact]
+    public void LoosePuckSpotsAndPressure_AreMapped()
+    {
+        TuningConfig tuning = TuningLoader.Parse(Fixtures.Read("tuning-small.json"), Fixtures.SmallRinkXgZones).Value!;
+
+        Assert.Equal(1, tuning.Pressure.UnderPressureNodes);
+        Assert.Equal(LoosePuckRule.NetFront, tuning.LoosePuckSpots.ReboundSlot);
+        Assert.Equal(LoosePuckRule.ShooterSideCorner, tuning.LoosePuckSpots.ReboundCorner);
+        Assert.Equal(LoosePuckRule.EndRowShooterLane, tuning.LoosePuckSpots.MissedShot);
+        Assert.Equal(LoosePuckRule.BlockerNode, tuning.LoosePuckSpots.BlockedShot);
+        Assert.Equal(LoosePuckRule.LaneDefenderNode, tuning.LoosePuckSpots.FailedPass);
+    }
+
+    [Fact]
+    public void UnknownMissingAndBadRules_AreRejected()
+    {
+        Assert.Contains("loosePuckSpots.offside: unknown key", Load(r => r["loosePuckSpots"]!["offside"] = "netFront").Errors);
+        Assert.Contains("loosePuckSpots.failedPass: missing", Load(r => r["loosePuckSpots"]!.AsObject().Remove("failedPass")).Errors);
+        Assert.Contains(Load(r => r["loosePuckSpots"]!["missedShot"] = "corner").Errors, e => e.StartsWith("loosePuckSpots.missedShot: unknown rule corner", StringComparison.Ordinal));
+        Assert.Contains(Load(r => r["loosePuckSpots"]!["missedShot"] = "blockerNode").Errors, e => e.StartsWith("loosePuckSpots.missedShot: rule BlockerNode has no reference node", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void PressureSection_RequiresUnderPressureNodes_AndAcceptsLaterKeys()
+    {
+        Assert.Contains("pressure.underPressureNodes: missing", Load(r => r["pressure"]!.AsObject().Remove("underPressureNodes")).Errors);
+        Assert.Contains("pressure.radius: unknown key", Load(r => r["pressure"]!["radius"] = 1).Errors);
+        Assert.Contains("pressure.underPressureNodes: must be >= 0, was -1", Load(r => r["pressure"]!["underPressureNodes"] = -1).Errors);
+    }
+
+    [Fact]
+    public void RepositoryTuning_RenamedPassPressureModifier()
+    {
+        TuningConfig tuning = GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning;
+
+        Assert.Contains("underPressure", tuning.GetCheck("pass").Modifiers.Scalars.Keys);
+        Assert.DoesNotContain("pressure", tuning.GetCheck("pass").Modifiers.Scalars.Keys);
+    }
+}
