@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using HockeyCoach.AI;
 using HockeyCoach.Harness.Data;
+using HockeyCoach.Harness.Report;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Match;
 using HockeyCoach.Sim.Model;
@@ -162,6 +163,7 @@ public static class MatchCommand
         double stoppageGaps = 0.0;
         int gaps = 0;
         int events = 0;
+        var targets = new TargetCounts(data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds);
         foreach (PairedGame game in PairedMatches.Play(data, teamA, teamB, options.Seed, pairs))
         {
             MatchResult result = game.Result;
@@ -179,6 +181,7 @@ public static class MatchCommand
             perTeam[0].Add(stats[(int)game.TeamASide]);
             perTeam[1].Add(stats[1 - (int)game.TeamASide]);
             MatchText.CountStoppages(result.Log.Events, stoppages, ref stoppageGaps, ref gaps);
+            AddTargets(targets, game);
         }
 
         int n = options.Count;
@@ -229,27 +232,25 @@ public static class MatchCommand
         sb.AppendLine("Stoppages per match: " + string.Join(", ", stoppages.Select(s => s.Key + " " + F1(s.Value / (double)n))) + "; mean time between stoppages "
             + F1(gaps == 0 ? 0.0 : stoppageGaps / gaps) + " s");
         sb.AppendLine();
-        sb.AppendLine("Targets with a range in data/targets.json:");
-        foreach (TargetMetric metric in data.Targets.Metrics.Where(m => m.Min.HasValue && m.Max.HasValue))
-        {
-            string value = metric.Name == "goalsPerMatch" ? F2(goals) : "not measured by match --count";
-            sb.AppendLine("  " + metric.Name + " [" + metric.Min + ", " + metric.Max + "]: " + value
-                + (metric.Name == "goalsPerMatch" ? " → " + Status(goals, metric) : string.Empty));
-        }
-
-        sb.AppendLine("Other metrics have no range yet (placeholder in targets.json).");
+        sb.AppendLine("Targets (data/targets.json, D-071): value for both teams together (team A / team B); OK / TOO LOW / TOO HIGH where min and max are set:");
+        sb.Append(TargetComparison.Write(TargetComparison.Evaluate(data.Targets, targets), new[] { "A", "B" }));
         return sb.ToString();
+    }
+
+    /// <summary>Adds one paired game to the target counts with team A in slot 0 and team B in slot 1.</summary>
+    public static void AddTargets(TargetCounts targets, PairedGame game)
+    {
+        Func<int, TeamSide> teamOf = TeamOf(game.Setup);
+        TeamSide aSide = game.TeamASide;
+        targets.AddMatch(game.Result.Log.Events, game.Result.Periods, id => teamOf(id) == aSide ? 0 : 1, side => side == aSide ? 0 : 1);
     }
 
     private static string TargetText(GameData data, string name, double value)
     {
         TargetMetric? metric = data.Targets.Metrics.FirstOrDefault(m => m.Name == name);
-        return metric == null || !metric.Min.HasValue || !metric.Max.HasValue ? "no range" : metric.Min + "–" + metric.Max + ": " + Status(value, metric);
-    }
-
-    private static string Status(double value, TargetMetric metric)
-    {
-        return value < metric.Min!.Value ? "TOO LOW" : (value > metric.Max!.Value ? "TOO HIGH" : "OK");
+        return metric == null || !metric.Min.HasValue || !metric.Max.HasValue
+            ? "no range"
+            : metric.Min + "–" + metric.Max + ": " + TargetComparison.StatusText(TargetComparison.Compare(MeasuredValue.Of(value), metric));
     }
 
     internal static string F1(double v) => v.ToString("0.0", CultureInfo.InvariantCulture);
