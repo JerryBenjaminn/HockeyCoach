@@ -170,6 +170,22 @@ namespace HockeyCoach.Sim.State
         /// <param name="maxSteps">Most steps per mover.</param>
         public void Move(TeamSide team, IReadOnlyList<KeyValuePair<Position, GridPoint>> orderedTargets, int maxSteps)
         {
+            Move(team, orderedTargets, maxSteps, null, maxSteps);
+        }
+
+        /// <summary>
+        /// Like <see cref="Move(TeamSide, IReadOnlyList{KeyValuePair{Position, GridPoint}}, int)"/>, but
+        /// <paramref name="limited"/> (if set and listed) takes at most <paramref name="limitedSteps"/> steps (the presser
+        /// reaction delay, D-074). Its ideal end and path are computed with the shorter step count; the processing order and
+        /// the D-058 resolution are unchanged.
+        /// </summary>
+        /// <param name="team">The moving team.</param>
+        /// <param name="orderedTargets">Position → target node (team's own view), in processing order.</param>
+        /// <param name="maxSteps">Most steps per mover.</param>
+        /// <param name="limited">The mover with a shorter step limit, or null.</param>
+        /// <param name="limitedSteps">Most steps of <paramref name="limited"/> (never more than <paramref name="maxSteps"/>).</param>
+        public void Move(TeamSide team, IReadOnlyList<KeyValuePair<Position, GridPoint>> orderedTargets, int maxSteps, Position? limited, int limitedSteps)
+        {
             if (orderedTargets == null)
             {
                 throw new ArgumentNullException(nameof(orderedTargets));
@@ -181,7 +197,8 @@ namespace HockeyCoach.Sim.State
             foreach (KeyValuePair<Position, GridPoint> target in orderedTargets)
             {
                 RequireSkaterNode(target.Value, nameof(orderedTargets));
-                moves.Add(new OccupancyMove(target.Key, SystemMovement.Path(skaters[target.Key], target.Value, puck, maxSteps, _rink)));
+                int steps = limited.HasValue && limited.Value == target.Key ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
+                moves.Add(new OccupancyMove(target.Key, SystemMovement.Path(skaters[target.Key], target.Value, puck, steps, _rink)));
             }
 
             SetTeam(team, OccupancyResolver.Resolve(skaters, moves, _rink));
@@ -225,6 +242,24 @@ namespace HockeyCoach.Sim.State
         /// <param name="pinched">Whether D1's target was replaced.</param>
         public SystemTargets ApplySystem(TeamSide defending, DefensiveSystem system, int maxSteps, bool pinch, out bool pinched)
         {
+            return ApplySystem(defending, system, maxSteps, pinch, null, maxSteps, out pinched);
+        }
+
+        /// <summary>
+        /// Like <see cref="ApplySystem(TeamSide, DefensiveSystem, int, bool, out bool)"/>, with the presser reaction delay
+        /// (D-074): <paramref name="limited"/> (if set) takes at most <paramref name="limitedSteps"/> steps; the other
+        /// defenders move as usual.
+        /// </summary>
+        /// <param name="defending">The moving team.</param>
+        /// <param name="system">Its system.</param>
+        /// <param name="maxSteps">Most steps per skater.</param>
+        /// <param name="pinch">The team's pinch instruction.</param>
+        /// <param name="limited">The delayed presser, or null.</param>
+        /// <param name="limitedSteps">Most steps of <paramref name="limited"/>.</param>
+        /// <param name="pinched">Whether D1's target was replaced.</param>
+        public SystemTargets ApplySystem(
+            TeamSide defending, DefensiveSystem system, int maxSteps, bool pinch, Position? limited, int limitedSteps, out bool pinched)
+        {
             GridPoint puck = TeamFrame.ToTeamView(PuckNode, defending, _rink);
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(defending);
             SystemTargets targets = SystemTargetResolver.Resolve(system, _rink, puck, PuckState, skaters);
@@ -237,7 +272,7 @@ namespace HockeyCoach.Sim.State
                 ordered.Add(new KeyValuePair<Position, GridPoint>(position, target));
             }
 
-            Move(defending, ordered, maxSteps);
+            Move(defending, ordered, maxSteps, limited, limitedSteps);
             return targets;
         }
 

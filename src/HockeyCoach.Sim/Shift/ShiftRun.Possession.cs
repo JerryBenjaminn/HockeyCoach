@@ -67,6 +67,7 @@ namespace HockeyCoach.Sim.Shift
         /// </summary>
         private void GainPossession(TeamSide team, Position holder, GainKind kind, bool fromOpponent)
         {
+            _presserDelayPending = false;
             NotePossession(team, holder, fromOpponent);
             SetAttacker(team);
             _play = null;
@@ -226,8 +227,7 @@ namespace HockeyCoach.Sim.Shift
 
             TraceSnapshotS(team);
             MoveSkaters(team, beat.Moves);
-            TeamSide defending = TeamSides.Opponent(team);
-            ApplyDefence(defending, _tuning.Plays.MaxNodesPerBeat);
+            ApplyActionDefence(team, PresserSource.System);
 
             bool continues;
             switch (action.Type)

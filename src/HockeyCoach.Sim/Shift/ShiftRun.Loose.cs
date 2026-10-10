@@ -29,6 +29,7 @@ namespace HockeyCoach.Sim.Shift
 
         private void StartLooseBattle(TeamSide attackerSide, LooseKind kind, Skater dumper)
         {
+            _presserDelayPending = false;
             _dumpPlayId = kind == LooseKind.Dump ? _play?.Id : null;
             _play = null;
             _prepaid = false;

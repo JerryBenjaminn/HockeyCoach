@@ -31,6 +31,7 @@ namespace HockeyCoach.Sim.Shift
         private readonly int[] _goals = new int[2];
         private readonly Play[] _faceoffPlays = new Play[2];
         private readonly IShotPressureTrace _trace;
+        private readonly IDefenceMoveTrace _moveTrace;
 
         private Mode _mode = Mode.Faceoff;
         private double _time;
@@ -52,6 +53,9 @@ namespace HockeyCoach.Sim.Shift
         private LastPass _lastPass;
         private bool _secondChance;
 
+        // D-074: a completed pass delays the presser in the next beat's or rush action's defence move only.
+        private bool _presserDelayPending;
+
         // Last shot, for the next faceoff spot (O-3).
         private bool _hasLastShot;
         private TeamSide _lastShotTeam;
@@ -63,8 +67,14 @@ namespace HockeyCoach.Sim.Shift
         }
 
         internal ShiftRun(ShiftSetup setup, IRandom random, IShotPressureTrace trace)
+            : this(setup, random, trace, null)
+        {
+        }
+
+        internal ShiftRun(ShiftSetup setup, IRandom random, IShotPressureTrace trace, IDefenceMoveTrace moveTrace)
         {
             _trace = trace;
+            _moveTrace = moveTrace;
             _setup = setup;
             _rink = setup.Rink;
             _tuning = setup.Tuning;
@@ -207,11 +217,58 @@ namespace HockeyCoach.Sim.Shift
             MoveSkaters(team, targets, Unbounded);
         }
 
-        /// <summary>The team's system movement (D-041) with its pinch instruction (O-10).</summary>
+        /// <summary>
+        /// The team's system movement (D-041) with its pinch instruction (O-10), outside a beat or rush action (setup,
+        /// regroup, system step, loose-puck battle). A pending presser reaction delay lapses here (D-074, point 3).
+        /// </summary>
         private void ApplyDefence(TeamSide defending, int maxSteps)
         {
-            _state.ApplySystem(defending, Team(defending).Plan.System, maxSteps, Team(defending).Plan.Instructions.Pinch, out bool pinched);
+            _presserDelayPending = false;
+            MoveDefence(DefenceMoveKind.Other, defending, maxSteps, false, null);
+        }
+
+        /// <summary>
+        /// D-041 phase 2 of a play beat or rush action, after the attackers' moves. After a completed pass the presser
+        /// (D-074) takes at most <c>pressure.presserReactionNodes</c> steps: the M-7 selector evaluated before this move
+        /// with the pass receiver as carrier (system rule in a play, nearest defender in a rush). No presser, no delay.
+        /// </summary>
+        /// <param name="attacking">The team with the puck.</param>
+        /// <param name="source">How the presser is picked (M-7, D-072).</param>
+        private void ApplyActionDefence(TeamSide attacking, PresserSource source)
+        {
+            TeamSide defending = TeamSides.Opponent(attacking);
+            Position? delayed = null;
+            if (_presserDelayPending && _state.HasCarrier && _state.CarrierTeam == attacking)
+            {
+                GridPoint carrierNode = TeamView(attacking, attacking, _state.CarrierPosition.Value);
+                if (FindPresser(attacking, carrierNode, NodesInView(defending, attacking), source, out Position presser))
+                {
+                    delayed = presser;
+                }
+            }
+
+            _presserDelayPending = false;
+            MoveDefence(DefenceMoveKind.Action, defending, _tuning.Plays.MaxNodesPerBeat, source == PresserSource.Nearest, delayed);
+        }
+
+        private void MoveDefence(DefenceMoveKind kind, TeamSide defending, int maxSteps, bool rush, Position? delayed)
+        {
+            IReadOnlyDictionary<Position, GridPoint> before = _moveTrace != null ? _state.NodesInTeamView(defending) : null;
+            _state.ApplySystem(
+                defending,
+                Team(defending).Plan.System,
+                maxSteps,
+                Team(defending).Plan.Instructions.Pinch,
+                delayed,
+                _tuning.Pressure.PresserReactionNodes,
+                out bool pinched);
             _pinchActive[(int)defending] = pinched;
+            if (_moveTrace != null)
+            {
+                GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, defending, _rink);
+                _moveTrace.OnDefenceMove(
+                    new DefenceMoveSample(kind, defending, rush, _log.Count, puck, before, _state.NodesInTeamView(defending), delayed));
+            }
         }
 
         private TeamShiftSetup Team(TeamSide side)
@@ -228,6 +285,7 @@ namespace HockeyCoach.Sim.Shift
         {
             _lastPass = null;
             _secondChance = false;
+            _presserDelayPending = false;
         }
 
         /// <summary>A skater's node in <paramref name="viewer"/>'s own view.</summary>
@@ -264,22 +322,31 @@ namespace HockeyCoach.Sim.Shift
         /// <param name="source">Whether the system or the nearest-defender rule picks the presser.</param>
         private bool CarrierUnderPressure(TeamSide team, GridPoint carrierNode, IReadOnlyDictionary<Position, GridPoint> defenders, PresserSource source)
         {
-            Position presser;
-            bool found;
+            bool found = FindPresser(team, carrierNode, defenders, source, out Position presser);
+            return found && GridPoint.Chebyshev(carrierNode, defenders[presser]) <= _tuning.Pressure.UnderPressureNodes;
+        }
+
+        /// <summary>
+        /// The M-7 presser (D-072) from the current positions: the defending system's rule (roles, mirror, pinch) or the
+        /// defender nearest the carrier. False when the system rule has no candidate.
+        /// </summary>
+        /// <param name="team">The carrier's team.</param>
+        /// <param name="carrierNode">The carrier's node in <paramref name="team"/>'s view.</param>
+        /// <param name="defenders">The defending skaters in <paramref name="team"/>'s view.</param>
+        /// <param name="source">Whether the system or the nearest-defender rule picks the presser.</param>
+        /// <param name="presser">The presser's position.</param>
+        private bool FindPresser(TeamSide team, GridPoint carrierNode, IReadOnlyDictionary<Position, GridPoint> defenders, PresserSource source, out Position presser)
+        {
             if (source == PresserSource.System)
             {
                 TeamSide defending = TeamSides.Opponent(team);
                 GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, defending, _rink);
                 bool pinched = Team(defending).Plan.Instructions.Pinch && _state.IsPinchSpot(puck);
-                found = PresserSelector.FromSystem(
+                return PresserSelector.FromSystem(
                     Team(defending).Plan.System, _rink, puck, _state.PuckState, _state.NodesInTeamView(defending), pinched, out presser);
             }
-            else
-            {
-                found = PresserSelector.Nearest(defenders, carrierNode, out presser);
-            }
 
-            return found && GridPoint.Chebyshev(carrierNode, defenders[presser]) <= _tuning.Pressure.UnderPressureNodes;
+            return PresserSelector.Nearest(defenders, carrierNode, out presser);
         }
 
         /// <summary>Any opposing skater within <c>pressure.underPressureNodes</c> (D-070 condition 2, receiver free).</summary>
@@ -381,6 +448,7 @@ namespace HockeyCoach.Sim.Shift
 
         private void End(ShiftEndReason reason, StoppageReason stoppage)
         {
+            _presserDelayPending = false;
             _log.Append(new StoppageEvent(Context(), stoppage));
             _endReason = reason;
             _ended = true;

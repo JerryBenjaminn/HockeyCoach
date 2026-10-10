@@ -33,7 +33,7 @@ namespace HockeyCoach.Sim.Shift
             IReadOnlyDictionary<Position, GridPoint>[] saved = _state.SaveNodes();
             bool[] pinch = (bool[])_pinchActive.Clone();
             MoveRushSupport(team);
-            ApplyDefence(defending, _tuning.Plays.MaxNodesPerBeat);
+            ApplyActionDefence(team, PresserSource.Nearest);
             Position carrier = _state.CarrierPosition.Value;
             RushAction action = ChooseRushAction(team, carrier, out Position receiver, out GridPoint target);
             double duration = action == RushAction.Shoot
@@ -236,6 +236,7 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
+            _presserDelayPending = false;
             Spend(_tuning.Time.RegroupSeconds);
             SelectNext(_tuning.Time.RegroupSeconds + _tuning.Time.SetupSeconds);
         }

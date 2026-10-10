@@ -32,5 +32,11 @@ namespace HockeyCoach.Sim.Shift
         {
             return new ShiftRun(setup, random, trace).Run();
         }
+
+        /// <summary>Runs the shift and reports every defence system move and its presser reaction delay (D-074, tests only).</summary>
+        internal static ShiftResult Run(ShiftSetup setup, IRandom random, IDefenceMoveTrace moveTrace)
+        {
+            return new ShiftRun(setup, random, null, moveTrace).Run();
+        }
     }
 }

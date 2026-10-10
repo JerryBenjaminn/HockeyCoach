@@ -120,6 +120,7 @@ namespace HockeyCoach.Sim.Shift
         private void ChangeOnIce(TeamSide team, LineupState lineup, bool forwards, int index)
         {
             KeyValuePair<int[], int[]> change = SwapUnit(lineup, forwards, index);
+            _presserDelayPending = false;
             _state.ReplaceUnit(team, lineup.OnIce);
             foreach (Position position in forwards ? Tactics.PositionOrder.Forwards : new[] { Position.LeftDefence, Position.RightDefence })
             {
