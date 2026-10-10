@@ -14,6 +14,19 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-054 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys:** hyväksytkö designerin tarkennukset D-072:n painostajaan (M-7)?
+**Konteksti:** `data-schema.md`, M-7, Painostaja. D-072 sanoo, että paineen antaa järjestelmäkohteeltaan `puckOffset`-puolustaja, ja kun järjestelmä ei ohjaa liikettä (esim. suorahyökkäys), lähin puolustaja. Päätös ei kerro, miten valitaan useasta ehdokkaasta. Lisäksi O-7 sanoo, että puolustajat liikkuvat suorahyökkäyksen aikana järjestelmän mukaan, joten suorahyökkäys ei ole speksissä tila, jossa järjestelmä ei ohjaa liikettä.
+**Suositukset (designer, eivät ole hyväksyttyjä, kirjoitettu speksiin oletuksina):**
+1. Mikä tahansa `puckOffset` kelpaa, ei vain [0, 0]. Seuraus: trap122:n F1 ([−1, 1]) on painostaja, mutta säteellä 0 se antaa painetta hyökkäys- ja keskialueella harvoin. Trap ohjaa eikä prässää, joten tämä on toivottu ero järjestelmien välillä.
+2. Useasta ehdokkaasta valitaan pienin `puckOffset` (Chebyshev, sitten Manhattan), sitten roolijärjestys `F1`, `D1`, `D2`, `F2`, `F3`. forecheck212:n keskialueella painostaja on F1 (F2:n kohde on [−1, 1] tai [−1, 0]). `pinch`-ohjeen D1 on ehdokas pituudella 0.
+3. Roolit ja sääntö arvioidaan toiminnon hetkellä nykyisistä sijainneista (puhdas funktio, ei tallennettua tilaa). Kiekollisen solmu on sama kuin liikkeessä, joten sääntö on sama.
+4. Jos säännössä ei ole `puckOffset`-kohdetta, kukaan ei anna painetta. Nykyisissä järjestelmissä sellaista sääntöä ei ole.
+5. D-070:n vapaan vastaanottajan ehto tarkistaa yhä kaikki vastustajat tilannekuvassa S, ei vain painostajaa (D-070:n sanamuoto, ja S:ssä painostaja määräytyi syöttäjän mukaan).
+6. Suorahyökkäys: painostaja on lähin puolustaja, kuten D-072:ssa sanotaan, vaikka O-7:ssä puolustajat liikkuvat järjestelmän mukaan. Perustelu: rushissa puolustus on järjestäytymätön (O < 0,8), ja lähin taaksepäin luistelija painostaa. Vaihtoehto: järjestelmän painostaja myös rushissa, jolloin sääntö on yhtenäinen ja vain toinen yritys (O-8) käyttää lähintä.
+**Ehdotettu oletus:** suositukset 1–6, kunnes Jerry päättää. Ohjelmoija toteuttaa niiden mukaan.
+**Vastaus:** (Jerry täyttää)
+
 ### Q-050 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** sisältävätkö Wisehockeyn laukausyritykset blokatut laukaukset? Simulaation laukausyritykset sisältävät ne.
 **Konteksti:** `targets.json` `shotAttempts` (D-071).
