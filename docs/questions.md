@@ -14,6 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-049 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys:** miten laukaukset paineen alla (99,8 %) saadaan tavoitteeseen 68–76 %, kun syy ei ole järjestelmädatassa? Tarvitaan koodi- tai määritelmämuutos (M-7 tai D-041), ja Jerryn pitää valita suunta.
+**Konteksti:** kalibrointikierroksen vaihe 2 (D-069). Oman pään box+1 ei ole mies miestä -puolustusta: molemmissa järjestelmissä vain F1 (lähin hyökkääjä, `puckOffset` [0, 0]) menee kiekolliseen, ja muut neljä seisovat kiinteissä solmuissa. Neljän ottelun tapahtumalokissa jokaisessa laukauksessa (584) laukojan solmussa oli tasan yksi puolustaja, 97 % hyökkääjä (F1). Kaikki laukaukset lähtivät kuudesta solmusta: puolustajan näkökulmasta (2, 1–3) ja (3, 1–3) eli slotti, ympyrät, korkea slotti ja pisteet. 11 × 5 -verkossa oikean box+1:n neljä paikkaa (pakit ympyröissä tai maalin edessä, laiturit pisteillä tai korkeassa slotissa) ovat juuri näitä solmuja, joten säteellä 0 laukoja on lähes aina jonkun solmussa. Kokeilu (ei repossa): kun F1 ei seuraa kiekollista slottiin, paine pysyi 99,9 %:ssa, koska boxin pelaaja oli valmiiksi samassa solmussa. Painostaja ehtii laukojan solmuun myös siksi, että puolustajat liikkuvat `maxNodesPerBeat` (2) solmua ennen jokaista toimintoa (D-041). Syöttäjiin osuu sama ongelma: omassa päässä 97 % syötöistä annetaan paineen alla.
+**Vaihtoehdot (programmer toteuttaa, Jerry päättää):**
+1. M-7: laukoja ei ole paineen alla, jos laukaus seuraa suoraan onnistunutta syöttöä (laukaus heti syötöstä) eikä puolustaja ollut vastaanottajan solmussa ennen tahdin liikkeitä. Ilmiö on oikea: heti syötöstä lähtevät laukaukset ovat tyypillisesti vapaita.
+2. M-7: paineen antaa vain puolustaja, joka pelaa kiekolliseen eli jonka järjestelmäkohde on `puckOffset`. Muut samassa solmussa olevat puolustajat vaikuttavat blokkiin ja maskiin, eivät paineeseen. Tarvitsee skeemaan tai koodiin tiedon painostajan roolista.
+3. D-041 tai O-6: kiekolliseen pelaava puolustaja liikkuu syötön jälkeen enintään 1 solmun ennen seuraavaa toimintoa (reaktioviive). Muuttaa lukittua päätöstä.
+**Kysymys veljelle:** miten Wisehockey määrittelee "paineen alla" (etäisyys metreinä, aikaikkuna ennen laukausta)? Verkon solmu on noin 5–6 m leveä, joten säde 0 voi olla analyysin määritelmää väljempi.
+**Ehdotettu oletus:** järjestelmädataa ei muuteta tämän vuoksi. Vaihe 3 (syötöt) voi edetä, koska syöttöjen paineosuus (67,2 %) on jo lähellä tavoitetta.
+
 ### Q-048 · 2026-10-10 · kirjaaja: Jerry
 **Kysymys:** montako aloitusta ottelussa on? Oikeassa kiekossa tyypillisesti noin 55–65, simulaatiossa noin 47.
 **Konteksti:** kalibrointikierros ennen virstanpylvästä 4 (D-069). Jerry tarkistaa luvun Wisehockeysta.
