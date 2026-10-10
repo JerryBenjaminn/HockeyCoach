@@ -90,6 +90,7 @@ Simulaation tapahtumaloki noudattaa oikean otteluanalyysin aikajanan rakennetta,
 | Kamppailu | Osallistujat, lopputulos (voitto, ei voittajaa, häviö) |
 | Pelikatko | Syy (maalivahti sulki kiekon, pitkä kiekko, paitsio, jäähy, maali, kiekko ulos kaukalosta (D-063), erän loppu (D-064)) |
 | Vaihto | Ketju ulos, ketju sisään |
+| Aikalisä | Joukkue, erä, kello (vain katkolla, D-077). Tarkemmat kentät ja vaikutus: `data-schema.md` |
 
 ## Järjestäytyneisyys, paine ja paikkatyypit
 

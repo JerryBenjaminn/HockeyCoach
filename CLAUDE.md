@@ -51,7 +51,7 @@ Sim- ja AI-projektien pitää kääntyä Unity 6:ssa sellaisenaan. Siksi niissä
 ## Ehdottomat säännöt
 
 1. **Determinismi.** Sama siemen ja samat päätökset tuottavat aina saman tapahtumalokin.
-   - Kaikki satunnaisuus kulkee yhden, parametrina annetun generaattorin kautta (`Sim.Random`).
+   - Kaikki satunnaisuus tulee ottelun siemenestä deterministisesti johdetuista, parametrina annetuista virroista (`Sim.Random`), ei koskaan muualta. Esim. simulaatiolla ja kummallakin valmentajalla on oma virta (D-077).
    - Ei `System.Random`, ei `Guid.NewGuid()`, ei `DateTime.Now`, ei staattisia generaattoreita.
    - Sanakirjat ja joukot käydään läpi järjestettynä.
 2. **Ei maagisia numeroita.** Jokainen painokerroin, perustaso, aikakustannus ja raja luetaan `data/tuning.json`-tiedostosta. Tavoitehaarukat ovat vain tiedostossa `data/targets.json`.

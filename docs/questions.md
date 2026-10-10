@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-057 · 2026-10-11 · kirjaaja: koordinaattori
+**Kysymys:** virstanpylvään 4 suunnitelman kohdat, joita D-077 ei ratkaissut: (a) AI:n kynnysarvot uuteen `ai`-osioon `tuning.json`:iin; (b) `batch --matches N` on otteluiden määrä per AI-pari; (c) kokoonpanot johdetaan parin siemenestä (ei aina siemenet 1 ja 2), ja lisäksi peilikokoonpano järjestelmävertailuun.
+**Konteksti:** ohjelmoijan suunnitelman kysymykset K4, K6, K7.
+**Ehdotettu oletus:** suositukset (a)–(c) sellaisinaan, kunnes Jerry päättää.
+
 ### Q-050 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** sisältävätkö Wisehockeyn laukausyritykset blokatut laukaukset? Simulaation laukausyritykset sisältävät ne.
 **Konteksti:** `targets.json` `shotAttempts` (D-071).
@@ -41,7 +46,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Konteksti:** designerin hyväksytty M3-suunnitelma (D-062), kohta D-058, `Sim.Tactics.OccupancyResolver` ja `SystemValidator`. Kohta (2): F1 `puckOffset` [0, 0] osuu molempien nykyisten järjestelmien kiinteisiin kohteisiin joillakin kiekon sijainneilla, joten tiukka tulkinta hylkäisi käytännössä jokaisen painostavan järjestelmän.
 **Ehdotettu oletus (toteutettu):** (1) Chebyshev-etäisyys omaan maalisolmuun, sitten Manhattan-etäisyys samaan, sitten etäisyys keskikaistaan, sitten pienempi y, sitten pienempi x (joukkueen omassa näkökulmassa). (2) Vain aina osuvat kohteet hylätään. Kiekon sijainnista riippuvat osumat ratkaistaan ajon aikana resolverilla. Kuvioiden lähtö- ja tahtisolmut hylättiin jo ennestään.
 
-### Q-042 · 2026-10-10 · kirjaaja: Jerry (virstanpylväs 4)
+### Q-042 · 2026-10-10 · kirjaaja: Jerry (virstanpylväs 4, ensimmäisen batch-raportin jälkeen, D-077)
 **Kysymys:** pitkä kiekko (icing) ja sääntö, ettei sen tehnyt ketju pääse vaihtoon.
 **Konteksti:** katkon syy "pitkä kiekko" on jo tapahtumaskeemassa, mutta sitä ei mallinneta.
 

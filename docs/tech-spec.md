@@ -88,7 +88,7 @@ Datatiedostojen tarkat skeemat, yksiköt ja validointisäännöt ovat dokumentis
 Sama siemenluku ja samat päätökset tuottavat aina täsmälleen saman tapahtumalokin. Tämä on ehdoton vaatimus.
 
 - **Oma satunnaislukugeneraattori** (esim. PCG32 tai xoshiro128), ei `System.Random`, koska sen tulokset voivat vaihdella .NET-versioiden ja Unityn välillä.
-- **Kaikki satunnaisuus kulkee yhden generaattori-instanssin kautta**, joka annetaan ottelulle parametrina. Ei staattisia generaattoreita, ei `DateTime.Now`-siemeniä.
+- **Kaikki satunnaisuus tulee ottelun siemenestä deterministisesti johdetuista virroista**, jotka annetaan parametrina (simulaatiolla ja kummallakin valmentajalla oma virta, D-077). Valmentajan arvonnat eivät siirrä simulaation virtaa. Ei staattisia generaattoreita, ei `DateTime.Now`-siemeniä.
 - **Ei liukulukujen järjestysriippuvuutta:** sanakirjojen läpikäynti tehdään aina järjestettynä, jotta tulokset eivät riipu hajautusjärjestyksestä.
 - **Determinismi samassa ajoympäristössä riittää** (D-012). Bittitarkkuutta .NETin ja Unityn välillä ei vaadita. Kaikki matematiikka (exp, log, logit) kulkee `CheckMath`-luokan kautta, jotta sen voi myöhemmin vaihtaa yhdessä paikassa.
 
