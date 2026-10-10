@@ -1,5 +1,6 @@
 using HockeyCoach.Sim.Config;
 using HockeyCoach.Sim.Model;
+using HockeyCoach.Sim.Shift;
 using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Harness.Data;
@@ -38,6 +39,12 @@ public sealed record GameData(Rink Rink, TuningConfig Tuning, TargetsConfig Targ
         Rink rink = RinkLoader.Load(Path.Combine(dataDirectory, RinkFile)).GetOrThrow(RinkFile);
         string tuningFile = tuningPath ?? Path.Combine(dataDirectory, TuningFile);
         TuningConfig tuning = TuningLoader.Load(tuningFile, rink.XgZones).GetOrThrow(Path.GetFileName(tuningFile));
+        IReadOnlyList<string> shiftErrors = ShiftTuningRequirements.Validate(tuning);
+        if (shiftErrors.Count > 0)
+        {
+            throw new DataLoadException(Path.GetFileName(tuningFile), shiftErrors);
+        }
+
         TargetsConfig targets = TargetsLoader.Load(Path.Combine(dataDirectory, TargetsFile)).GetOrThrow(TargetsFile);
         IReadOnlyList<Play> plays = PlayLoader.LoadAll(Path.Combine(dataDirectory, PlaysDirectory), rink, tuning.Plays);
         IReadOnlyList<DefensiveSystem> systems = SystemLoader.LoadAll(Path.Combine(dataDirectory, SystemsDirectory), rink);
