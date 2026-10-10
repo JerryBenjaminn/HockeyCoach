@@ -56,6 +56,12 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-046 | 2026-10-09 | Virstanpylvään 2 rajaus | Järjestäytyneisyys, energia ja paine ovat vakioita virstanpylvääseen 3 asti (suorahyökkäyspaikat vasta silloin). Järjestelmätilan ohjeet (`netFrontAfterShot`, `looseChasers`, `pinch`) virstanpylväässä 3, virstanpylväässä 2 kiinteät oletukset. Taklaukset ja jäähyt myöhemmin. Avoimissa kysymyksissä Q-006, Q-007, Q-008, Q-010, Q-011, Q-014 ja Q-020 edetään ehdotetuilla oletuksilla | lukittu |
 | D-047 | 2026-10-09 | Maskin xG | `netFront`-solmun laukaukset (reboundit ja ohjaukset) käyttävät maskin (`crease`) xG-arvoa (E-003) | lukittu |
 | D-048 | 2026-10-09 | Määritelmät | Syöttölinjan etäisyys, poikittaissyöttö, Royal Road, blokkaaja ja irtokiekon kamppailijat kirjoitetaan `data-schema.md`:hen, ja Jerry hyväksyy ne ennen toteutusta | lukittu |
+| D-049 | 2026-10-10 | Määritelmät | Määritelmät M-1–M-8 (`data-schema.md`) hyväksytty sellaisinaan virstanpylvääseen 2. D-040:n, D-044:n ja D-047:n tarkennukset hyväksytty. `pass.modifiers.pressure` nimetään `underPressure`:ksi | lukittu |
+| D-050 | 2026-10-10 | Laukauksen paine | Laukaustapahtumaan lisätään kenttä `underPressure` (Q-026) | lukittu |
+| D-051 | 2026-10-10 | Syöttö maalin läpi | Syöttölinja saa kulkea maalisolmun kautta, paitsi suoraan maalin läpi: validointi hylkää syötön, jossa syöttäjä ja vastaanottaja ovat molemmat keskikaistalla (y = 2) maalin eri puolilla. Vinot syötöt maalin takaa slottiin ovat sallittuja (Q-027) | lukittu |
+| D-052 | 2026-10-10 | Laukausnopeus | Tyhjä virstanpylvääseen 3 asti. Myöhemmin johdetaan laukaisuvoimasta pelkäksi näyttöarvoksi ilman pelivaikutusta (Q-028) | lukittu |
+| D-053 | 2026-10-10 | Maalin kierto | Puolustaja, jonka askel osuisi maalisolmuun, kiertää maalin sille puolelle, jolla kiekko on (Q-029) | lukittu |
+| D-054 | 2026-10-10 | Unity-kansio | Agentit eivät koske `unity/`-kansioon. Jerry hoitaa Unity-projektin itse | lukittu |
 
 ## Muutosehdotukset
 

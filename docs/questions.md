@@ -14,25 +14,17 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-029 · 2026-10-09 · kirjaaja: programmer
-**Kysymys:** mitä puolustaja tekee, kun hänen suora askeleensa y-suunnassa (sign(dx) = 0) osuisi maalisolmuun?
-**Konteksti:** `docs/data-schema.md`, Puolustusjärjestelmät → Liikkuminen. Sääntö korvaa maalisolmuun osuvan askeleen askeleella (sign(dx), 0), kun sign(dy) ≠ 0. Jos myös sign(dx) = 0 (esim. puolustaja (9, 1), kohde (9, 3), välissä maalisolmu (9, 2)), korvaava askel on (0, 0), eikä puolustaja pääse kohteeseensa koskaan. Tilanne on mahdollinen `puckOffset`-kohteilla maaliviivalla.
-**Ehdotettu oletus:** toteutettu kirjaimellisesti: puolustaja jää paikalleen tässä tapahtumassa. Vaihtoehto: kierretään maalin edustan kautta (askel (−1, sign(dy)) hyökkäyspäässä, eli keskiviivaa kohti).
+### Q-032 · 2026-10-10 · kirjaaja: Jerry
+**Kysymys:** kalibroidaan paineen alla -säde (M-7, `pressure.underPressureNodes`) raportin perusteella.
+**Konteksti:** laukausten osuutta paineen alla verrataan Wisehockeyn 68–76 %:iin (`stats-and-checks.md`, tavoitearvot). Virstanpylväs 5.
 
-### Q-028 · 2026-10-09 · kirjaaja: programmer
-**Kysymys:** mitä Laukaus-tapahtuman kenttä "laukausnopeus" tarkoittaa simulaatiossa?
-**Konteksti:** `docs/stats-and-checks.md`, Tapahtumaskeema. Simulaatio ei mallinna laukauksen nopeutta, eikä `tuning.json`:ssa ole sille arvoja. Kenttä on nyt `ShotEvent.Speed`, ja se on aina tyhjä (null).
-**Ehdotettu oletus:** kenttä pysyy tyhjänä, kunnes päätetään, johdetaanko se esim. laukaisijan Laukaisuvoimasta tai poistetaanko se skeemasta.
+### Q-031 · 2026-10-10 · kirjaaja: Jerry
+**Kysymys:** miten maalin edessä oleva puolustaja vaikuttaa maskiin (M-4)?
+**Konteksti:** virstanpylväässä 2 puolustaja ei poista maskia. Otetaan uudelleen esille virstanpylväässä 3.
 
-### Q-027 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** saako syöttölinja tai luistelureitti kulkea maalisolmun kautta (esim. maalin takaa (10, 1) slottiin (8, 3), linjan solmut (10, 1), (9, 2), (8, 3))?
-**Konteksti:** `docs/data-schema.md`, Määritelmät M-1 (luonnos). E-002:n hyväksyntä jätti "maali esteenä" -säännön erillisen päätöksen varaan. Oikeassa kiekossa maalin takaa syötetään slottiin maalin ohi, ei läpi, mutta 22 jalan verkossa ero ei näy solmuina.
-**Ehdotettu oletus:** sallitaan. Maalisolmu kuuluu linjaan, mutta siellä ei ole puolustajaa, joten se ei vaikuta riskiin. Laukauslinjasta maalisolmu jätetään pois (M-5).
-
-### Q-026 · 2026-10-09 · kirjaaja: game-designer
-**Kysymys:** lisätäänkö laukaustapahtumaan kenttä "paineen alla (kyllä/ei)"?
-**Konteksti:** tavoitearvoissa on mittari "Laukaukset paineen alla (osuus)" (analyysi 68 % / 76 %), mutta tapahtumaskeeman Laukaus-tapahtumassa ei ole paine-kenttää (vain Syötössä). Raportti ei voi laskea mittaria ilman sitä. D-045 kieltää uudet tapahtumatyypit, mutta tämä on kenttä olemassa olevaan tapahtumaan, joten se vaatii `stats-and-checks.md`:n tapahtumaskeeman päivityksen.
-**Ehdotettu oletus:** kyllä, kenttä lisätään. Määritelmä sama kuin syötöllä (`data-schema.md`, M-7). Virstanpylväässä 2 se vain kirjataan, eikä se muuta laukauksen todennäköisyyksiä.
+### Q-030 · 2026-10-10 · kirjaaja: Jerry
+**Kysymys veljelle:** miten Wisehockey määrittelee Royal Road -syötön?
+**Konteksti:** M-3 (`data-schema.md`). Määritelmän pitää vastata analyysityökalua, jotta mittari on vertailukelpoinen.
 
 ### Q-021 · 2026-10-09 · kirjaaja: game-designer
 **Kysymys:** kertyykö kemiaa myös hyökkäyskolmikon ja pakkiparin välille, vai vain yksikön sisällä?
@@ -102,6 +94,30 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-029 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** mitä puolustaja tekee, kun hänen suora askeleensa y-suunnassa (sign(dx) = 0) osuisi maalisolmuun?
+**Konteksti:** `docs/data-schema.md`, Puolustusjärjestelmät → Liikkuminen. Sääntö korvaa maalisolmuun osuvan askeleen askeleella (sign(dx), 0), kun sign(dy) ≠ 0. Jos myös sign(dx) = 0 (esim. puolustaja (9, 1), kohde (9, 3), välissä maalisolmu (9, 2)), korvaava askel on (0, 0), eikä puolustaja pääse kohteeseensa koskaan. Tilanne on mahdollinen `puckOffset`-kohteilla maaliviivalla.
+**Ehdotettu oletus:** toteutettu kirjaimellisesti: puolustaja jää paikalleen tässä tapahtumassa. Vaihtoehto: kierretään maalin edustan kautta (askel (−1, sign(dy)) hyökkäyspäässä, eli keskiviivaa kohti).
+**Vastaus (Jerry, 2026-10-10):** puolustaja kiertää maalin sille puolelle, jolla kiekko on. Kirjattu: D-053.
+
+### Q-028 · 2026-10-09 · kirjaaja: programmer
+**Kysymys:** mitä Laukaus-tapahtuman kenttä "laukausnopeus" tarkoittaa simulaatiossa?
+**Konteksti:** `docs/stats-and-checks.md`, Tapahtumaskeema. Simulaatio ei mallinna laukauksen nopeutta, eikä `tuning.json`:ssa ole sille arvoja. Kenttä on nyt `ShotEvent.Speed`, ja se on aina tyhjä (null).
+**Ehdotettu oletus:** kenttä pysyy tyhjänä, kunnes päätetään, johdetaanko se esim. laukaisijan Laukaisuvoimasta tai poistetaanko se skeemasta.
+**Vastaus (Jerry, 2026-10-10):** laukausnopeus on tyhjä virstanpylvääseen 3 asti. Myöhemmin se johdetaan laukaisuvoimasta pelkäksi näyttöarvoksi ilman pelivaikutusta. Kirjattu: D-052.
+
+### Q-027 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** saako syöttölinja tai luistelureitti kulkea maalisolmun kautta (esim. maalin takaa (10, 1) slottiin (8, 3), linjan solmut (10, 1), (9, 2), (8, 3))?
+**Konteksti:** `docs/data-schema.md`, Määritelmät M-1 (luonnos). E-002:n hyväksyntä jätti "maali esteenä" -säännön erillisen päätöksen varaan. Oikeassa kiekossa maalin takaa syötetään slottiin maalin ohi, ei läpi, mutta 22 jalan verkossa ero ei näy solmuina.
+**Ehdotettu oletus:** sallitaan. Maalisolmu kuuluu linjaan, mutta siellä ei ole puolustajaa, joten se ei vaikuta riskiin. Laukauslinjasta maalisolmu jätetään pois (M-5).
+**Vastaus (Jerry, 2026-10-10):** syöttölinja saa kulkea maalisolmun kautta, paitsi suoraan maalin läpi: validointi hylkää syötön, jossa syöttäjä ja vastaanottaja ovat molemmat keskikaistalla (y = 2) maalin eri puolilla. Vinot syötöt maalin takaa slottiin ovat sallittuja. Kirjattu: D-051.
+
+### Q-026 · 2026-10-09 · kirjaaja: game-designer
+**Kysymys:** lisätäänkö laukaustapahtumaan kenttä "paineen alla (kyllä/ei)"?
+**Konteksti:** tavoitearvoissa on mittari "Laukaukset paineen alla (osuus)" (analyysi 68 % / 76 %), mutta tapahtumaskeeman Laukaus-tapahtumassa ei ole paine-kenttää (vain Syötössä). Raportti ei voi laskea mittaria ilman sitä. D-045 kieltää uudet tapahtumatyypit, mutta tämä on kenttä olemassa olevaan tapahtumaan, joten se vaatii `stats-and-checks.md`:n tapahtumaskeeman päivityksen.
+**Ehdotettu oletus:** kyllä, kenttä lisätään. Määritelmä sama kuin syötöllä (`data-schema.md`, M-7). Virstanpylväässä 2 se vain kirjataan, eikä se muuta laukauksen todennäköisyyksiä.
+**Vastaus (Jerry, 2026-10-10):** kyllä. Laukaustapahtumaan lisätään kenttä `underPressure`, ja `stats-and-checks.md` on päivitetty. Kirjattu: D-050.
 
 ### Q-001 · 2026-10-09 · kirjaaja: Jerry
 **Kysymys:** kuvion ja puolustusjärjestelmän tarkka JSON-skeema.

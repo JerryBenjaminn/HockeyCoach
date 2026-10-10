@@ -85,7 +85,7 @@ Simulaation tapahtumaloki noudattaa oikean otteluanalyysin aikajanan rakennetta,
 | Hallittu alueelletuonti | Kiekon kuljettaja, voimasuhteet (esim. 2 vs 2), tapa (kuljetus tai syöttö), lopputulos (hallinta säilytetty tai menetetty) |
 | Kiekko päätyyn | Ampuja, lopputulos kamppailusta |
 | Syöttö | Syöttäjä, vastaanottaja, paineen alla (kyllä/ei), onnistui (kyllä/ei) |
-| Laukaus | Laukoja, torjuja tai blokkaaja, xG, paikkaluokka, paikkatyyppi, laukausnopeus, lopputulos (maali, torjuttu, blokattu, ohi) |
+| Laukaus | Laukoja, torjuja tai blokkaaja, xG, paikkaluokka, paikkatyyppi, paineen alla (kyllä/ei, D-050), laukausnopeus (tyhjä virstanpylvääseen 3 asti, D-052), lopputulos (maali, torjuttu, blokattu, ohi) |
 | Kiekonmenetys / riisto | Menettäjä, riistäjä, sijainti |
 | Kamppailu | Osallistujat, lopputulos (voitto, ei voittajaa, häviö) |
 | Pelikatko | Syy (maalivahti sulki kiekon, pitkä kiekko, paitsio, jäähy, maali) |

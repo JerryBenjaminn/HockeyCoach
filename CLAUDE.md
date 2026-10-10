@@ -58,6 +58,7 @@ Sim- ja AI-projektien pitää kääntyä Unity 6:ssa sellaisenaan. Siksi niissä
 3. **Tapahtumaloki noudattaa tapahtumaskeemaa** (`docs/stats-and-checks.md`). Uusi tapahtumatyyppi vaatii dokumentin päivityksen ensin.
 4. **Testit ennen valmista.** Ominaisuus on valmis vasta, kun sillä on testit ja `dotnet test` menee läpi.
 5. **Otteluanalyysien raakadataa ei tallenneta repoon.** Vain keskiarvot ja haarukat dokumentteihin.
+6. **Älä koske `unity/`-kansioon.** Ei muokkauksia, ei committeja, ei stagea. Jerry hoitaa Unity-projektin itse.
 
 ## Työnjako
 
