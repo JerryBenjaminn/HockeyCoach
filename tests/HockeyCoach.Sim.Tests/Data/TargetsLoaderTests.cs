@@ -49,4 +49,29 @@ public class TargetsLoaderTests
 
         Assert.Contains("metrics.goalsPerMatch: min (4) is greater than max (3)", result.Errors);
     }
+
+    [Fact]
+    public void PerShiftScope_IsAccepted()
+    {
+        LoadResult<TargetsConfig> result = TargetsLoader.Parse(Valid.Replace("\"scope\": \"perTeamPerMatch\"", "\"scope\": \"perShift\"", StringComparison.Ordinal));
+
+        Assert.Empty(result.Errors);
+        Assert.Equal("perShift", result.Value!.Metrics.Single(m => m.Name == "xg").Scope);
+    }
+
+    [Fact]
+    public void UnknownScope_IsReported()
+    {
+        LoadResult<TargetsConfig> result = TargetsLoader.Parse(Valid.Replace("\"scope\": \"perTeamPerMatch\"", "\"scope\": \"perPeriod\"", StringComparison.Ordinal));
+
+        Assert.Contains(result.Errors, e => e.StartsWith("metrics.xg.scope: unknown value perPeriod", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MetricNote_IsIgnored()
+    {
+        LoadResult<TargetsConfig> result = TargetsLoader.Parse(Valid.Replace("\"unit\": \"xg\"", "\"_note\": \"meta\", \"unit\": \"xg\"", StringComparison.Ordinal));
+
+        Assert.Empty(result.Errors);
+    }
 }

@@ -5,7 +5,7 @@ namespace HockeyCoach.Harness.Data;
 /// <summary>One target metric (data/targets.json, D-016). Used by the Harness report only, never by Sim.</summary>
 /// <param name="Name">Metric name, also used in the report.</param>
 /// <param name="Unit">share, count, xg or seconds.</param>
-/// <param name="Scope">perMatch, perTeamPerMatch, perTeam, perShot or perMatchup.</param>
+/// <param name="Scope">perMatch, perTeamPerMatch, perTeam, perShot, perShift (D-071) or perMatchup.</param>
 /// <param name="Min">Inclusive lower bound, or null when not known yet.</param>
 /// <param name="Max">Inclusive upper bound, or null when not known yet.</param>
 /// <param name="Status">approved or placeholder.</param>
@@ -23,7 +23,7 @@ public static class TargetsLoader
     public const int SchemaVersion = 1;
 
     private static readonly string[] Units = { "share", "count", "xg", "seconds" };
-    private static readonly string[] Scopes = { "perMatch", "perTeamPerMatch", "perTeam", "perShot", "perMatchup" };
+    private static readonly string[] Scopes = { "perMatch", "perTeamPerMatch", "perTeam", "perShot", "perShift", "perMatchup" };
     private static readonly string[] Statuses = { "approved", "placeholder" };
 
     /// <summary>Parses and validates targets JSON text.</summary>

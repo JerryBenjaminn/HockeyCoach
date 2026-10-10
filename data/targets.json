@@ -1,13 +1,20 @@
 {
   "schemaVersion": 1,
-  "_notes": "Only source of target ranges (D-016). Only ranges, never raw match data (CLAUDE.md rule 5). status: approved = range set by Jerry; placeholder = range not yet known (min/max null), filled after 3-5 match analyses. Observations behind each metric: docs/stats-and-checks.md, Tavoitearvot. Faceoff win rate and first-line ice time are deliberately not here: they are not calibration targets. Schema: docs/data-schema.md.",
+  "_notes": "Only source of target ranges (D-016). Only ranges, never raw match data (CLAUDE.md rule 5). status: approved = range set by Jerry; placeholder = range not yet known (min/max null), filled after 3-5 match analyses. All ranges are regulation time 3 x 20 min, no overtime (Q-052). Keys without 5v5 are full match, all strengths (D-069). evenStrengthXgShare Rush/Turnover/ZonePlay are compared without the faceoff class for now (Q-051). The Harness compares every metric with both min and max: OK / TOO LOW / TOO HIGH (D-071). Observations behind each metric: docs/stats-and-checks.md, Tavoitearvot. Faceoff win rate and first-line ice time are deliberately not here: they are not calibration targets. Schema and the metric-to-statistic mapping: docs/data-schema.md, targets.json.",
   "metrics": {
     "smartVsRandomWinRate": {"unit": "share", "scope": "perMatchup", "min": 0.75, "max": 0.85, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
     "goalsPerMatch": {"_note": "Both teams combined: home goals + away goals per match, mean over all matches of the batch (vision.md: Ottelussa syntyy keskimäärin 4–7 maalia). Regulation 3 x 1200 s; ties allowed in milestone 3, no overtime.", "unit": "count", "scope": "perMatch", "min": 4, "max": 7, "status": "approved", "source": "vision.md, Onnistumisen kriteerit"},
+    "goalsPerTeamPerMatch": {"_note": "Optional. One team's goals in regulation.", "unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
+
+    "shotAttempts": {"_note": "Full match, all strengths. All attempts: goals, saved, blocked, missed (Q-050).", "unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-069, D-071)"},
+    "shotsOnTarget": {"_note": "Full match, all strengths. Goals + saved.", "unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-069, D-071)"},
+    "shotsBlocked": {"_note": "Optional. The team's own attempts blocked by the opponent, full match.", "unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
+    "shotsMissed": {"_note": "Optional. The team's missed attempts incl. out of play, full match.", "unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
 
     "passSuccessAll": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "passSuccess5v5": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "passSuccessUnderPressure": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "passesUnderPressureShare": {"_note": "Optional. Passes under pressure / all passes.", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
     "shotsUnderPressureShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
 
     "puckBattleWinShare": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
@@ -24,14 +31,23 @@
     "chances5v5Moderate": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (classes: Q-004)"},
     "chancesAll": {"unit": "count", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
 
-    "xg": {"unit": "xg", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "evenStrengthXgShareRush": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "evenStrengthXgShareTurnover": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "evenStrengthXgShareZonePlay": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "xg": {"_note": "Full match, all strengths: sum of attempt xG (Q-014).", "unit": "xg", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "xg5v5": {"_note": "Optional. Sum of attempt xG at 5 vs 5.", "unit": "xg", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
+    "evenStrengthXgShareRush": {"_note": "Even-strength xG of rush shots / (rush + turnover + zone play), faceoff shots excluded (Q-051).", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareTurnover": {"_note": "As Rush, turnover class (Q-051).", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareZonePlay": {"_note": "As Rush, zone play class (Q-051).", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "evenStrengthXgShareFaceoff": {"_note": "Even-strength xG of faceoff shots / even-strength xG of all four classes (Q-051).", "unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
     "shotXgTypical": {"unit": "xg", "scope": "perShot", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
 
     "offensiveZoneTime5v5": {"unit": "seconds", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "offensiveZoneTime": {"_note": "Optional. Full match, all strengths.", "unit": "seconds", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
     "zoneEntrySuccessCarry": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
-    "zoneEntrySuccessPass": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"}
+    "zoneEntrySuccessPass": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+
+    "faceoffsPerMatch": {"_note": "Both teams combined: faceoff events per match in regulation, period openings included.", "unit": "count", "scope": "perMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (Q-048, D-071)"},
+    "meanTimeBetweenStoppages": {"_note": "Optional. Per match 3600 s / faceoffs, mean over matches.", "unit": "seconds", "scope": "perMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
+
+    "shiftLengthForward": {"_note": "Optional. Forward trio ice seconds / trio shifts; a period start begins a new shift (Q-047).", "unit": "seconds", "scope": "perShift", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
+    "shiftLengthDefence": {"_note": "Optional. Defence pair ice seconds / pair shifts; a period start begins a new shift (Q-047).", "unit": "seconds", "scope": "perShift", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"}
   }
 }
