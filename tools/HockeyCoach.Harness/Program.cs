@@ -16,9 +16,43 @@ internal static class Program
             return Validate(OptionValue(args, "--data") ?? DefaultDataDirectory);
         }
 
+        if (args.Length > 0 && args[0] == "shift")
+        {
+            return Shift(args);
+        }
+
         Console.Error.WriteLine("Usage: validate [--data <dir>]   Load and validate rink, tuning, targets, plays and systems.");
+        Console.Error.WriteLine("       shift [--seed 42] [--home-system forecheck212] [--away-system trap122] [--no-board] [--json] [--max-steps 500] [--data <dir>]");
         Console.Error.WriteLine("match, batch and compare are not implemented yet.");
         return 1;
+    }
+
+    private static int Shift(string[] args)
+    {
+        Simulation.ShiftCommand.Options? options = Simulation.ShiftCommand.Parse(args, out string? error);
+        if (options == null)
+        {
+            Console.Error.WriteLine(error);
+            return 1;
+        }
+
+        try
+        {
+            GameData data = GameData.Load(OptionValue(args, "--data") ?? DefaultDataDirectory);
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.Write(Simulation.ShiftCommand.Run(data, options));
+            return 0;
+        }
+        catch (DataLoadException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 2;
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
     }
 
     private static int Validate(string dataDirectory)
