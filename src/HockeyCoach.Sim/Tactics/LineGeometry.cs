@@ -47,6 +47,29 @@ namespace HockeyCoach.Sim.Tactics
             return nodes;
         }
 
+        /// <summary>
+        /// The pass lane passer → receiver: the M-1 line without the passer's own node (D-062). Closeness to the passer is
+        /// pressure (M-7), not lane coverage. Never empty: passer and receiver are on different nodes.
+        /// </summary>
+        public static IReadOnlyList<GridPoint> PassLane(GridPoint passer, GridPoint receiver)
+        {
+            if (passer.Equals(receiver))
+            {
+                throw new ArgumentException("A pass needs two different nodes.", nameof(receiver));
+            }
+
+            var lane = new List<GridPoint>();
+            foreach (GridPoint node in Nodes(passer, receiver))
+            {
+                if (!node.Equals(passer))
+                {
+                    lane.Add(node);
+                }
+            }
+
+            return lane;
+        }
+
         /// <summary>Smallest Chebyshev distance from <paramref name="point"/> to any line node (0 = on the line).</summary>
         public static int DistanceToLine(GridPoint point, IReadOnlyList<GridPoint> line)
         {

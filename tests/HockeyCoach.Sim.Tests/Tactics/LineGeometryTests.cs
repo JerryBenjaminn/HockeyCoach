@@ -75,4 +75,25 @@ public class LineGeometryTests
     {
         Assert.Equal(expected, LineGeometry.IsCrossIce(P(8, y1), P(8, y2), Rink));
     }
+
+    [Fact]
+    public void PassLane_ExcludesThePassersNode()
+    {
+        Assert.Equal(Set(P(8, 2), P(8, 3)), new HashSet<GridPoint>(LineGeometry.PassLane(P(8, 1), P(8, 3))));
+        Assert.Equal(new[] { P(1, 3) }, LineGeometry.PassLane(P(0, 3), P(1, 3)));
+        Assert.Throws<ArgumentException>(() => LineGeometry.PassLane(P(4, 4), P(4, 4)));
+    }
+
+    [Fact]
+    public void PassLaneDefender_OnThePassersNodeIsOneNodeOffTheLane_NotOnIt()
+    {
+        // D-062 double penalty: F1 on the passer's node (0, 1) passing to (0, 3) is pressure (M-7), not lane coverage.
+        var defenders = new Dictionary<Position, GridPoint> { { Position.Center, P(0, 1) }, { Position.LeftWing, P(4, 4) } };
+
+        Assert.True(LineGeometry.LineDefender(defenders, LineGeometry.PassLane(P(0, 1), P(0, 3)), P(0, 3), out Position defender, out int distance));
+        Assert.Equal(Position.Center, defender);
+        Assert.Equal(1, distance);
+        LineGeometry.LineDefender(defenders, LineGeometry.Nodes(P(0, 1), P(0, 3)), P(0, 3), out _, out int full);
+        Assert.Equal(0, full);
+    }
 }
