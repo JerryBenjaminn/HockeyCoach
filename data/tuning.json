@@ -14,7 +14,9 @@
     "checks.dumpIn.goalieReachNodes",
     "checks.deke.p0",
     "checks.deke.modifiers.defenderDistance",
+    "checks.deke.modifiers.organization",
     "checks.breakout.p0",
+    "checks.breakout.modifiers.organization",
     "checks.shot.attackerByXgZone.crease.shooter.shotAccuracy",
     "checks.shot.attackerByXgZone.crease.shooter.shotPower",
     "checks.shot.attackerByXgZone.highSlot.shooter.shotAccuracy",
@@ -39,6 +41,7 @@
     "checks.shot.baseXg.behindNet",
     "checks.shot.baseXg.longRange",
     "checks.shot.onTargetShare",
+    "checks.shot.missedOutOfPlayShare",
     "checks.shot.modifiers.royalRoad",
     "checks.shot.modifiers.screen",
     "checks.shot.modifiers.pressure",
@@ -49,6 +52,7 @@
     "checks.block.modifiers.distancePerNode",
     "checks.block.maxLaneDistance",
     "checks.block.modifiers.laneDistance",
+    "checks.block.modifiers.organization",
     "checks.rebound.p0",
     "checks.rebound.controlledHoldShare",
     "checks.rebound.modifiers.shotPowerPerPoint",
@@ -60,7 +64,6 @@
     "checks.hit.p0",
     "checks.hit.penaltyBaseProbability",
     "checks.hit.penaltyChangePerDisciplinePoint",
-    "time.periodSeconds",
     "time.defenceShiftSeconds",
     "time.secondsPerAction.faceoff",
     "time.secondsPerAction.skate",
@@ -78,15 +81,18 @@
     "time.setupSeconds",
     "time.regroupSeconds",
     "energy.start",
+    "energy.drainPerSecondOnIce",
     "energy.costPerAction",
     "energy.enduranceCostReductionPerPoint",
-    "energy.benchRecoveryPerSecond",
+    "energy.benchRecoveryRate",
     "energy.checkModifierAtZero",
     "positions.offSideCheckModifier",
     "organization.dropOnTurnover.defensive",
     "organization.dropOnTurnover.neutral",
     "organization.dropOnTurnover.offensive",
-    "organization.recoveryPerEvent",
+    "organization.dropFactorOnShotOrDump",
+    "organization.dropPerCommittedPlayer",
+    "organization.recoveryPerSecond",
     "organization.recoveryWeights.speed",
     "organization.recoveryWeights.awareness",
     "organization.recoveryPerStatPoint",
@@ -99,6 +105,7 @@
     "pressure.mentalToughnessReductionPerPoint",
     "chemistry.maxPassModifier",
     "chemistry.maxOrganizationRecoveryBonus",
+    "familiarity.freeUses",
     "familiarity.penaltyPerRepeat",
     "familiarity.maxPenalty",
     "plays.maxNodesPerBeat",
@@ -239,7 +246,8 @@
           0.0,
           1.0,
           3.5
-        ]
+        ],
+        "organization": 0.6
       }
     },
     "breakout": {
@@ -258,10 +266,12 @@
           "awareness": 0.5
         }
       },
-      "modifiers": {}
+      "modifiers": {
+        "organization": 0.6
+      }
     },
     "shot": {
-      "_notes": "Order: block -> onTargetShare -> goal check (Q-010). Success = goal. p0 = baseXg[xgZone] of the shooting node in the shooter's view. Shooter weights slide with distance (attackerByXgZone): slot accuracy 0.8, blue line power 0.7 from docs, others interpolated placeholders. behindNet (E-002) = wraparound / shot from behind the goal line, very low xG. Goal probability and xG are clamped to minProbability..maxProbability here, not checkFormula (D-014, Q-009).",
+      "_notes": "Order: block -> onTargetShare -> goal check (Q-010). Success = goal. p0 = baseXg[xgZone] of the shooting node in the shooter's view. Shooter weights slide with distance (attackerByXgZone): slot accuracy 0.8, blue line power 0.7 from docs, others interpolated placeholders. behindNet (E-002) = wraparound / shot from behind the goal line, very low xG. Goal probability and xG are clamped to minProbability..maxProbability here, not checkFormula (D-014, Q-009). screenContested (Q-031, D-062) replaces screen when a defender is on the net-front node. missedOutOfPlayShare (D-063): share of missed shots that leave the rink (stoppage, faceoff); the rest stay loose at loosePuckSpots.missedShot.",
       "kind": "twoSided",
       "attackerByXgZone": {
         "crease": {
@@ -341,10 +351,12 @@
         "royalRoad": 0.6,
         "screen": 0.3,
         "pressure": 0.3,
-        "organization": 0.7
+        "organization": 0.7,
+        "screenContested": 0.15
       },
       "minProbability": 0.001,
-      "maxProbability": 0.6
+      "maxProbability": 0.6,
+      "missedOutOfPlayShare": 0.25
     },
     "block": {
       "_notes": "One-sided (D-019): H = checkFormula.referenceValue, D = defender side. Success = shot gets through (not blocked). distancePerNode: logit in the shooter's favour per node between shooter and blocker. Clamped with checkFormula bounds (block is a check). Blocker = defender nearest the shot lane (shooter node to goal node, goal node excluded) within maxLaneDistance nodes; no candidate = no block check. laneDistance (table by the blocker's lane distance) is logit in the shooter's favour. Definitions M-5 in data-schema.md (D-049).",
@@ -362,7 +374,8 @@
         "laneDistance": [
           0.0,
           1.0
-        ]
+        ],
+        "organization": 0.5
       }
     },
     "rebound": {
@@ -452,30 +465,33 @@
     "regroupSeconds": 8
   },
   "energy": {
-    "_notes": "Energy 0..1. checkModifierAtZero = logit applied to every check of a player at energy 0, linear in between.",
+    "_notes": "Energy 0..1 (D-062, data-schema.md, Energia). On ice a skater loses drainPerSecondOnIce per game second and costPerAction per check he takes part in (every participant, loose-puck battlers included), both scaled by 1 - enduranceCostReductionPerPoint x (endurance - checkFormula.referenceValue). On the bench energy recovers exponentially: E <- 1 - (1 - E) x exp(-benchRecoveryRate x seconds). The goalie loses energy only from the opposing team pressure (pressure.energyDrainPerSecond). checkModifierAtZero = logit at energy 0 applied to every check, linear in between, per side as the mean of the side's participants.",
     "start": 1.0,
+    "drainPerSecondOnIce": 0.0055,
     "costPerAction": 0.02,
     "enduranceCostReductionPerPoint": 0.03,
-    "benchRecoveryPerSecond": 0.01,
-    "checkModifierAtZero": -0.8
+    "benchRecoveryRate": 0.011,
+    "checkModifierAtZero": -1.2
   },
   "positions": {
     "_notes": "Positions C, LW, RW, LD, RD (D-024). offSideCheckModifier (logit, negative) applies to every check a player takes part in while playing the opposite side of his primary position (LW<->RW, LD<->RD). Added to M when the player is on the attacker side, subtracted when on the defender side, so it always hurts his own side. Applied once per check side, even if several players on that side are off-side.",
     "offSideCheckModifier": -0.3
   },
   "organization": {
-    "_notes": "0..1. dropOnTurnover is indexed by the zone where the puck was lost (losing team view). Each check lists its own organization modifier (logit for the attacker at defender organization 0, linear).",
+    "_notes": "0..1 per defending team, a scalar that the checks read; defender positions follow it with a delay (D-062, data-schema.md, Järjestäytyneisyys). On a turnover the losing team's value becomes min(O, 1 - dropOnTurnover[zone where the puck was lost, losing team view]) - dropPerCommittedPlayer x committed players; after a shot, rebound, block or dump the drop is multiplied by dropFactorOnShotOrDump. Recovers recoveryPerSecond x (1 + recoveryPerStatPoint x (S - checkFormula.referenceValue)) per game second, S = mean over the five skaters of recoveryWeights. organizedThreshold: rush ends and chance type stops being rush at or above it. Each check lists its own organization modifier (logit for the attacker at defender organization 0, linear).",
     "dropOnTurnover": {
-      "defensive": 0.2,
-      "neutral": 0.4,
-      "offensive": 0.6
+      "defensive": 0.35,
+      "neutral": 0.5,
+      "offensive": 0.65
     },
-    "recoveryPerEvent": 0.15,
+    "dropFactorOnShotOrDump": 0.5,
+    "dropPerCommittedPlayer": 0.1,
+    "recoveryPerSecond": 0.04,
     "recoveryWeights": {
       "speed": 0.5,
       "awareness": 0.5
     },
-    "recoveryPerStatPoint": 0.01,
+    "recoveryPerStatPoint": 0.06,
     "organizedThreshold": 0.8
   },
   "pressure": {
@@ -496,8 +512,11 @@
     "maxOrganizationRecoveryBonus": 0.1
   },
   "familiarity": {
-    "penaltyPerRepeat": 0.1,
-    "maxPenalty": 0.5
+    "_notes": "Per team, per play and per match (mirror image = same play), counted when the play starts, interrupted and faceoff plays included (D-066). Penalty (logit against the attacker) = min(maxPenalty, penaltyPerRepeat x max(0, uses - freeUses)), uses including the current start. Applies to the play's passes, carries and blocks. The counter is multiplied by intermissionMultiplier at every intermission (D-066: halved).",
+    "freeUses": 2,
+    "penaltyPerRepeat": 0.08,
+    "maxPenalty": 0.5,
+    "intermissionMultiplier": 0.5
   },
   "plays": {
     "maxBeats": 4,
