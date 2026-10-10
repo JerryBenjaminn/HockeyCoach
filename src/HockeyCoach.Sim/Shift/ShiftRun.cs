@@ -41,11 +41,9 @@ namespace HockeyCoach.Sim.Shift
         private Play _play;
         private int _beat;
 
-        // Action history for Royal Road (M-3) and crease xG (D-047): only the last puck action counts.
+        // Action history for Royal Road (M-3) and crease xG (D-047, D-059): only the last puck action counts.
         private LastPass _lastPass;
-        private bool _hasReboundWinner;
-        private TeamSide _reboundTeam;
-        private Position _reboundPosition;
+        private bool _secondChance;
 
         internal ShiftRun(ShiftSetup setup, IRandom random)
         {
@@ -147,19 +145,30 @@ namespace HockeyCoach.Sim.Shift
             TeamSide winner = result.Success ? TeamSide.Home : TeamSide.Away;
             GridPoint spot = _state.PuckNode;
             _time += _tuning.Time.GetSecondsPerAction("faceoff");
-            _state.GivePuckTo(winner, Position.Center);
+            Play faceoffPlay = _faceoffPlays[(int)winner];
+            Position receiver = faceoffPlay != null ? faceoffPlay.PuckCarrier : DotSideDefence(winner, spot);
+            _state.GivePuckTo(winner, receiver);
             _log.Append(new FaceoffEvent(Context(null, null), home.Id, away.Id, winner, LocationOf(spot)));
 
-            Play faceoffPlay = _faceoffPlays[(int)winner];
             if (faceoffPlay != null)
             {
                 SetAttacker(winner);
-                BeginPlay(faceoffPlay, faceoffPlay.PuckCarrier != Position.Center);
+                BeginPlay(faceoffPlay, false);
             }
             else
             {
-                GainPossession(winner, Position.Center);
+                GainPossession(winner, receiver);
             }
+        }
+
+        /// <summary>
+        /// D-060 default receiver without a faceoff play: the defenceman on the dot's side in the winner's view (left spot
+        /// and the middle lane → LD, right → RD).
+        /// </summary>
+        private Position DotSideDefence(TeamSide winner, GridPoint spot)
+        {
+            GridPoint view = TeamFrame.ToTeamView(spot, winner, _rink);
+            return _rink.LaneOf(view.Y) == Lane.Right ? Position.RightDefence : Position.LeftDefence;
         }
 
         private FaceoffLocation LocationOf(GridPoint homeView)
@@ -510,7 +519,7 @@ namespace HockeyCoach.Sim.Shift
         private void ClearActionHistory()
         {
             _lastPass = null;
-            _hasReboundWinner = false;
+            _secondChance = false;
         }
 
         /// <summary>A skater's node in <paramref name="viewer"/>'s own view.</summary>

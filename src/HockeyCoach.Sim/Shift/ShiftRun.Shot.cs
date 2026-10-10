@@ -118,7 +118,7 @@ namespace HockeyCoach.Sim.Shift
             if (result.Success)
             {
                 _state.SetLoosePuck(TeamFrame.ToRink(LooseSpot(_tuning.LoosePuckSpots.ReboundSlot, shooterNode, null), team, _rink));
-                StartLooseBattle(team, LooseKind.ReboundSlot, null);
+                StartLooseBattle(team, LooseKind.Normal, null);
                 return;
             }
 
@@ -199,7 +199,10 @@ namespace HockeyCoach.Sim.Shift
             return false;
         }
 
-        /// <summary>D-047: a rebound winner's shot, or a pass to a player who drove the net, from the net front.</summary>
+        /// <summary>
+        /// D-047, D-059: from the net front, a second-chance shot after a loose puck won there, or a pass to a player who
+        /// drove the net.
+        /// </summary>
         private bool UsesCrease(TeamSide team, Position shooter, GridPoint shooterNode, GridPoint netFront)
         {
             if (!shooterNode.Equals(netFront))
@@ -207,9 +210,8 @@ namespace HockeyCoach.Sim.Shift
                 return false;
             }
 
-            bool rebound = _hasReboundWinner && _reboundTeam == team && _reboundPosition == shooter;
             bool tip = _droveNet[(int)team, (int)shooter] && _lastPass != null && _lastPass.Team == team && _lastPass.To == shooter;
-            return rebound || tip;
+            return _secondChance || tip;
         }
 
         /// <summary>Faceoff play → faceoff; a takeaway in the neutral or offensive zone within the window → turnover; else offensive zone.</summary>

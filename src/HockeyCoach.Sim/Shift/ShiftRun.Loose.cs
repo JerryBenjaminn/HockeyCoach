@@ -9,7 +9,8 @@ namespace HockeyCoach.Sim.Shift
 {
     /// <summary>
     /// Loose pucks (M-6, Q-007) and the dump (E-001, D-031). The first battle at a new loose puck is resolved in the next
-    /// step without movement; after "no winner" both teams take one system step before the battle is retried.
+    /// step without movement; after "no winner" both teams take one system step before the battle is retried. A win in
+    /// the winner's offensive slot is an immediate second-chance shot (D-059, D-065).
     /// </summary>
     internal sealed partial class ShiftRun
     {
@@ -22,7 +23,6 @@ namespace HockeyCoach.Sim.Shift
         private enum LooseKind
         {
             Normal,
-            ReboundSlot,
             Dump,
         }
 
@@ -120,16 +120,31 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
-            bool reboundWin = _looseKind == LooseKind.ReboundSlot && outcome == BattleOutcome.Win;
             TeamSide gainer = outcome == BattleOutcome.Win ? attacker : defender;
-            GainPossession(gainer, outcome == BattleOutcome.Win ? attackerPosition : defenderPosition);
-            if (reboundWin && _mode == Mode.PlayBeat && _play != null && _beat == 0)
+            Position gainerPosition = outcome == BattleOutcome.Win ? attackerPosition : defenderPosition;
+            if (IsOffensiveSlot(gainer, _state.NodeOf(gainer, gainerPosition)))
             {
-                // Setup moved the players; the rebound condition of D-047 only holds while the winner still stands at the spot.
-                _hasReboundWinner = _state.NodeOf(attacker, attackerPosition).Equals(spot);
-                _reboundTeam = attacker;
-                _reboundPosition = attackerPosition;
+                SecondChance(gainer, gainerPosition);
+                return;
             }
+
+            GainPossession(gainer, gainerPosition);
+        }
+
+        /// <summary>D-059, D-065: a loose puck won in the winner's offensive slot is shot at once, without play setup.</summary>
+        private void SecondChance(TeamSide team, Position shooter)
+        {
+            SetAttacker(team);
+            _play = null;
+            _secondChance = true;
+            Shoot(team, shooter);
+        }
+
+        /// <summary>The node (home view) is a slot node of <paramref name="team"/>'s offensive zone, in its own view.</summary>
+        private bool IsOffensiveSlot(TeamSide team, GridPoint node)
+        {
+            GridPoint view = TeamFrame.ToTeamView(node, team, _rink);
+            return _rink.GetNode(view.X, view.Y).IsSlot && _rink.ZoneAtX(view.X) == RinkZone.Offensive;
         }
 
         /// <summary>The team's skater nearest the node: Chebyshev, then Manhattan, then position order.</summary>
