@@ -14,6 +14,18 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-053 · 2026-10-10 · kirjaaja: game-designer
+**Kysymys:** D-070:n ja D-071:n toteutuksessa on tarkennuksia, joita päätökset eivät kata. Hyväksytkö designerin suositukset?
+**Konteksti:** `data-schema.md`, M-7 (Laukaus heti syötöstä) ja targets.json (Mittarit ja niiden laskenta, Automaattinen vertailu).
+**Suositukset (designer, eivät ole hyväksyttyjä):**
+1. M-7, vapaa vastaanottaja: käytetään samaa sädettä `pressure.underPressureNodes` kuin muussa paineessa. Arvolla 0 sama kuin D-070:n "ei vastaanottajan solmussa", mutta pysyy johdonmukaisena, jos säde kalibroidaan (Q-032).
+2. M-7: poikkeus koskee kaikkia syöttö → laukaus -pareja: kuviot, D-036:n aloitussyöttö, aloituskuviot ja suorahyökkäys (O-7). Ei koske toista yritystä eikä aloitusvoitosta suoraan laukaisevaa.
+3. M-7: poikkeus muuttaa vain laukaustapahtuman `underPressure`-kentän ja raportin. Laukaukselle ei lisätä `underPressure`-muokkaajaa (se olisi uusi mekaniikka).
+4. `smartVsRandomWinRate`: voitot / ottelut, tasapeli ei ole voitto (tiukin tulkinta; tasapelien osuus näytetään erikseen). Vaihtoehto: tasapeli = puoli voittoa.
+5. `shotXgTypical` (haarukka 0,003–0,05): raportti näyttää laukausten xG:n 10., 50. ja 90. persentiilin. TOO LOW, jos 10. persentiili < `min`; TOO HIGH, jos 90. persentiili > `max`; muuten OK.
+6. Automaattinen vertailu tehdään AI-pareittain yhteisarvolle (molemmat joukkueet). Realismia verrataan järkevien AI:den pariin (rulebased vs. rulebased), koska satunnainen AI vääristää lukuja.
+**Ehdotettu oletus:** suositukset 1–6, kunnes Jerry päättää.
+
 ### Q-050 · 2026-10-10 · kirjaaja: game-designer
 **Kysymys:** sisältävätkö Wisehockeyn laukausyritykset blokatut laukaukset? Simulaation laukausyritykset sisältävät ne.
 **Konteksti:** `targets.json` `shotAttempts` (D-071).

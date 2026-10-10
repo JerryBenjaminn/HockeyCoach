@@ -197,7 +197,7 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 | `metrics` | Mittarin nimi → määrittely. Raportti käyttää samaa nimeä |
 | `_note` | Vapaaehtoinen meta-avain: mittarin tarkka määrittely ihmisille. Lataaja ohittaa sen |
 | `unit` | `share` (0–1), `count`, `xg`, `seconds` |
-| `scope` | `perMatch`, `perTeamPerMatch`, `perTeam`, `perShot`, `perMatchup` (ks. alla) |
+| `scope` | `perMatch`, `perTeamPerMatch`, `perTeam`, `perShot`, `perShift`, `perMatchup` (ks. alla) |
 | `min`, `max` | Haarukka (mukaan lukien). `null`, kun haarukkaa ei vielä tiedetä |
 | `status` | `approved` (Jerry asettanut) tai `placeholder` (ei haarukkaa, raportti näyttää arvon ilman OK/korkea/matala-tilaa) |
 | `source` | Mistä mittari tulee |
@@ -210,7 +210,53 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 | `perTeamPerMatch` | Yhden joukkueen arvo yhdessä ottelussa, keskiarvo kaikista (joukkue, ottelu) -pareista |
 | `perTeam` | Osuus yhden joukkueen tapahtumista koko batchissa (esim. syötöt), raportoidaan joukkueittain ja yhteensä |
 | `perShot` | Yhden laukauksen arvo |
+| `perShift` | Yhden vaihdon pituus (D-071). Vaihto = yksikön yhtäjaksoinen jääaika jäälle tulosta vaihtoon tai erän loppuun (erän alku aloittaa uuden vaihdon, Q-047). Arvo = Σ jääaika / Σ vaihdot yhden joukkueen kaikista kyseisen yksikkötyypin vaihdoista koko batchissa; raportoidaan joukkueittain ja yhteensä. Kolmikko ja pari vaihtuvat yhtenä yksikkönä, joten yksikön vaihto = sen pelaajien vaihto. Maalivahti ei kuulu |
 | `perMatchup` | AI-parin tulos koko batchissa (esim. voitto-osuus) |
+
+**Yhteiset säännöt (D-071).**
+
+- **Varsinainen peliaika (Q-052).** Kaikki haarukat koskevat varsinaista peliaikaa 3 × 20 min. Jos simulaatioon tulee jatkoaika, sen tapahtumat (erä > 3) jätetään pois kaikista mittareista. Nyt jatkoaikaa ei ole.
+- **Koko ottelu vs. 5v5.** Avaimet ilman `5v5`-päätettä lasketaan kaikista pelitilanteista (D-069). `5v5`-avaimet lasketaan vain tapahtumista, joiden voimasuhde on 5 vs 5. Ennen erikoistilanteita molemmat ovat samat.
+- **xG:n paikkatyyppiosuudet (Q-051).** `evenStrengthXgShareRush`, `...Turnover` ja `...ZonePlay` lasketaan toistaiseksi **ilman aloitusluokkaa**: osoittaja ja nimittäjä ovat tasakentällisten laukausten xG:t luokista suorahyökkäys, riisto ja alueella pelaaminen, ja aloituslaukaukset (O-12, paikkatyyppi aloitus) jätetään pois molemmista. Kolmen osuuden summa on 1. `evenStrengthXgShareFaceoff` on aloitusluokan osuus kaikkien neljän luokan tasakentällisestä xG:stä. Kun Jerry on täyttänyt osuudet kaikkine luokkineen, sääntö päätetään uudelleen.
+- **Automaattinen vertailu (tech-spec.md, Tavoitevertailu).** Harness vertaa jokaista mittaria, jolla on sekä `min` että `max`, riippumatta `status`-arvosta: arvo < `min` → TOO LOW, arvo > `max` → TOO HIGH, muuten OK (rajat mukaan lukien). Jos kumpikin on `null`, raportti näyttää arvon ilman tilaa. Vertailtava arvo on mittarin yhteisarvo (molemmat joukkueet yhdessä `scope`-säännön mukaan) jokaiselle AI-parille erikseen; joukkuekohtaiset arvot näytetään rinnalla. `perMatchup`-mittari verrataan vain AI-pareille, joita se koskee.
+
+**Mittarit ja niiden laskenta.** Harness laskee arvot tapahtumalokista ja erän tilannekuvista (`PeriodSnapshot`). "Laukaus" = Laukaus-tapahtuma (kaikki lopputulokset: maali, torjuttu, blokattu, ohi), joukkue = laukojan joukkue. Osuudet (`perTeam`) ovat summien suhteita koko batchista, eivät otteluiden osuuksien keskiarvoja.
+
+| Avain | `unit` / `scope` | Laskenta |
+| --- | --- | --- |
+| `smartVsRandomWinRate` | share / perMatchup | Älykkään AI:n voitot / ottelut parissa älykäs vs. satunnainen (tasapeli ei ole voitto, ks. avoin suositus Q-053) |
+| `goalsPerMatch` | count / perMatch | Kotimaalit + vierasmaalit |
+| `goalsPerTeamPerMatch` | count / perTeamPerMatch | Joukkueen maalit (laukaukset, lopputulos maali) |
+| `shotAttempts` | count / perTeamPerMatch | Joukkueen laukaukset, kaikki lopputulokset, blokatut mukaan lukien (Q-050) |
+| `shotsOnTarget` | count / perTeamPerMatch | Lopputulos maali tai torjuttu |
+| `shotsBlocked` | count / perTeamPerMatch | Joukkueen omat laukaukset, jotka vastustaja blokkasi |
+| `shotsMissed` | count / perTeamPerMatch | Lopputulos ohi, myös kaukalon ulkopuolelle menneet (O-13) |
+| `xg` | xg / perTeamPerMatch | Joukkueen laukausten xG:n summa, koko ottelu (raportin xG = yrityksen kokonaistodennäköisyys, Q-014) |
+| `xg5v5` | xg / perTeamPerMatch | Sama, vain 5 vs 5 |
+| `evenStrengthXgShareRush` | share / perTeam | Tasakentällinen xG, paikkatyyppi suorahyökkäys / (suorahyökkäys + riisto + alueella pelaaminen), ilman aloituksia |
+| `evenStrengthXgShareTurnover` | share / perTeam | Sama, riisto |
+| `evenStrengthXgShareZonePlay` | share / perTeam | Sama, alueella pelaaminen |
+| `evenStrengthXgShareFaceoff` | share / perTeam | Tasakentällinen xG, paikkatyyppi aloitus / kaikkien neljän luokan tasakentällinen xG |
+| `shotXgTypical` | xg / perShot | Ks. avoin suositus Q-053 |
+| `shotsUnderPressureShare` | share / perTeam | Laukaukset, joissa `underPressure` (M-7, myös D-070:n poikkeus) / laukaukset |
+| `shots5v5` | count / perTeamPerMatch | Laukaukset 5 vs 5 |
+| `shots5v5Rush`, `shots5v5Turnover`, `shots5v5ZonePlay` | count / perTeamPerMatch | Laukaukset 5 vs 5 paikkatyypin mukaan (aloituslaukaukset eivät kuulu mihinkään näistä) |
+| `chances5v5Top`, `chances5v5Good`, `chances5v5Moderate` | count / perTeamPerMatch | Laukaukset 5 vs 5 paikkaluokan mukaan (Q-004) |
+| `chancesAll` | count / perTeamPerMatch | Laukaukset, joilla on paikkaluokka (huippu + hyvä + kohtalainen), kaikki pelitilanteet |
+| `passSuccessAll` | share / perTeam | Onnistuneet syötöt / syötöt (Syöttö-tapahtumat, myös avaussyötöt) |
+| `passSuccess5v5` | share / perTeam | Sama, vain 5 vs 5 |
+| `passSuccessUnderPressure` | share / perTeam | Onnistuneet paineen alla / syötöt paineen alla |
+| `passesUnderPressureShare` | share / perTeam | Syötöt paineen alla / syötöt |
+| `puckBattleWinShare`, `puckBattleNoWinnerShare`, `puckBattleLossShare` | share / perTeam | Joukkueen kamppailuvoitot, ei voittajaa, häviöt / joukkueen kamppailut. Kamppailut = Kamppailu-tapahtumat ja Kiekko päätyyn -tapahtumien kamppailut, molemmille joukkueille |
+| `faceoffsPerMatch` | count / perMatch | Aloitus-tapahtumat ottelussa (erien aloitukset mukaan lukien) |
+| `meanTimeBetweenStoppages` | seconds / perMatch | Ottelun arvo = 3 600 / ottelun aloitukset (sama laskutapa kuin Jerryn keruupohjassa), keskiarvo otteluista |
+| `offensiveZoneTime` | seconds / perTeamPerMatch | Joukkueen hyökkäysalueaika (`OffensiveZoneSeconds`) erien summana |
+| `offensiveZoneTime5v5` | seconds / perTeamPerMatch | Sama, vain 5 vs 5 |
+| `zoneEntrySuccessCarry`, `zoneEntrySuccessPass` | share / perTeam | Hallitut alueelletuonnit tavalla kuljetus / syöttö: lopputulos "hallinta säilytetty" / kaikki |
+| `shiftLengthForward` | seconds / perShift | Joukkueen kolmikoiden jääaika / kolmikoiden vaihdot |
+| `shiftLengthDefence` | seconds / perShift | Joukkueen parien jääaika / parien vaihdot |
+
+**Lataaja.** `scope` hyväksyy arvon `perShift` (D-071). Mittarin `_note` on meta-avain kuten muualla.
 
 Haarukoita muuttaa vain Jerry. Aloitusten voittoprosentti ja ykkösketjun jääaika eivät ole tavoitteita (ne kertovat hajonnasta ja väsymyksestä), joten ne eivät ole tiedostossa.
 
@@ -511,6 +557,30 @@ Pelaaja on **paineen alla**, kun ainakin yksi vastustajan kenttäpelaaja on enin
 - **Syöttö:** tapahtuman kenttä "paineen alla" = syöttäjä on paineen alla. Kun se on tosi, syöttötarkistukseen lisätään ehtomuokkaaja `pass.modifiers.underPressure` (−0,9; analyysi 85 % → n. 70 %).
 - **Nimimuutos (D-049):** `pass.modifiers.pressure` on nimetty `underPressure`:ksi (arvo ei muuttunut). Yleisten käytäntöjen mukaan `pressure`-niminen muokkaaja skaalautuu joukkueen painetilalla (hyökkäävän joukkueen momentum), eikä momentum saa heikentää hyökkäävän joukkueen omia syöttöjä. Analyysin "paineen alla" tarkoittaa fyysistä painetta syöttäjään. `underPressure` on Yleisten käytäntöjen ehtomuokkaajien listassa.
 - **Laukaus:** sama ehto laukaisijalle. Laukaustapahtuman kenttä `underPressure` (D-050, `stats-and-checks.md`, Tapahtumaskeema) = laukaisija on paineen alla, ja se kirjataan jokaiseen laukaukseen. Virstanpylväässä 2 se on vain raporttia varten (mittari "Laukaukset paineen alla (osuus)") eikä muuta todennäköisyyksiä. `shot.modifiers.pressure` pysyy joukkueen painetilaan sidottuna. Säteen kalibrointi: Q-032.
+- **Laukaus heti syötöstä (D-070, Q-049).** Laukaisija **ei ole paineen alla**, vaikka edellinen ehto täyttyisi laukaushetkellä, kun molemmat pätevät:
+  1. **Heti syötöstä:** laukaus on onnistunutta syöttöä seuraava kiekkotoiminto, ja syötön vastaanottaja on laukaisija. Sama ehto kuin M-3:n kohta 1: kuviossa syöttö tahdissa n ja `shoot` tahdissa n + 1. Mikä tahansa välissä oleva toiminto katkaisee ehdon (`skate`, `driveNet`, `dump`, toinen syöttö, järjestelmätilan askel, setup, irtokiekkokamppailu). Laukaisevan tahdin kiekottomien siirrot eivät ole toimintoja eivätkä katkaise ehtoa.
+  2. **Vastaanottaja oli vapaa:** tilannekuvassa S yksikään vastustajan kenttäpelaaja ei ollut enintään `pressure.underPressureNodes` solmun päässä (Chebyshev) vastaanottajan solmusta. Arvolla 0 tämä on D-070:n sanamuoto "puolustaja ei ollut vastaanottajan solmussa". Säteen käyttö on designerin suositus (Q-053, kohta 1).
+
+  **Tilannekuva S** = puolustajien solmut laukaisevan tahdin alussa, ennen D-041:n vaihetta 1 (hyökkääjien siirrot) ja vaihetta 2 (puolustajien järjestelmäliike). Syötön ratkaisun ja seuraavan tahdin alun välillä kukaan ei liiku, joten S on sama kuin ne puolustajien sijainnit, joilla syöttö ratkaistiin. Toteutus voi siksi tallentaa tiedon "vastaanottaja vapaa" onnistuneen syötön yhteydessä (samaan paikkaan kuin M-3:n syöttötieto), ja testi varmistaa, että tulos on sama kuin tahdin alun tilannekuvasta. Vastaanottajan solmu on myös laukaisijan solmu, koska kiekollinen ei liiku kiekottomien siirroissa.
+
+  Jos jompikumpi ehto ei täyty, paine ratkaistaan tavallisella säännöllä laukaushetken sijainneista. Poikkeus vain poistaa paineen, se ei koskaan lisää sitä.
+
+  Soveltamisala on designerin suositus (Q-053, kohta 2):
+
+  | Tilanne | Poikkeus |
+  | --- | --- |
+  | Kuvion `pass` tahdissa n → `shoot` tahdissa n + 1 | kyllä |
+  | Kuvion aloitussyöttö (D-036: kiekollinen → kuvion `puckCarrier`) → tahdin 0 `shoot` | kyllä. Setup on ennen syöttöä, ei syötön ja laukauksen välissä |
+  | Aloituskuvion `pass` → `shoot` | kyllä. Aloitusvoitto ei ole syöttö: jos aloituskuvion ensimmäinen tahti on `shoot`, poikkeusta ei ole |
+  | Suorahyökkäys (O-7): syöttö → laukaus seuraavana toimintona | kyllä. S = sijainnit ennen tukipelaajien siirtoja ja puolustajien liikettä (rushin toiminto etenee kuten tahti) |
+  | Avaussyöttö omalta alueelta (`breakout`-tarkistus) → laukaus | sääntö on sama, tarkistuksen tyypillä ei ole väliä (käytännössä harvinainen) |
+  | Toinen yritys (O-8), rebound | ei. Laukausta edeltää irtokiekkokamppailu, ei syöttö |
+  | Järjestelmätila | järjestelmätilassa ei syötetä eikä laukota; järjestelmätilan askel katkaisee ehdon |
+  | Epäonnistunut syöttö | ei (kiekko ei tullut laukaisijalle) |
+
+  **Suoralaukaus vai vastaanotto ja laukaus.** Simulaatiossa ei ole erillistä suoralaukausta (one-timer): syöttö ja laukaus ovat aina eri tahdeissa tai toiminnoissa. Poikkeus koskee siksi kaikkia heti syötöstä lähteviä laukauksia. Niiden erottelu olisi uusi mekaniikka.
+
+  **Vaikutus.** Poikkeus muuttaa vain laukaustapahtuman kentän `underPressure` ja sitä käyttävät mittarit (`shotsUnderPressureShare`). Laukaustarkistuksessa ei ole `underPressure`-ehtomuokkaajaa (`shot.modifiers.pressure` on joukkueen painetila), joten maalin, blokin ja ohilaukauksen todennäköisyydet eivät muutu. Laukaisijan solmuun tahdin aikana liikkunut puolustaja voi yhä blokata (M-5, laukaushetken sijainnit). Syötön paine (syöttäjä, `pass.modifiers.underPressure`) ei muutu. Pelkkä raporttivaikutus on designerin suositus (Q-053, kohta 3). Mittaus: 200 ottelua; jos laukauksista paineen alla on yhä yli 80 %, M-7:n vaihtoehto 2 viedään Jerrylle (D-070).
 - **Laukausnopeus** (D-052): laukaustapahtuman laukausnopeus on tyhjä (null) virstanpylvääseen 3 asti. Myöhemmin se johdetaan laukaisijan Laukaisuvoimasta pelkäksi näyttöarvoksi ilman pelivaikutusta. `tuning.json`:ssa ei ole sille arvoja.
 
 ### M-8 Alueelle tulon voimasuhde "N vs M"
