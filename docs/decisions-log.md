@@ -129,6 +129,19 @@ Designerin `tuning.json`-säädöt tavoitehaarukoiden sisällä. Ei vaadi erilli
 
 | Päivä | Arvo | Ennen | Jälkeen | Syy | Vaikutus raporttiin |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-10 | `pressure.underPressureNodes` | 1 | 0 | D-056 | Ei raporttia vielä |
+| 2026-10-10 | `energy.benchRecoveryPerSecond → energy.benchRecoveryRate` | 0,01 (lineaarinen) | 0,011 (eksponentiaalinen, τ ≈ 90 s) | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `energy.drainPerSecondOnIce` | – | 0,0055 | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `energy.checkModifierAtZero` | −0,8 | −1,2 | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `organization.dropOnTurnover def / neu / off` | 0,2 / 0,4 / 0,6 | 0,35 / 0,5 / 0,65 (taso = 1 − drop) | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `organization.recoveryPerEvent → organization.recoveryPerSecond` | 0,15 | 0,04 | Palautuminen pelisekuntien mukaan (D-062) | Ei raporttia vielä |
+| 2026-10-10 | `organization.recoveryPerStatPoint` | 0,01 | 0,06 (kerroin) | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `organization.dropFactorOnShotOrDump / dropPerCommittedPlayer` | – | 0,5 / 0,1 | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `checks.deke / breakout / block .modifiers.organization` | – | 0,6 / 0,6 / 0,5 | D-062 | Ei raporttia vielä |
+| 2026-10-10 | `checks.shot.modifiers.screenContested` | – | 0,15 | Q-031, D-062 | Ei raporttia vielä |
+| 2026-10-10 | `checks.shot.missedOutOfPlayShare` | – | 0,25 | D-063 | Ei raporttia vielä |
+| 2026-10-10 | `familiarity.freeUses / penaltyPerRepeat / intermissionMultiplier` | – / 0,1 / – | 2 / 0,08 / 0,5 | D-066 | Ei raporttia vielä |
+| 2026-10-10 | `time.periodSeconds` | 1200 (paikkamerkki) | 1200 (vahvistettu) | Oikean kiekon mitta | Ei raporttia vielä |
 | 2026-10-09 | `checks.pass.interceptionShare` | – | 0,6 (paikkamerkki) | Syötönkatkojen osuus epäonnistuneista syötöistä (D-040) | Ei raporttia vielä |
 | 2026-10-09 | `checks.block.maxLaneDistance` | – | 1 (paikkamerkki) | Blokkaajaehdokkaan suurin etäisyys laukauslinjasta (M-5, luonnos) | Ei raporttia vielä |
 | 2026-10-09 | `checks.block.modifiers.laneDistance` | – | [0,0, 1,0] (paikkamerkki) | Blokkaajan linjaetäisyyden muokkaaja (M-5, luonnos) | Ei raporttia vielä |
