@@ -32,7 +32,8 @@ public static class EventJson
         return System.Text.Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    private static void WriteEvent(Utf8JsonWriter w, SimEvent e)
+    /// <summary>Writes one event object (common context, the event's fields and the placement).</summary>
+    public static void WriteEvent(Utf8JsonWriter w, SimEvent e)
     {
         EventContext c = e.Context;
         w.WriteStartObject();

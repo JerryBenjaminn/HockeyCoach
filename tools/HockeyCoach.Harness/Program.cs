@@ -3,7 +3,7 @@ using HockeyCoach.Harness.Data;
 namespace HockeyCoach.Harness;
 
 /// <summary>
-/// Entry point of the headless test harness. Match, batch and compare commands come with later milestones.
+/// Entry point of the headless test harness. Batch and compare commands come with milestone 4.
 /// </summary>
 internal static class Program
 {
@@ -21,9 +21,16 @@ internal static class Program
             return Shift(args);
         }
 
+        if (args.Length > 0 && args[0] == "match")
+        {
+            return Match(args);
+        }
+
         Console.Error.WriteLine("Usage: validate [--data <dir>]   Load and validate rink, tuning, targets, plays and systems.");
-        Console.Error.WriteLine("       shift [--seed 42] [--home-system forecheck212] [--away-system trap122] [--no-board] [--json] [--max-steps 500] [--data <dir>]");
-        Console.Error.WriteLine("match, batch and compare are not implemented yet.");
+        Console.Error.WriteLine("       shift [--seed 42] [--home-system forecheck212] [--away-system trap122] [--no-board] [--json] [--max-steps 5000] [--data <dir>]");
+        Console.Error.WriteLine("       match [--seed 42] [--home-system forecheck212] [--away-system trap122] [--json] [--count N] [--data <dir>]");
+        Console.Error.WriteLine("             --count N plays seeds seed..seed+N-1 and prints averages only.");
+        Console.Error.WriteLine("batch and compare are not implemented yet.");
         return 1;
     }
 
@@ -41,6 +48,34 @@ internal static class Program
             GameData data = GameData.Load(OptionValue(args, "--data") ?? DefaultDataDirectory);
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.Write(Simulation.ShiftCommand.Run(data, options));
+            return 0;
+        }
+        catch (DataLoadException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 2;
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
+    }
+
+    private static int Match(string[] args)
+    {
+        Simulation.MatchCommand.Options? options = Simulation.MatchCommand.Parse(args, out string? error);
+        if (options == null)
+        {
+            Console.Error.WriteLine(error);
+            return 1;
+        }
+
+        try
+        {
+            GameData data = GameData.Load(OptionValue(args, "--data") ?? DefaultDataDirectory);
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.Write(Simulation.MatchCommand.Run(data, options));
             return 0;
         }
         catch (DataLoadException ex)

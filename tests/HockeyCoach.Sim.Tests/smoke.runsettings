@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long smoke tests only (Q-I): dotnet test -s tests/HockeyCoach.Sim.Tests/smoke.runsettings -->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=Smoke</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

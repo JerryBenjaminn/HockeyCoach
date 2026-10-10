@@ -34,6 +34,53 @@ public static class HarnessTeams
         return new Team(name, new[] { lw, c, rw, ld, rd }, new[] { goalie }, new[] { new ForwardLine("F1", lw, c, rw) }, new[] { new DefencePair("D1", ld, rd) });
     }
 
+    /// <summary>Forward trios of a match team (D-062).</summary>
+    public const int MatchTrios = 4;
+
+    /// <summary>Defence pairs of a match team (D-062).</summary>
+    public const int MatchPairs = 3;
+
+    /// <summary>
+    /// Builds a match team (D-062: 4 trios, 3 pairs, one goalie) with ids from <paramref name="firstId"/>: trio by trio
+    /// LW, C, RW, then pair by pair LD, RD, then the goalie. Names are "team unit position", e.g. "Home F2 C".
+    /// </summary>
+    public static Team BuildMatchTeam(string name, int firstId, ulong teamSeed)
+    {
+        var random = new Pcg32(teamSeed, 7UL);
+        int id = firstId;
+        var skaters = new List<Skater>();
+        Skater Next(string unit, Position position)
+        {
+            var skater = new Skater(id++, name + " " + unit + " " + Positions.ToName(position), position, SkaterStats.FromArray(Stats(random, StatNames.SkaterStatCount)));
+            skaters.Add(skater);
+            return skater;
+        }
+
+        var lines = new List<ForwardLine>();
+        for (int t = 1; t <= MatchTrios; t++)
+        {
+            string unit = "F" + t;
+            lines.Add(new ForwardLine(unit, Next(unit, Position.LeftWing), Next(unit, Position.Center), Next(unit, Position.RightWing)));
+        }
+
+        var pairs = new List<DefencePair>();
+        for (int p = 1; p <= MatchPairs; p++)
+        {
+            string unit = "D" + p;
+            pairs.Add(new DefencePair(unit, Next(unit, Position.LeftDefence), Next(unit, Position.RightDefence)));
+        }
+
+        var goalie = new Goalie(id, name + " G", GoalieStats.FromArray(Stats(random, StatNames.GoalieStatCount)));
+        return new Team(name, skaters, new[] { goalie }, lines, pairs);
+    }
+
+    /// <summary>The system with <paramref name="systemId"/>; throws with the known ids otherwise.</summary>
+    public static DefensiveSystem System(GameData data, string systemId)
+    {
+        return data.Systems.FirstOrDefault(s => s.Id == systemId)
+            ?? throw new ArgumentException("Unknown system " + systemId + " (known: " + string.Join(", ", data.Systems.Select(s => s.Id)) + ")");
+    }
+
     /// <summary>
     /// A shift setup with all repository plays in file order and the named systems (home and away). Home ids start at 1,
     /// away ids at 101.
