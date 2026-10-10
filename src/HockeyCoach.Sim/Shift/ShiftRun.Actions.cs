@@ -7,7 +7,10 @@ using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Sim.Shift
 {
-    /// <summary>Puck actions of a beat: skate, pass and drive the net (D-032, D-039, D-040).</summary>
+    /// <summary>
+    /// Puck actions of a beat or rush action: skate, pass and drive the net (D-032, D-039, D-040). Checks add the state
+    /// modifiers (energy O-5, organization O-6, familiarity O-11) and charge every participant (O-5).
+    /// </summary>
     internal sealed partial class ShiftRun
     {
         /// <summary>
@@ -31,38 +34,48 @@ namespace HockeyCoach.Sim.Shift
             var participants = new CheckParticipants().With("carrier", carrierSkater);
             CheckDefinition check;
             double m;
+            Skater[] defenderSide;
             EntryNumbers numbers = default;
             if (entry)
             {
                 check = _tuning.GetCheck("zoneEntryCarry");
+                defenderSide = new[] { defenderSkater };
                 participants.With("nearestDefender", defenderSkater);
                 numbers = Numbers(team, from);
-                m = OffSide(new[] { carrierSkater }, team, new[] { defenderSkater }, defending);
+                m = 0.0;
             }
             else if (breakout)
             {
                 check = _tuning.GetCheck("breakout");
-                Skater[] forecheckers = Forecheckers(team);
-                participants.With("forecheckers", forecheckers);
-                m = OffSide(new[] { carrierSkater }, team, forecheckers, defending);
+                defenderSide = Forecheckers(team);
+                participants.With("forecheckers", defenderSide);
+                m = 0.0;
             }
             else
             {
                 check = _tuning.GetCheck("deke");
+                defenderSide = new[] { defenderSkater };
                 participants.With("nearestDefender", defenderSkater);
-                m = check.Modifiers.GetTable("defenderDistance", distance)
-                    + OffSide(new[] { carrierSkater }, team, new[] { defenderSkater }, defending);
+                m = check.Modifiers.GetTable("defenderDistance", distance);
             }
 
+            Skater[] attackerSide = { carrierSkater };
+            m += OffSide(attackerSide, team, defenderSide, defending)
+                + StateModifier(check.Modifiers, defending, attackerSide, defenderSide)
+                - PlayFamiliarity();
             CheckResult result = CheckResolver.Resolve(_tuning.CheckFormula, check, participants, m, _random);
+            PayCost(attackerSide);
+            PayCost(defenderSide);
             Spend("skate");
             ClearActionHistory();
+            _lastAction[(int)team] = LastPuckAction.Other;
             if (result.Success)
             {
                 MoveSkaters(team, new[] { new KeyValuePair<Position, GridPoint>(carrier, target) });
                 if (entry)
                 {
                     _log.Append(new ControlledZoneEntryEvent(Context(), carrierSkater.Id, numbers, ZoneEntryMethod.Carry, ZoneEntryOutcome.Kept));
+                    EntryKept(team, numbers);
                 }
 
                 return true;
@@ -74,13 +87,14 @@ namespace HockeyCoach.Sim.Shift
                 _log.Append(new ControlledZoneEntryEvent(Context(), carrierSkater.Id, numbers, ZoneEntryMethod.Carry, ZoneEntryOutcome.Lost));
             }
 
-            Takeaway(team, carrier, defending, routeDefender);
+            Takeaway(team, carrier, defending, routeDefender, GainKind.Takeaway);
             return false;
         }
 
         /// <summary>
-        /// <c>pass</c>: a pass check against the pass lane defender (M-1 without the passer's node per D-062, M-2, M-7), or the breakout check when the pass
-        /// leaves the defensive zone (D-039). Failure: interception or a loose puck at the lane defender (D-040).
+        /// <c>pass</c>: a pass check against the pass lane defender (M-1 without the passer's node per D-062, M-2, M-7), or
+        /// the breakout check when the pass leaves the defensive zone (D-039). Failure: interception or a loose puck at the
+        /// lane defender (D-040).
         /// </summary>
         private bool Pass(TeamSide team, Position from, Position to)
         {
@@ -105,30 +119,43 @@ namespace HockeyCoach.Sim.Shift
             {
                 CheckDefinition breakout = _tuning.GetCheck("breakout");
                 Skater[] forecheckers = Forecheckers(team);
+                Skater[] attackerSide = { passer };
+                double m = OffSide(attackerSide, team, forecheckers, defending)
+                    + StateModifier(breakout.Modifiers, defending, attackerSide, forecheckers)
+                    - PlayFamiliarity();
                 result = CheckResolver.Resolve(
                     _tuning.CheckFormula,
                     breakout,
                     new CheckParticipants().With("carrier", passer).With("forecheckers", forecheckers),
-                    OffSide(new[] { passer }, team, forecheckers, defending),
+                    m,
                     _random);
+                PayCost(attackerSide);
+                PayCost(forecheckers);
             }
             else
             {
                 CheckDefinition pass = _tuning.GetCheck("pass");
+                Skater[] attackerSide = { passer, receiver };
+                Skater[] defenderSide = { laneSkater };
                 double m = pass.Modifiers.GetTable("laneDefenderDistance", distance)
                     + (crossIce ? pass.Modifiers.Get("crossIce") : 0.0)
                     + (underPressure ? pass.Modifiers.Get("underPressure") : 0.0)
-                    + OffSide(new[] { passer, receiver }, team, new[] { laneSkater }, defending);
+                    + OffSide(attackerSide, team, defenderSide, defending)
+                    + StateModifier(pass.Modifiers, defending, attackerSide, defenderSide)
+                    - PlayFamiliarity();
                 result = CheckResolver.Resolve(
                     _tuning.CheckFormula,
                     pass,
                     new CheckParticipants().With("passer", passer).With("receiver", receiver).With("nearestDefender", laneSkater),
                     m,
                     _random);
+                PayCost(attackerSide);
+                PayCost(defenderSide);
             }
 
             Spend("pass");
             ClearActionHistory();
+            _lastAction[(int)team] = LastPuckAction.Other;
             if (result.Success)
             {
                 _state.GivePuckTo(team, to);
@@ -137,6 +164,7 @@ namespace HockeyCoach.Sim.Shift
                 if (entry)
                 {
                     _log.Append(new ControlledZoneEntryEvent(Context(), receiver.Id, numbers, ZoneEntryMethod.Pass, ZoneEntryOutcome.Kept));
+                    EntryKept(team, numbers);
                 }
 
                 return true;
@@ -160,7 +188,7 @@ namespace HockeyCoach.Sim.Shift
 
             if (interception)
             {
-                Takeaway(team, from, defending, laneDefender);
+                Takeaway(team, from, defending, laneDefender, GainKind.Interception);
             }
             else
             {

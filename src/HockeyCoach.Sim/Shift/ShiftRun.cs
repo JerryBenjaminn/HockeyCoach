@@ -10,10 +10,10 @@ using HockeyCoach.Sim.Tactics;
 namespace HockeyCoach.Sim.Shift
 {
     /// <summary>
-    /// One shift in progress: a small state machine stepped until a stoppage or the cap. The core loop and shared helpers
-    /// live here; the clock, faceoff, possession and play mode, puck actions, shots and loose pucks are in the other
-    /// parts of this class.
-    /// State modifiers (organization, team pressure, energy) are constant until milestone 3 (D-046) and so contribute 0.
+    /// One shift segment: from a faceoff to the next stoppage or the end of the period (O-1, O-13), stepped as a small
+    /// state machine. The core loop and shared helpers live here; the clock, faceoff, possession and play mode,
+    /// transitions, puck actions, shots, loose pucks, line changes and state modifiers are in the other parts of this
+    /// class. Persistent state (energy, organization, pressure, familiarity, lineups) lives in <see cref="GameState"/>.
     /// </summary>
     internal sealed partial class ShiftRun
     {
@@ -21,11 +21,13 @@ namespace HockeyCoach.Sim.Shift
         private readonly Rink _rink;
         private readonly TuningConfig _tuning;
         private readonly IRandom _random;
-        private readonly EventLog _log = new EventLog();
+        private readonly EventLog _log;
+        private readonly GameState _game;
+        private readonly IShiftHost _host;
         private readonly ShiftState _state;
         private readonly bool[,] _droveNet = new bool[2, 5];
-        private readonly double[] _takeawayTime = { double.NaN, double.NaN };
-        private readonly GridPoint[] _takeawayNode = new GridPoint[2];
+        private readonly bool[,] _committed = new bool[2, 5];
+        private readonly bool[] _pinchActive = new bool[2];
         private readonly int[] _goals = new int[2];
         private readonly Play[] _faceoffPlays = new Play[2];
 
@@ -40,10 +42,19 @@ namespace HockeyCoach.Sim.Shift
         private TeamSide _attacker;
         private Play _play;
         private int _beat;
+        private double _familiarityPenalty;
+        private bool _prepaid;
+        private int _setupSteps;
+        private int _rushActions;
 
         // Action history for Royal Road (M-3) and crease xG (D-047, D-059): only the last puck action counts.
         private LastPass _lastPass;
         private bool _secondChance;
+
+        // Last shot, for the next faceoff spot (O-3).
+        private bool _hasLastShot;
+        private TeamSide _lastShotTeam;
+        private GridPoint _lastShotNode;
 
         internal ShiftRun(ShiftSetup setup, IRandom random)
         {
@@ -52,13 +63,19 @@ namespace HockeyCoach.Sim.Shift
             _tuning = setup.Tuning;
             _random = random;
             _time = setup.StartTime;
+            ShiftContext context = setup.Context ?? StandaloneContext(setup);
+            _game = context.State;
+            _log = context.Log;
+            _host = context.Host;
+            _setupSteps = SetupSteps(_tuning.Time.SetupSeconds);
+            ApplyStartUnits(context);
             FaceoffSpot spot = FindSpot(setup.FaceoffSpotId);
             _state = new ShiftState(
                 _rink,
-                setup.Home.Skaters,
-                setup.Away.Skaters,
-                setup.Home.Goalie.Id,
-                setup.Away.Goalie.Id,
+                _game.Lineup(TeamSide.Home).OnIce,
+                _game.Lineup(TeamSide.Away).OnIce,
+                _game.Lineup(TeamSide.Home).Goalie.Id,
+                _game.Lineup(TeamSide.Away).Goalie.Id,
                 FaceoffStart(TeamSide.Home, spot),
                 FaceoffStart(TeamSide.Away, spot),
                 spot.Point);
@@ -67,27 +84,39 @@ namespace HockeyCoach.Sim.Shift
         private enum Mode
         {
             Faceoff,
+            SelectPlay,
             PlayPass,
             PlayBeat,
             SystemPossession,
             LooseBattle,
+            Rush,
+            Regroup,
+        }
+
+        private enum LastPuckAction
+        {
+            Other,
+            ShotOrDump,
         }
 
         internal ShiftResult Run()
         {
+            LogStartChanges();
             while (!_ended)
             {
-                if (_steps >= _setup.MaxSteps || _log.Count >= _setup.MaxSteps)
+                if (_steps >= _setup.MaxSteps)
                 {
                     _endReason = ShiftEndReason.StepCap;
                     break;
                 }
 
                 _steps++;
+                TrackEntry();
                 Step();
             }
 
-            return new ShiftResult(_log, _endReason, _goals[(int)TeamSide.Home], _goals[(int)TeamSide.Away], _time, _steps);
+            return new ShiftResult(
+                _log, _endReason, _goals[(int)TeamSide.Home], _goals[(int)TeamSide.Away], _time, _steps, _hasLastShot, _lastShotTeam, _lastShotNode);
         }
 
         private void Step()
@@ -97,6 +126,9 @@ namespace HockeyCoach.Sim.Shift
                 case Mode.Faceoff:
                     Faceoff();
                     break;
+                case Mode.SelectPlay:
+                    SelectPlayStep();
+                    break;
                 case Mode.PlayPass:
                     InitialPass();
                     break;
@@ -105,6 +137,12 @@ namespace HockeyCoach.Sim.Shift
                     break;
                 case Mode.SystemPossession:
                     SystemPossessionStep();
+                    break;
+                case Mode.Rush:
+                    RushStep();
+                    break;
+                case Mode.Regroup:
+                    RegroupStep();
                     break;
                 default:
                     LooseBattleStep();
@@ -120,11 +158,18 @@ namespace HockeyCoach.Sim.Shift
             get { return _rink.Length * _rink.Width; }
         }
 
+        /// <summary>O-6: defenders' steps in a setup or regroup of <paramref name="seconds"/>.</summary>
+        private int SetupSteps(double seconds)
+        {
+            double skate = _tuning.Time.GetSecondsPerAction("skate");
+            return skate > 0.0 ? (int)System.Math.Floor((seconds * _tuning.Plays.MaxNodesPerBeat / skate) + 1e-9) : Unbounded;
+        }
+
         /// <summary>
-        /// Moves skaters of the team to targets in its own view (D-058 order: carrier first, then C, LW, RW, LD, RD). Anyone who
-        /// moves is no longer the one who drove the net (D-047).
+        /// Moves skaters of the team toward targets in its own view, at most <paramref name="maxSteps"/> each (D-058 order:
+        /// carrier first, then C, LW, RW, LD, RD). Anyone who moves is no longer the one who drove the net (D-047).
         /// </summary>
-        private void MoveSkaters(TeamSide team, IEnumerable<KeyValuePair<Position, GridPoint>> targets)
+        private void MoveSkaters(TeamSide team, IEnumerable<KeyValuePair<Position, GridPoint>> targets, int maxSteps)
         {
             var byPosition = new SortedDictionary<Position, GridPoint>();
             foreach (KeyValuePair<Position, GridPoint> target in targets)
@@ -140,12 +185,29 @@ namespace HockeyCoach.Sim.Shift
                 _droveNet[(int)team, (int)position] = false;
             }
 
-            _state.Move(team, ordered, Unbounded);
+            _state.Move(team, ordered, maxSteps);
+        }
+
+        private void MoveSkaters(TeamSide team, IEnumerable<KeyValuePair<Position, GridPoint>> targets)
+        {
+            MoveSkaters(team, targets, Unbounded);
+        }
+
+        /// <summary>The team's system movement (D-041) with its pinch instruction (O-10).</summary>
+        private void ApplyDefence(TeamSide defending, int maxSteps)
+        {
+            _state.ApplySystem(defending, Team(defending).Plan.System, maxSteps, Team(defending).Plan.Instructions.Pinch, out bool pinched);
+            _pinchActive[(int)defending] = pinched;
         }
 
         private TeamShiftSetup Team(TeamSide side)
         {
             return side == TeamSide.Home ? _setup.Home : _setup.Away;
+        }
+
+        private Goalie GoalieOf(TeamSide side)
+        {
+            return _game.Lineup(side).Goalie;
         }
 
         private void ClearActionHistory()
@@ -170,6 +232,12 @@ namespace HockeyCoach.Sim.Shift
             }
 
             return nodes;
+        }
+
+        /// <summary>The zone of a home-view node in <paramref name="team"/>'s view.</summary>
+        private RinkZone ZoneFor(TeamSide team, GridPoint rinkNode)
+        {
+            return _rink.ZoneAtX(TeamFrame.ToTeamView(rinkNode, team, _rink).X);
         }
 
         /// <summary>M-7: an opposing skater within <c>pressure.underPressureNodes</c>.</summary>
@@ -274,6 +342,7 @@ namespace HockeyCoach.Sim.Shift
             _log.Append(new StoppageEvent(Context(), stoppage));
             _endReason = reason;
             _ended = true;
+            _prepaid = false;
         }
 
         /// <summary>The last puck action if it was a completed pass (M-3 condition 1, D-047 condition 2).</summary>

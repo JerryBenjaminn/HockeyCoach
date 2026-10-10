@@ -8,7 +8,7 @@ using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Sim.Shift
 {
-    /// <summary>The opening faceoff: formations, the draw and its receiver (D-042, D-060).</summary>
+    /// <summary>The opening faceoff: formations, the draw and its receiver (D-042, D-060, O-3).</summary>
     internal sealed partial class ShiftRun
     {
         private IReadOnlyDictionary<Position, GridPoint> FaceoffStart(TeamSide team, FaceoffSpot spot)
@@ -28,10 +28,20 @@ namespace HockeyCoach.Sim.Shift
 
         private void Faceoff()
         {
+            if (!Begin("faceoff"))
+            {
+                return;
+            }
+
+            // O-3, O-6: both defences are organized at every faceoff.
+            _game.SetOrganization(TeamSide.Home, 1.0);
+            _game.SetOrganization(TeamSide.Away, 1.0);
             CheckDefinition check = _tuning.GetCheck("faceoff");
             Skater home = _state.SkaterAt(TeamSide.Home, Position.Center);
             Skater away = _state.SkaterAt(TeamSide.Away, Position.Center);
-            double m = check.Modifiers.Get("homeAdvantage") + OffSide(new[] { home }, TeamSide.Home, new[] { away }, TeamSide.Away);
+            double m = check.Modifiers.Get("homeAdvantage")
+                + OffSide(new[] { home }, TeamSide.Home, new[] { away }, TeamSide.Away)
+                + EnergyModifier(new[] { home.Id }, new[] { away.Id });
             CheckResult result = SidedCheck.Resolve(
                 _tuning.CheckFormula,
                 check,
@@ -39,6 +49,7 @@ namespace HockeyCoach.Sim.Shift
                 new CheckParticipants().With("centre", away),
                 m,
                 _random);
+            PayCost(home, away);
             TeamSide winner = result.Success ? TeamSide.Home : TeamSide.Away;
             GridPoint spot = _state.PuckNode;
             Spend("faceoff");
@@ -47,14 +58,16 @@ namespace HockeyCoach.Sim.Shift
             _state.GivePuckTo(winner, receiver);
             _log.Append(new FaceoffEvent(Context(null, null), home.Id, away.Id, winner, LocationOf(spot)));
 
+            StartPossession(winner, ZoneFor(winner, spot));
+            SetAttacker(winner);
+            _play = null;
             if (faceoffPlay != null)
             {
-                SetAttacker(winner);
                 BeginPlay(faceoffPlay, false);
             }
             else
             {
-                GainPossession(winner, receiver);
+                SelectNext(_tuning.Time.SetupSeconds);
             }
         }
 

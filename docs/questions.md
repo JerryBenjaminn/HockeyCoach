@@ -14,6 +14,26 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-047 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** missä järjestyksessä saman katkon Vaihto-tapahtumat kirjataan: kotijoukkueen kolmikko ja pari ennen vierasjoukkuetta, vai kaikki kolmikot ennen pareja?
+**Konteksti:** O-2: "kolmikko ennen paria, kotijoukkue ennen vierasta" sopii molempiin.
+**Ehdotettu oletus (toteutettu):** koti kolmikko, koti pari, vieras kolmikko, vieras pari. Erän alussa vaihdetut ja säilytetyt yksiköt aloittavat uuden vuoron (vuoromäärä raportissa kasvaa).
+
+### Q-046 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** milloin kokonaisuuden sekuntivaikutukset (O-14) näkyvät saman kokonaisuuden tarkistuksissa?
+**Konteksti:** O-14 sanoo, että vaikutukset lasketaan tilasta ennen kokonaisuutta ja kerrotaan kestolla d, mutta ei sitä, näkeekö kokonaisuuden oma tarkistus jo kuluneen ajan vaikutuksen. Esim. setup (6 s) + ensimmäinen syöttö: palautuuko puolustuksen järjestäytyneisyys setupin 6 sekunnin ajalta ennen syöttötarkistusta?
+**Ehdotettu oletus (toteutettu):** nopeudet otetaan talteen kokonaisuuden alussa, ja ne kertyvät sitä mukaa kuin kokonaisuuden aika kuluu (`Spend`). Setupin sekunnit ehtivät siis vaikuttaa ensimmäiseen toimintoon, mutta toiminnon omat sekunnit kirjautuvat vasta tarkistuksen jälkeen. Kiekonmenetyksen pudotus tulee aina palautumisen jälkeen.
+
+### Q-045 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** mihin rushin tukipelaaja menee, jos sen O-7-kohde osuu maalisolmuun?
+**Konteksti:** O-7: hyökkääjät kohti (min(kiekollisen x, maali x − 1), kaista). Kun kiekollinen on omalla maaliviivalla (x = 1), sentterin kohde (1, 2) on oma maalisolmu.
+**Ehdotettu oletus (toteutettu):** kohde siirretään kyseisen maalin edustalle, kuten järjestelmän `puckOffset`-kohteissa (D-033).
+
+### Q-044 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** saako maalin selitystä varten tallentaa puolustuksen järjestäytyneisyyden laukaushetkellä lokin ulkopuolelle?
+**Konteksti:** hyväksytyssä suunnitelmassa ottelutulosteen maalirivi kertoo esim. "puolustus 45 % järjestäytynyt", mutta tapahtumaskeemassa ei ole järjestäytyneisyyttä, eikä tapahtumatyyppejä saa muuttaa ilman speksiä.
+**Ehdotettu oletus (toteutettu):** simulaatio tallentaa jokaisesta maalista erillisen raporttimerkinnän (`GameState.GoalNotes`: paikkatyyppi, järjestäytyneisyys, alueelle tulon N vs M, Royal Road, maski, maskin xG, toinen yritys). Tapahtumaloki pysyy skeeman mukaisena. Sama koskee jakson lopun energiaa, jääaikaa ja painekäyrää (`PeriodSnapshot`, `PressureSamples`).
+
 ### Q-043 · 2026-10-10 · kirjaaja: programmer
 **Kysymys:** D-058:n ratkaisusäännön kaksi tarkennusta. (1) Lähimmän vapaan solmun renkaassa "lähempänä omaa maalia": millä etäisyydellä, ja mikä ratkaisee, jos kaikki designerin kriteerit ovat tasan (esim. (0, 2) ja (2, 2) ovat yhtä lähellä maalia (1, 2), samalla kaistalla ja samalla y:llä)? (2) Validointivirhe (D-062): hylätäänkö järjestelmä vain, kun kaksi roolia osuu samaan solmuun aina (sama `node` tai sama `puckOffset` samassa säännössä), vai myös, kun `puckOffset` osuu kiinteään solmuun vain joillakin kiekon sijainneilla?
 **Konteksti:** designerin hyväksytty M3-suunnitelma (D-062), kohta D-058, `Sim.Tactics.OccupancyResolver` ja `SystemValidator`. Kohta (2): F1 `puckOffset` [0, 0] osuu molempien nykyisten järjestelmien kiinteisiin kohteisiin joillakin kiekon sijainneilla, joten tiukka tulkinta hylkäisi käytännössä jokaisen painostavan järjestelmän.

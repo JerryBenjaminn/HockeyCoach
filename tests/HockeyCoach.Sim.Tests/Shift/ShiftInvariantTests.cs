@@ -65,7 +65,14 @@ public class ShiftInvariantTests
             Assert.NotEqual(ShiftEndReason.StepCap, result.EndReason);
             var stoppage = Assert.IsType<StoppageEvent>(events[events.Count - 1]);
             Assert.Single(events.OfType<StoppageEvent>());
-            Assert.Equal(result.EndReason == ShiftEndReason.Goal ? StoppageReason.Goal : StoppageReason.GoalieFreeze, stoppage.Reason);
+            StoppageReason expected = result.EndReason switch
+            {
+                ShiftEndReason.Goal => StoppageReason.Goal,
+                ShiftEndReason.GoalieFreeze => StoppageReason.GoalieFreeze,
+                ShiftEndReason.OutOfPlay => StoppageReason.OutOfPlay,
+                _ => StoppageReason.PeriodEnd,
+            };
+            Assert.Equal(expected, stoppage.Reason);
         }
     }
 

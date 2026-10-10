@@ -82,18 +82,18 @@ public class ShiftScenarioTests
             IReadOnlyList<SimEvent> events = ShiftTestData.Run(seed).Log.Events;
             for (int i = 0; i < events.Count - 1; i++)
             {
-                if (events[i] is not PuckBattleEvent battle || battle.Outcome == BattleOutcome.NoWinner)
+                if (events[i] is not PuckBattleEvent battle || battle.Outcome != BattleOutcome.Win)
                 {
                     continue;
                 }
 
+                // O-8: only the attacking side's win in its own offensive slot.
                 PlacementSnapshot p = battle.Context.Placement;
-                PlayerPlacement winner = p.Find(p.PuckCarrierId!.Value)!;
+                PlayerPlacement winner = p.Find(battle.AttackerIds[0])!;
                 GridPoint view = TeamFrame.ToTeamView(new GridPoint(rink.XOf(winner.NodeId), rink.YOf(winner.NodeId)), winner.Team, rink);
                 bool slot = view.Y == 2 && (view.X == 7 || view.X == 8);
                 if (!slot)
                 {
-                    Assert.IsNotType<ShotEvent>(events[i + 1]);
                     continue;
                 }
 

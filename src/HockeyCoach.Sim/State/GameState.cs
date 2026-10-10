@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Model;
 
@@ -14,6 +15,14 @@ namespace HockeyCoach.Sim.State
         private readonly double[] _organization = { 1.0, 1.0 };
         private readonly double[] _pressure = new double[2];
         private readonly double[] _offensiveZoneSeconds = new double[2];
+        private readonly List<PressureSample> _pressureSamples = new List<PressureSample>();
+        private readonly List<GoalNote> _goalNotes = new List<GoalNote>();
+
+        /// <summary>
+        /// Interval of the pressure samples for the momentum chart (report resolution from the approved milestone 3
+        /// plan, not a balance value).
+        /// </summary>
+        public const double PressureSampleSeconds = 60.0;
 
         /// <summary>Creates the state; every player starts at <paramref name="startEnergy"/>.</summary>
         public GameState(LineupState home, LineupState away, double startEnergy)
@@ -80,6 +89,30 @@ namespace HockeyCoach.Sim.State
         public void AddOffensiveZoneSeconds(TeamSide team, double seconds)
         {
             _offensiveZoneSeconds[(int)team] += seconds;
+        }
+
+        /// <summary>Pressure samples every <see cref="PressureSampleSeconds"/> of period time, in time order.</summary>
+        public IReadOnlyList<PressureSample> PressureSamples
+        {
+            get { return _pressureSamples; }
+        }
+
+        /// <summary>Goal explanations in goal order.</summary>
+        public IReadOnlyList<GoalNote> GoalNotes
+        {
+            get { return _goalNotes; }
+        }
+
+        /// <summary>Adds a goal explanation.</summary>
+        public void AddGoalNote(GoalNote note)
+        {
+            _goalNotes.Add(note ?? throw new ArgumentNullException(nameof(note)));
+        }
+
+        /// <summary>Records both teams' pressure at a period time.</summary>
+        public void SamplePressure(int period, double time)
+        {
+            _pressureSamples.Add(new PressureSample(period, time, Pressure(TeamSide.Home), Pressure(TeamSide.Away)));
         }
 
         private static double Clamp01(double value)

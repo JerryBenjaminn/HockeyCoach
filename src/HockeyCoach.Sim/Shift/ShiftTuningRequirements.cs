@@ -4,7 +4,7 @@ using HockeyCoach.Sim.Config;
 namespace HockeyCoach.Sim.Shift
 {
     /// <summary>
-    /// The tuning entries the shift simulation reads (milestone 2). The general validator accepts any check set; this
+    /// The tuning entries the shift simulation reads (milestones 2 and 3). The general validator accepts any check set; this
     /// one makes sure a tuning file can actually run a shift, so a missing value fails at load time, not mid-shift.
     /// </summary>
     public static class ShiftTuningRequirements
@@ -16,6 +16,7 @@ namespace HockeyCoach.Sim.Shift
             new[] { "pass", "underPressure" },
             new[] { "block", "distancePerNode" },
             new[] { "rebound", "shotPowerPerPoint" },
+            new[] { "rebound", "goalieEnergy" },
             new[] { "loosePuck", "extraPlayer" },
             new[] { "loosePuck", "distancePerNode" },
         };
@@ -40,7 +41,7 @@ namespace HockeyCoach.Sim.Shift
 
         private static readonly string[] Checks = { "faceoff", "pass", "zoneEntryCarry", "deke", "breakout", "block", "rebound", "loosePuck", "dumpIn" };
 
-        private static readonly string[] ShotModifiers = { "royalRoad", "screen" };
+        private static readonly string[] ShotModifiers = { "royalRoad", "screen", "screenContested", "pressure" };
 
         private static readonly string[] Times = { "faceoff", "skate", "pass", "shoot", "driveNet", "dumpIn", "loosePuck", "rebound", "systemStep" };
 
@@ -78,6 +79,11 @@ namespace HockeyCoach.Sim.Shift
                 {
                     errors.Add(Missing("checks." + entry[0] + "." + entry[1]));
                 }
+            }
+
+            if (!tuning.Shot.Parameters.ContainsKey(ShiftRun.MissedOutOfPlayShare))
+            {
+                errors.Add(Missing("checks.shot." + ShiftRun.MissedOutOfPlayShare));
             }
 
             foreach (string name in ShotModifiers)

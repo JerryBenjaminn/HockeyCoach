@@ -9,8 +9,8 @@ namespace HockeyCoach.Sim.Shift
 {
     /// <summary>
     /// Loose pucks (M-6, Q-007) and the dump (E-001, D-031). The first battle at a new loose puck is resolved in the next
-    /// step without movement; after "no winner" both teams take one system step before the battle is retried. A win in
-    /// the winner's offensive slot is an immediate second-chance shot (D-059, D-065).
+    /// step without movement; after "no winner" both teams take one system step before the battle is retried. A win by
+    /// the attacking side in its offensive slot is an immediate second-chance shot (D-059, D-065, O-8).
     /// </summary>
     internal sealed partial class ShiftRun
     {
@@ -18,6 +18,7 @@ namespace HockeyCoach.Sim.Shift
         private LooseKind _looseKind;
         private Skater _dumper;
         private bool _battleRetry;
+        private bool _dumpPrepaid;
         private string _dumpPlayId;
 
         private enum LooseKind
@@ -30,6 +31,7 @@ namespace HockeyCoach.Sim.Shift
         {
             _dumpPlayId = kind == LooseKind.Dump ? _play?.Id : null;
             _play = null;
+            _prepaid = false;
             SetAttacker(attackerSide);
             _battleAttacker = attackerSide;
             _looseKind = kind;
@@ -38,29 +40,46 @@ namespace HockeyCoach.Sim.Shift
             _mode = Mode.LooseBattle;
         }
 
-        /// <summary><c>dump</c>: the puck flies to the target node, then the loose-puck battle there (no check on the way).</summary>
+        /// <summary>
+        /// <c>dump</c>: the puck flies to the target node (no check), the dumping team may change on the fly ("dump and
+        /// change", O-2), then the loose-puck battle there, inside the same sequence (O-1).
+        /// </summary>
         private void Dump(TeamSide team, Position shooter, GridPoint target)
         {
             Spend("dumpIn");
             ClearActionHistory();
+            _lastAction[(int)team] = LastPuckAction.ShotOrDump;
             Skater dumper = _state.SkaterAt(team, shooter);
             _state.SetLoosePuck(TeamFrame.ToRink(target, team, _rink));
             StartLooseBattle(team, LooseKind.Dump, dumper);
+            TryChangeOnTheFly(team);
+            _dumpPrepaid = true;
         }
 
         private void LooseBattleStep()
         {
             TeamSide attacker = _battleAttacker;
             TeamSide defender = TeamSides.Opponent(attacker);
+            if (_dumpPrepaid)
+            {
+                _dumpPrepaid = false;
+            }
+            else if (!Begin(_battleRetry ? Seconds("systemStep") + Seconds("loosePuck") : Seconds("loosePuck")))
+            {
+                return;
+            }
+
             if (_battleRetry)
             {
                 // M-6.5: both teams take one system step around the loose puck (Q-035 default: each by its own system).
                 Spend("systemStep");
                 _state.ApplySystem(attacker, Team(attacker).Plan.System, _tuning.Plays.MaxNodesPerBeat);
-                _state.ApplySystem(defender, Team(defender).Plan.System, _tuning.Plays.MaxNodesPerBeat);
+                ApplyDefence(defender, _tuning.Plays.MaxNodesPerBeat);
             }
 
             GridPoint spot = _state.PuckNode;
+            Chase(attacker, spot);
+            Chase(defender, spot);
             Position attackerPosition = NearestSkater(attacker, spot);
             Position defenderPosition = NearestSkater(defender, spot);
             Skater a = _state.SkaterAt(attacker, attackerPosition);
@@ -71,7 +90,8 @@ namespace HockeyCoach.Sim.Shift
             CheckDefinition check = _tuning.GetCheck("loosePuck");
             double m = check.Modifiers.Get("distancePerNode") * (defenderDistance - attackerDistance)
                 + ExtraPlayer(check, attacker, defender, spot)
-                + OffSide(new[] { a }, attacker, new[] { d }, defender);
+                + OffSide(new[] { a }, attacker, new[] { d }, defender)
+                + EnergyModifier(new[] { a.Id }, new[] { d.Id });
             if (_looseKind == LooseKind.Dump && !_battleRetry)
             {
                 m += GoalieReach(attacker, spot);
@@ -94,6 +114,7 @@ namespace HockeyCoach.Sim.Shift
                 outcome = result.Success ? BattleOutcome.Win : BattleOutcome.Loss;
             }
 
+            PayCost(a, d);
             Spend("loosePuck");
             ClearActionHistory();
             if (outcome != BattleOutcome.NoWinner)
@@ -120,22 +141,56 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
-            TeamSide gainer = outcome == BattleOutcome.Win ? attacker : defender;
-            Position gainerPosition = outcome == BattleOutcome.Win ? attackerPosition : defenderPosition;
-            if (IsOffensiveSlot(gainer, _state.NodeOf(gainer, gainerPosition)))
+            if (outcome == BattleOutcome.Loss)
             {
-                SecondChance(gainer, gainerPosition);
+                DropOrganization(attacker, spot);
+                GainPossession(defender, defenderPosition, GainKind.LooseWin, true);
                 return;
             }
 
-            GainPossession(gainer, gainerPosition);
+            if (IsOffensiveSlot(attacker, _state.NodeOf(attacker, attackerPosition)))
+            {
+                NotePossession(attacker, attackerPosition, false);
+                SecondChance(attacker, attackerPosition);
+                return;
+            }
+
+            GainPossession(attacker, attackerPosition, GainKind.LooseWin, false);
         }
 
-        /// <summary>D-059, D-065: a loose puck won in the winner's offensive slot is shot at once, without play setup.</summary>
+        /// <summary>O-10 <c>looseChasers</c> 2: the team's second-nearest skater moves toward the loose puck and is committed. No time.</summary>
+        private void Chase(TeamSide team, GridPoint spot)
+        {
+            if (Team(team).Plan.Instructions.LooseChasers < 2)
+            {
+                return;
+            }
+
+            Position nearest = NearestSkater(team, spot);
+            var others = new SortedDictionary<Position, GridPoint>();
+            foreach (Position position in PositionOrder.All)
+            {
+                if (position != nearest)
+                {
+                    others.Add(position, _state.NodeOf(team, position));
+                }
+            }
+
+            LineGeometry.Closest(others, new[] { spot }, spot, int.MaxValue, out Position chaser, out int unused);
+            MoveSkaters(team, new[] { new KeyValuePair<Position, GridPoint>(chaser, TeamFrame.ToTeamView(spot, team, _rink)) }, _tuning.Plays.MaxNodesPerBeat);
+            _committed[(int)team, (int)chaser] = true;
+        }
+
+        /// <summary>D-059, D-065, O-8: the attacking side's win in its offensive slot is shot at once, without play setup.</summary>
         private void SecondChance(TeamSide team, Position shooter)
         {
             SetAttacker(team);
             _play = null;
+            if (!Begin(Seconds("shoot") + Seconds("rebound")))
+            {
+                return;
+            }
+
             _secondChance = true;
             Shoot(team, shooter);
         }
@@ -196,7 +251,7 @@ namespace HockeyCoach.Sim.Shift
                 return 0.0;
             }
 
-            Goalie goalie = Team(TeamSides.Opponent(dumpingTeam)).Goalie;
+            Goalie goalie = GoalieOf(TeamSides.Opponent(dumpingTeam));
             return -dumpIn.GetParameter("goaliePuckHandlingPerPoint") * (goalie.Stats[GoalieStat.PuckHandling] - _tuning.CheckFormula.ReferenceValue);
         }
     }

@@ -20,7 +20,23 @@ namespace HockeyCoach.Sim.Shift
         /// simulation steps, whichever comes first.
         /// </param>
         public ShiftSetup(Rink rink, TuningConfig tuning, TeamShiftSetup home, TeamShiftSetup away, string faceoffSpotId, int period, double startTime, int maxSteps)
+            : this(rink, tuning, home, away, faceoffSpotId, period, startTime, maxSteps, null)
         {
+        }
+
+        /// <summary>Creates the setup of a segment inside a match.</summary>
+        /// <param name="rink">The rink.</param>
+        /// <param name="tuning">Balance values.</param>
+        /// <param name="home">Home team (its <see cref="TeamShiftSetup.Skaters"/> are the units after the context's start changes).</param>
+        /// <param name="away">Away team.</param>
+        /// <param name="faceoffSpotId">Faceoff spot id in the home team's view.</param>
+        /// <param name="period">Period number, from 1.</param>
+        /// <param name="startTime">Period time when the segment starts.</param>
+        /// <param name="maxSteps">Anti-stall cap (D-043).</param>
+        /// <param name="context">Match context; null runs a standalone segment with fresh state (the <c>shift</c> command).</param>
+        public ShiftSetup(Rink rink, TuningConfig tuning, TeamShiftSetup home, TeamShiftSetup away, string faceoffSpotId, int period, double startTime, int maxSteps, ShiftContext context)
+        {
+            Context = context;
             Rink = rink ?? throw new ArgumentNullException(nameof(rink));
             Tuning = tuning ?? throw new ArgumentNullException(nameof(tuning));
             Home = home ?? throw new ArgumentNullException(nameof(home));
@@ -40,6 +56,9 @@ namespace HockeyCoach.Sim.Shift
             StartTime = startTime;
             MaxSteps = maxSteps;
         }
+
+        /// <summary>Match context, or null for a standalone segment.</summary>
+        public ShiftContext Context { get; }
 
         /// <summary>The rink.</summary>
         public Rink Rink { get; }

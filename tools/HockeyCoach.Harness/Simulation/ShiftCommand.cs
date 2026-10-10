@@ -15,7 +15,7 @@ namespace HockeyCoach.Harness.Simulation;
 public static class ShiftCommand
 {
     /// <summary>Default anti-stall cap for one shift (D-043: a caller parameter).</summary>
-    public const int DefaultMaxSteps = 500;
+    public const int DefaultMaxSteps = 5000;
 
     /// <summary>Options of the command.</summary>
     /// <param name="Seed">Random seed.</param>

@@ -210,18 +210,87 @@ namespace HockeyCoach.Sim.State
         /// <returns>The evaluated targets (defending team's view).</returns>
         public SystemTargets ApplySystem(TeamSide defending, DefensiveSystem system, int maxSteps)
         {
+            return ApplySystem(defending, system, maxSteps, false, out bool unused);
+        }
+
+        /// <summary>
+        /// Like <see cref="ApplySystem(TeamSide, DefensiveSystem, int)"/>, with the <c>pinch</c> instruction (O-10): when
+        /// <paramref name="pinch"/> is set and the puck is on the boards (y 0 or width − 1) high in the defending team's
+        /// offensive zone (offensive zone xMin ≤ x &lt; opponent goal x, defending team's view), D1's target is the puck node.
+        /// </summary>
+        /// <param name="defending">The moving team.</param>
+        /// <param name="system">Its system.</param>
+        /// <param name="maxSteps">Most steps per skater.</param>
+        /// <param name="pinch">The team's pinch instruction.</param>
+        /// <param name="pinched">Whether D1's target was replaced.</param>
+        public SystemTargets ApplySystem(TeamSide defending, DefensiveSystem system, int maxSteps, bool pinch, out bool pinched)
+        {
             GridPoint puck = TeamFrame.ToTeamView(PuckNode, defending, _rink);
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(defending);
             SystemTargets targets = SystemTargetResolver.Resolve(system, _rink, puck, PuckState, skaters);
+            pinched = pinch && IsPinchSpot(puck);
             var ordered = new List<KeyValuePair<Position, GridPoint>>();
             foreach (SystemRole role in OccupancyResolver.SystemOrder)
             {
                 Position position = targets.Roles[role];
-                ordered.Add(new KeyValuePair<Position, GridPoint>(position, targets.Targets[position]));
+                GridPoint target = pinched && role == SystemRole.D1 ? puck : targets.Targets[position];
+                ordered.Add(new KeyValuePair<Position, GridPoint>(position, target));
             }
 
             Move(defending, ordered, maxSteps);
             return targets;
+        }
+
+        /// <summary>O-10 pinch spot: boards, high in the offensive zone (team's own view).</summary>
+        public bool IsPinchSpot(GridPoint teamViewPuck)
+        {
+            int offensiveMin = int.MaxValue;
+            foreach (ZoneRange zone in _rink.Zones)
+            {
+                if (zone.Zone == RinkZone.Offensive)
+                {
+                    offensiveMin = zone.XMin;
+                }
+            }
+
+            bool boards = teamViewPuck.Y == 0 || teamViewPuck.Y == _rink.Width - 1;
+            return boards && teamViewPuck.X >= offensiveMin && teamViewPuck.X < _rink.OpponentGoal.X;
+        }
+
+        /// <summary>
+        /// Puts another unit on the ice (a line change, O-2): the incoming skaters take the outgoing skaters' nodes at the
+        /// same positions; the puck carrier's position keeps the puck.
+        /// </summary>
+        public void ReplaceUnit(TeamSide team, OnIceSkaters unit)
+        {
+            _units[(int)team] = unit ?? throw new ArgumentNullException(nameof(unit));
+        }
+
+        /// <summary>A copy of every skater node (home view), to undo a move with <see cref="RestoreNodes"/>.</summary>
+        public IReadOnlyDictionary<Position, GridPoint>[] SaveNodes()
+        {
+            return new IReadOnlyDictionary<Position, GridPoint>[]
+            {
+                new SortedDictionary<Position, GridPoint>(_nodes[0]), new SortedDictionary<Position, GridPoint>(_nodes[1]),
+            };
+        }
+
+        /// <summary>Restores nodes saved by <see cref="SaveNodes"/>.</summary>
+        public void RestoreNodes(IReadOnlyDictionary<Position, GridPoint>[] saved)
+        {
+            if (saved == null || saved.Length != 2)
+            {
+                throw new ArgumentException("Expected the two teams' nodes.", nameof(saved));
+            }
+
+            for (int team = 0; team < 2; team++)
+            {
+                _nodes[team].Clear();
+                foreach (KeyValuePair<Position, GridPoint> entry in saved[team])
+                {
+                    _nodes[team].Add(entry.Key, entry.Value);
+                }
+            }
         }
 
         /// <summary>Skaters on the ice per team.</summary>
