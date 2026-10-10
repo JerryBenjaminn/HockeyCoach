@@ -8,14 +8,17 @@ using HockeyCoach.Sim.Match;
 using HockeyCoach.Sim.Model;
 using HockeyCoach.Sim.Random;
 using HockeyCoach.Sim.State;
+using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Harness.Simulation;
 
 /// <summary>
 /// <c>match</c>: plays a full match with the default <see cref="RotationCoach"/> on both sides and prints it as text
-/// (events, goal explanations, period and match summaries) or JSON. With <c>--count N</c> it plays N matches (seeds
-/// seed … seed + N − 1) and prints only the averages and the target comparison; raw match data is never written to the
-/// repository (CLAUDE.md rule 5). The full <c>batch</c> report comes in milestone 4.
+/// (events, goal explanations, period and match summaries) or JSON. With an even <c>--count N</c> it plays N / 2 pairs
+/// (<see cref="PairedMatches"/>, D-069: pair i uses seed + i twice, first team A with the home system at home, then
+/// team B with the away system at home) and prints only the averages, the venue and team split and the target
+/// comparison; an odd N above 1 is rejected. Raw match data is never written to the repository (CLAUDE.md rule 5). The
+/// full <c>batch</c> report comes in milestone 4.
 /// </summary>
 public static class MatchCommand
 {
@@ -26,11 +29,11 @@ public static class MatchCommand
     public const int DefaultMaxSegments = 2000;
 
     /// <summary>Options of the command.</summary>
-    /// <param name="Seed">Random seed (first seed with --count).</param>
-    /// <param name="HomeSystem">Home defensive system id.</param>
-    /// <param name="AwaySystem">Away defensive system id.</param>
+    /// <param name="Seed">Random seed (first pair's seed with --count).</param>
+    /// <param name="HomeSystem">Home defensive system id (team A's system with --count).</param>
+    /// <param name="AwaySystem">Away defensive system id (team B's system with --count).</param>
     /// <param name="Json">Print JSON instead of text (single match).</param>
-    /// <param name="Count">Number of matches; above 1 prints averages only.</param>
+    /// <param name="Count">Number of matches: 1 plays a single match, an even number above 1 plays paired matches and prints averages only.</param>
     public sealed record Options(ulong Seed, string HomeSystem, string AwaySystem, bool Json, int Count);
 
     /// <summary>The match setup used by the command: harness teams (home ids from 1, away from 101) with the given caps.</summary>
@@ -39,6 +42,20 @@ public static class MatchCommand
         Team home = HarnessTeams.BuildMatchTeam("Home", 1, 1UL);
         Team away = HarnessTeams.BuildMatchTeam("Away", 101, 2UL);
         return new MatchSetup(data.Rink, data.Tuning, home, away, maxStepsPerSegment, maxSegments);
+    }
+
+    /// <summary>
+    /// The two teams of a paired series: team A (the single-match home roster, ids from 1) with
+    /// <paramref name="systemA"/> and team B (the single-match away roster, ids from 101) with <paramref name="systemB"/>,
+    /// each with a fresh rotation coach per match.
+    /// </summary>
+    public static (PairedTeam A, PairedTeam B) PairTeams(GameData data, string systemA, string systemB)
+    {
+        DefensiveSystem a = HarnessTeams.System(data, systemA);
+        DefensiveSystem b = HarnessTeams.System(data, systemB);
+        return (
+            new PairedTeam("A (" + systemA + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), () => new RotationCoach(data.Plays, a)),
+            new PairedTeam("B (" + systemB + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), () => new RotationCoach(data.Plays, b)));
     }
 
     /// <summary>Plays one match with rotation coaches.</summary>
@@ -52,12 +69,12 @@ public static class MatchCommand
     /// <summary>Runs the command and returns the printed output.</summary>
     public static string Run(GameData data, Options options)
     {
-        MatchSetup setup = Setup(data);
         if (options.Count > 1)
         {
-            return Averages(data, setup, options);
+            return Averages(data, options);
         }
 
+        MatchSetup setup = Setup(data);
         MatchResult result = Play(data, setup, options.HomeSystem, options.AwaySystem, options.Seed);
         return options.Json ? MatchJson.Write(result, setup, options.Seed) : MatchText.Write(result, setup, data, options);
     }
@@ -101,6 +118,13 @@ public static class MatchCommand
             }
         }
 
+        if (count > 1 && count % 2 != 0)
+        {
+            error = "--count must be 1 (single match) or an even number: matches are played in pairs with the same seed and sides swapped (got "
+                + count + ")";
+            return null;
+        }
+
         return new Options(seed, home, away, json, count);
     }
 
@@ -124,27 +148,27 @@ public static class MatchCommand
         return id => map[id];
     }
 
-    private static string Averages(GameData data, MatchSetup setup, Options options)
+    private static string Averages(GameData data, Options options)
     {
-        Func<int, TeamSide> teamOf = TeamOf(setup);
+        int pairs = PairedMatches.PairCount(options.Count);
+        (PairedTeam teamA, PairedTeam teamB) = PairTeams(data, options.HomeSystem, options.AwaySystem);
         var total = new TeamStats();
         var perSide = new[] { new TeamStats(), new TeamStats() };
+        var perTeam = new[] { new TeamStats(), new TeamStats() };
+        var record = new PairedRecord();
         int stalled = 0;
-        int homeWins = 0;
-        int awayWins = 0;
         double zoneSeconds = 0.0;
         var stoppages = new SortedDictionary<string, int>(StringComparer.Ordinal);
         double stoppageGaps = 0.0;
         int gaps = 0;
         int events = 0;
-        for (int i = 0; i < options.Count; i++)
+        foreach (PairedGame game in PairedMatches.Play(data, teamA, teamB, options.Seed, pairs))
         {
-            MatchResult result = Play(data, setup, options.HomeSystem, options.AwaySystem, options.Seed + (ulong)i);
+            MatchResult result = game.Result;
+            record.Add(game);
             stalled += result.Stalled ? 1 : 0;
-            homeWins += result.HomeGoals > result.AwayGoals ? 1 : 0;
-            awayWins += result.AwayGoals > result.HomeGoals ? 1 : 0;
             events += result.Log.Count;
-            TeamStats[] stats = TeamStats.From(result.Log.Events, teamOf);
+            TeamStats[] stats = TeamStats.From(result.Log.Events, TeamOf(game.Setup));
             for (int t = 0; t < 2; t++)
             {
                 perSide[t].Add(stats[t]);
@@ -152,22 +176,37 @@ public static class MatchCommand
                 zoneSeconds += result.State.OffensiveZoneSeconds((TeamSide)t);
             }
 
+            perTeam[0].Add(stats[(int)game.TeamASide]);
+            perTeam[1].Add(stats[1 - (int)game.TeamASide]);
             MatchText.CountStoppages(result.Log.Events, stoppages, ref stoppageGaps, ref gaps);
         }
 
         int n = options.Count;
         double teamMatches = 2.0 * n;
         var sb = new StringBuilder();
-        sb.AppendLine("Match averages: " + n + " matches, seeds " + options.Seed + "–" + (options.Seed + (ulong)n - 1) + ", Home (" + options.HomeSystem + ") vs Away ("
-            + options.AwaySystem + "), rotation coaches, transition rush.");
-        sb.AppendLine("Stalled matches: " + stalled + ". Results: home " + homeWins + ", away " + awayWins + ", ties " + (n - homeWins - awayWins) + ". Events per match " + F1(events / (double)n) + ".");
+        sb.AppendLine("Match averages: " + n + " matches in " + pairs + " pairs, seeds " + options.Seed + "–" + (options.Seed + (ulong)pairs - 1)
+            + " (one seed per pair), team " + teamA.Label + " vs team " + teamB.Label + ", rotation coaches, transition rush.");
+        sb.AppendLine("Pairing: each pair plays its seed twice, first A at home, then B at home (rosters, systems and coaches travel with the team).");
+        sb.AppendLine("Stalled matches: " + stalled + ". Events per match " + F1(events / (double)n) + ".");
+        sb.AppendLine();
+        sb.AppendLine("By venue: home wins " + record.HomeWins + ", ties " + record.Ties + ", away wins " + record.AwayWins
+            + " (" + Pct(record.HomeWins, n) + " / " + Pct(record.Ties, n) + " / " + Pct(record.AwayWins, n) + ")");
+        sb.AppendLine("  Home / away per match: goals " + F2(record.HomeGoals / (double)n) + " / " + F2(record.AwayGoals / (double)n)
+            + ", shot attempts " + F1(perSide[0].Shots / (double)n) + " / " + F1(perSide[1].Shots / (double)n)
+            + ", xG " + F2(perSide[0].Xg / n) + " / " + F2(perSide[1].Xg / n));
+        sb.AppendLine("By team: A wins " + record.TeamAWins + " (home " + record.TeamAHomeWins + ", away " + record.TeamAAwayWins + "), ties " + record.Ties
+            + ", B wins " + record.TeamBWins + " (home " + record.TeamBHomeWins + ", away " + record.TeamBAwayWins + ")");
+        sb.AppendLine("  A / B per match: goals " + F2(record.TeamAGoals / (double)n) + " / " + F2(record.TeamBGoals / (double)n)
+            + ", shot attempts " + F1(perTeam[0].Shots / (double)n) + " / " + F1(perTeam[1].Shots / (double)n)
+            + ", xG " + F2(perTeam[0].Xg / n) + " / " + F2(perTeam[1].Xg / n));
         sb.AppendLine();
         double goals = total.Goals / (double)n;
         sb.AppendLine("Goals per match (both teams combined): " + F2(goals) + "   [target goalsPerMatch " + TargetText(data, "goalsPerMatch", goals) + "]");
-        sb.AppendLine("Per team per match: shot attempts " + F1(total.Shots / teamMatches) + ", on target " + F1(total.OnTarget / teamMatches)
-            + ", blocked " + F1(total.Blocked / teamMatches) + ", missed " + F1(total.Missed / teamMatches) + ", xG " + F2(total.Xg / teamMatches)
-            + ", goals " + F2(total.Goals / teamMatches));
-        sb.AppendLine("Home / away goals per match: " + F2(perSide[0].Goals / (double)n) + " / " + F2(perSide[1].Goals / (double)n));
+        sb.AppendLine("Full match per team per match (all play; compare with full-match numbers, not 5v5): shot attempts " + F1(total.Shots / teamMatches)
+            + ", shots on target " + F1(total.OnTarget / teamMatches));
+        sb.AppendLine("Per team per match: blocked " + F1(total.Blocked / teamMatches) + ", missed " + F1(total.Missed / teamMatches)
+            + ", xG " + F2(total.Xg / teamMatches) + ", goals " + F2(total.Goals / teamMatches));
+        sb.AppendLine("Faceoffs per match: " + F1(total.Faceoffs / teamMatches) + " (home team wins " + Pct(perSide[0].FaceoffsWon, perSide[0].Faceoffs) + ")");
         sb.AppendLine("Passes: " + Pct(total.PassesCompleted, total.Passes) + " complete (" + F1(total.Passes / teamMatches) + " per team per match), under pressure "
             + Pct(total.PassesUnderPressureCompleted, total.PassesUnderPressure) + " (" + Pct(total.PassesUnderPressure, total.Passes) + " of passes)");
         sb.AppendLine("Shots under pressure: " + Pct(total.ShotsUnderPressure, total.Shots));
