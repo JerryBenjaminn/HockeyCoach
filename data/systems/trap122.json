@@ -2,11 +2,34 @@
   "schemaVersion": 1,
   "id": "trap122",
   "name": "1-2-2 trap",
-  "_notes": "One forechecker angles the carrier to the boards from the inside (D-057): offensive and neutral zone F1 target is one node towards the own goal and one lane towards the middle of the carrier (puck on the centre lane: straight in front of it), so he steers the carrier wide instead of pressing. Two forwards wait in the neutral zone and the D hold the red line area. Neutral zone: the forwards collapse to the defensive side of the red line, D on the own blue line. Own zone: collapsed box with F1 straight at the carrier (D-062).",
+  "_notes": "One forechecker angles the carrier to the boards from the inside (D-057): offensive and neutral zone F1 target is one node towards the own goal and one lane towards the middle of the carrier (puck on the centre lane: straight in front of it), so he steers the carrier wide instead of pressing. Two forwards wait in the neutral zone and the D hold the red line area. Neutral zone: the forwards collapse to the defensive side of the red line, D on the own blue line. Own zone: collapsed box with F1 straight at the carrier (D-062). One player per team per node (D-058): when the puck sits where a teammate's fixed target is, a puckX/puckY rule moves that teammate: on the boards the strong-side forward seals the wall (6,0)/(4,0) or D1 stands up at the blue line (3,0); in the own zone D1 drops to the strong-side post (1,1), D2 to the weak-side post (1,3) or F2 slides to (3,1).",
   "mirrorY": true,
   "rules": [
     {
       "when": {
+        "puckX": [7, 7],
+        "puckY": [0, 0]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [-1, 1]
+        },
+        "F2": {
+          "node": [6, 0]
+        },
+        "F3": {
+          "node": [6, 3]
+        },
+        "D1": {
+          "node": [4, 1]
+        },
+        "D2": {
+          "node": [4, 3]
+        }
+      }
+    },
+    {
+      "when": {
         "puckZones": [
           "offensive"
         ],
@@ -56,6 +79,52 @@
     },
     {
       "when": {
+        "puckX": [4, 4],
+        "puckY": [0, 0]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [-1, 1]
+        },
+        "F2": {
+          "node": [4, 1]
+        },
+        "F3": {
+          "node": [4, 3]
+        },
+        "D1": {
+          "node": [3, 0]
+        },
+        "D2": {
+          "node": [3, 3]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckX": [5, 5],
+        "puckY": [0, 0]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [-1, 1]
+        },
+        "F2": {
+          "node": [4, 0]
+        },
+        "F3": {
+          "node": [4, 3]
+        },
+        "D1": {
+          "node": [3, 1]
+        },
+        "D2": {
+          "node": [3, 3]
+        }
+      }
+    },
+    {
+      "when": {
         "puckZones": [
           "neutral"
         ],
@@ -100,6 +169,75 @@
         },
         "D2": {
           "node": [3, 3]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckX": [2, 2],
+        "puckY": [1, 1]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "node": [3, 2]
+        },
+        "F3": {
+          "node": [2, 3]
+        },
+        "D1": {
+          "node": [1, 1]
+        },
+        "D2": {
+          "node": [2, 2]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckX": [2, 2],
+        "puckY": [2, 2]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "node": [3, 2]
+        },
+        "F3": {
+          "node": [2, 3]
+        },
+        "D1": {
+          "node": [2, 1]
+        },
+        "D2": {
+          "node": [1, 3]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckX": [3, 3],
+        "puckY": [2, 2]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [0, 0]
+        },
+        "F2": {
+          "node": [3, 1]
+        },
+        "F3": {
+          "node": [2, 3]
+        },
+        "D1": {
+          "node": [2, 1]
+        },
+        "D2": {
+          "node": [2, 2]
         }
       }
     },
