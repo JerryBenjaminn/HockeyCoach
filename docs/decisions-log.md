@@ -62,6 +62,13 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-052 | 2026-10-10 | Laukausnopeus | Tyhjä virstanpylvääseen 3 asti. Myöhemmin johdetaan laukaisuvoimasta pelkäksi näyttöarvoksi ilman pelivaikutusta (Q-028) | lukittu |
 | D-053 | 2026-10-10 | Maalin kierto | Puolustaja, jonka askel osuisi maalisolmuun, kiertää maalin sille puolelle, jolla kiekko on (Q-029) | lukittu |
 | D-054 | 2026-10-10 | Unity-kansio | Agentit eivät koske `unity/`-kansioon. Jerry hoitaa Unity-projektin itse | lukittu |
+| D-055 | 2026-10-10 | Virstanpylväs 2 | Hyväksytty valmiiksi (`shift --seed 42`). Vaihdon pituus, kuvion toisto ja aina valmis puolustus korjataan virstanpylväässä 3 nykyisten päätösten mukaan | lukittu |
+| D-056 | 2026-10-10 | Paineen alla -säde | `pressure.underPressureNodes` = 0 (sama solmu). Kalibroidaan raportin perusteella Wisehockeyn 68–76 %:iin (Q-032). Toteutus virstanpylväässä 3 | lukittu |
+| D-057 | 2026-10-10 | trap122:n F1 | F1:n kohde on yhden solmun päässä kiekollisesta, kiekon ja keskikaistan välissä (ohjaa laitaan, ei prässää). forecheck212:n F1 menee edelleen suoraan kiekolliseen. Toteutus virstanpylväässä 3 | lukittu |
+| D-058 | 2026-10-10 | Solmun pelaajamäärä | Samassa solmussa voi olla enintään yksi pelaaja kummastakin joukkueesta. Hyökkääjä ja puolustaja samassa solmussa on sallittu. Invarianttitesti lisätään | lukittu |
+| D-059 | 2026-10-10 | Toinen yritys | Kun hyökkääjä voittaa irtokiekon `netFront`-solmussa tai slotissa, se laukoo heti ilman kuvion setuppia; `netFront`-solmussa käytetään maskin xG:tä (Q-038). Virstanpylväs 3, ensimmäisten joukossa | lukittu |
+| D-060 | 2026-10-10 | Aloituksen jälkeen | Aloitustarkistus ratkaisee, kumpi joukkue saa kiekon. Voittaneen joukkueen aloituskuvio määrää, kuka kiekon saa; oletuksena pakki. Ei erillistä syöttötarkistusta (Q-037) | lukittu |
+| D-061 | 2026-10-10 | Oletukset Q-033–Q-036 | Ohjelmoijan oletukset hyväksytty: kuviotyyppi alueen mukaan, aloituksen oletusasettelu, järjestelmätilan askeleet, epäonnistunut kuljetus | lukittu |
 
 ## Muutosehdotukset
 

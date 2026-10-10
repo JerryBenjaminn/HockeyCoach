@@ -14,36 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-038 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** pitääkö reboundin voittajan voida laukoa heti, ennen uuden kuvion valintaa?
-**Konteksti:** D-047 antaa `crease`-xG:n reboundin voittajan laukaukselle, kun se on seuraava kiekkotoiminto. D-036:n mukaan kiekon saanut joukkue valitsee kuitenkin heti kuvion, ja setup (D-038) siirtää pelaajat kuvion lähtösolmuihin. Siksi rebound-laukaus `netFront`-solmusta syntyy virstanpylväässä 2 käytännössä vain, jos valitun kuvion ensimmäinen toiminto on saman pelaajan laukaus lähtösolmusta (8, 2).
-**Ehdotettu oletus:** toteutettu sääntöjen mukaan (kuvion valinta ensin). Järjestelmätilan ohje `netFrontAfterShot` (virstanpylväs 3) voisi ratkaista tämän.
-
-### Q-037 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** kenelle kiekko menee aloituksen jälkeen?
-**Konteksti:** D-042 ja tarkistustaulukko kertovat vain voittajan. Kuvio `offensiveFaceoffPointShot` olettaa, että sentteri pitää kiekon (C syöttää ensimmäisessä tahdissa).
-**Ehdotettu oletus:** voittaneen joukkueen sentteri saa kiekon aloituspisteessä. Jos joukkueella on aloituskuvio pisteelle, se alkaa (D-036:n syötöllä, jos kuvion kiekollinen ei ole C); muuten kuvio valitaan alueen mukaan.
-
-### Q-036 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** mitä tapahtuu epäonnistuneessa kuljetuksessa (`skate`)?
-**Konteksti:** D-040: "puolustaja riistää kiekon". Avoinna: (1) mikä puolustaja avauksessa (`breakout`), jossa tarkistuksen puolustajapuoli on `forecheckers`; (2) missä solmussa riisto tapahtuu ja missä kuljettaja on sen jälkeen.
-**Ehdotettu oletus:** riistäjä on aina reitin puolustaja (M-1, viitesolmu = kohde). Hän saa kiekon omassa solmussaan (kuten syötönkatkossa), ja kuljettaja jää lähtösolmuunsa.
-
-### Q-035 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** mitä järjestelmätilassa tapahtuu (virstanpylväs 2)?
-**Konteksti:** (1) Kiekollinen joukkue, jolle ei sovi kuviota, "pitää kiekon järjestelmätilassa" (D-036), mutta kiekollinen ei liiku, joten tila voisi jatkua loputtomiin. (2) Kun irtokiekkokamppailussa ei ole voittajaa, "kumpikin joukkue liikkuu yhden järjestelmätilan askeleen" (M-6), mutta hyökkääjäpuolella ei ole liikesääntöä ennen virstanpylvään 3 ohjeita.
-**Ehdotettu oletus:** (1) jokainen järjestelmätilan askel (`time.secondsPerAction.systemStep`) liikuttaa puolustusta järjestelmän mukaan, ja sen jälkeen kuvio valitaan uudelleen kiekollisen nykyisestä alueesta. Sama tapahtuu, kun kuvio päättyy ja kiekko on tallessa. (2) Kumpikin joukkue liikkuu oman puolustusjärjestelmänsä mukaan irtokiekkoa kohden.
-
-### Q-034 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** mikä on aloituksen oletusasettelu (D-042), kun joukkueella ei ole aloituskuviota pisteelle?
-**Konteksti:** D-042 mainitsee oletusasettelun, mutta sen solmuja ei ole määritelty.
-**Ehdotettu oletus:** (oma näkökulma, piste (sx, sy)) C pisteessä, LW (sx, max(0, sy − 2)), RW (sx, min(width − 1, sy + 2)), LD (max(0, sx − 2), keskikaista − 1), RD (max(0, sx − 2), keskikaista + 1).
-
-### Q-033 · 2026-10-10 · kirjaaja: programmer
-**Kysymys:** mikä kuviotyyppi "sopii kiekon alueeseen" (D-036)?
-**Konteksti:** kuvion valinta. Tyypit ja alueet ovat eri listoja, eikä niiden vastaavuutta ole kirjattu.
-**Ehdotettu oletus:** `breakout` ↔ oma alue, `zoneEntry` ↔ keskialue, `offensiveZone` ↔ hyökkäysalue (kiekollisen solmu oman joukkueen näkökulmasta). `faceoff`-kuvioita käytetään vain aloituksissa, `powerPlay`-kuvioita ei tasakentällisin.
-
 ### Q-032 · 2026-10-10 · kirjaaja: Jerry
 **Kysymys:** kalibroidaan paineen alla -säde (M-7, `pressure.underPressureNodes`) raportin perusteella.
 **Konteksti:** laukausten osuutta paineen alla verrataan Wisehockeyn 68–76 %:iin (`stats-and-checks.md`, tavoitearvot). Virstanpylväs 5.
@@ -124,6 +94,42 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-038 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** pitääkö reboundin voittajan voida laukoa heti, ennen uuden kuvion valintaa?
+**Konteksti:** D-047 antaa `crease`-xG:n reboundin voittajan laukaukselle, kun se on seuraava kiekkotoiminto. D-036:n mukaan kiekon saanut joukkue valitsee kuitenkin heti kuvion, ja setup (D-038) siirtää pelaajat kuvion lähtösolmuihin. Siksi rebound-laukaus `netFront`-solmusta syntyy virstanpylväässä 2 käytännössä vain, jos valitun kuvion ensimmäinen toiminto on saman pelaajan laukaus lähtösolmusta (8, 2).
+**Ehdotettu oletus:** toteutettu sääntöjen mukaan (kuvion valinta ensin). Järjestelmätilan ohje `netFrontAfterShot` (virstanpylväs 3) voisi ratkaista tämän.
+**Vastaus (Jerry, 2026-10-10):** kun hyökkääjä voittaa irtokiekon `netFront`-solmussa tai slotissa, se laukoo heti ilman kuvion setuppia (toinen yritys, maskin xG `netFront`issa). Virstanpylväs 3. Kirjattu: D-059.
+
+### Q-037 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** kenelle kiekko menee aloituksen jälkeen?
+**Konteksti:** D-042 ja tarkistustaulukko kertovat vain voittajan. Kuvio `offensiveFaceoffPointShot` olettaa, että sentteri pitää kiekon (C syöttää ensimmäisessä tahdissa).
+**Ehdotettu oletus:** voittaneen joukkueen sentteri saa kiekon aloituspisteessä. Jos joukkueella on aloituskuvio pisteelle, se alkaa (D-036:n syötöllä, jos kuvion kiekollinen ei ole C); muuten kuvio valitaan alueen mukaan.
+**Vastaus (Jerry, 2026-10-10):** aloitustarkistus ratkaisee, kumpi joukkue saa kiekon. Voittaneen joukkueen aloituskuvio määrää, kuka kiekon saa; oletuksena pakki. Ei erillistä syöttötarkistusta. Kirjattu: D-060.
+
+### Q-036 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** mitä tapahtuu epäonnistuneessa kuljetuksessa (`skate`)?
+**Konteksti:** D-040: "puolustaja riistää kiekon". Avoinna: (1) mikä puolustaja avauksessa (`breakout`), jossa tarkistuksen puolustajapuoli on `forecheckers`; (2) missä solmussa riisto tapahtuu ja missä kuljettaja on sen jälkeen.
+**Ehdotettu oletus:** riistäjä on aina reitin puolustaja (M-1, viitesolmu = kohde). Hän saa kiekon omassa solmussaan (kuten syötönkatkossa), ja kuljettaja jää lähtösolmuunsa.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-061.
+
+### Q-035 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** mitä järjestelmätilassa tapahtuu (virstanpylväs 2)?
+**Konteksti:** (1) Kiekollinen joukkue, jolle ei sovi kuviota, "pitää kiekon järjestelmätilassa" (D-036), mutta kiekollinen ei liiku, joten tila voisi jatkua loputtomiin. (2) Kun irtokiekkokamppailussa ei ole voittajaa, "kumpikin joukkue liikkuu yhden järjestelmätilan askeleen" (M-6), mutta hyökkääjäpuolella ei ole liikesääntöä ennen virstanpylvään 3 ohjeita.
+**Ehdotettu oletus:** (1) jokainen järjestelmätilan askel (`time.secondsPerAction.systemStep`) liikuttaa puolustusta järjestelmän mukaan, ja sen jälkeen kuvio valitaan uudelleen kiekollisen nykyisestä alueesta. Sama tapahtuu, kun kuvio päättyy ja kiekko on tallessa. (2) Kumpikin joukkue liikkuu oman puolustusjärjestelmänsä mukaan irtokiekkoa kohden.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-061.
+
+### Q-034 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** mikä on aloituksen oletusasettelu (D-042), kun joukkueella ei ole aloituskuviota pisteelle?
+**Konteksti:** D-042 mainitsee oletusasettelun, mutta sen solmuja ei ole määritelty.
+**Ehdotettu oletus:** (oma näkökulma, piste (sx, sy)) C pisteessä, LW (sx, max(0, sy − 2)), RW (sx, min(width − 1, sy + 2)), LD (max(0, sx − 2), keskikaista − 1), RD (max(0, sx − 2), keskikaista + 1).
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-061.
+
+### Q-033 · 2026-10-10 · kirjaaja: programmer
+**Kysymys:** mikä kuviotyyppi "sopii kiekon alueeseen" (D-036)?
+**Konteksti:** kuvion valinta. Tyypit ja alueet ovat eri listoja, eikä niiden vastaavuutta ole kirjattu.
+**Ehdotettu oletus:** `breakout` ↔ oma alue, `zoneEntry` ↔ keskialue, `offensiveZone` ↔ hyökkäysalue (kiekollisen solmu oman joukkueen näkökulmasta). `faceoff`-kuvioita käytetään vain aloituksissa, `powerPlay`-kuvioita ei tasakentällisin.
+**Vastaus (Jerry, 2026-10-10):** oletus hyväksytty. Kirjattu: D-061.
 
 ### Q-029 · 2026-10-09 · kirjaaja: programmer
 **Kysymys:** mitä puolustaja tekee, kun hänen suora askeleensa y-suunnassa (sign(dx) = 0) osuisi maalisolmuun?
