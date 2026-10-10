@@ -55,8 +55,8 @@ public static class MatchCommand
         DefensiveSystem a = HarnessTeams.System(data, systemA);
         DefensiveSystem b = HarnessTeams.System(data, systemB);
         return (
-            new PairedTeam("A (" + systemA + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), () => new RotationCoach(data.Plays, a)),
-            new PairedTeam("B (" + systemB + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), () => new RotationCoach(data.Plays, b)));
+            new PairedTeam("A (" + systemA + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), _ => new RotationCoach(data.Plays, a)),
+            new PairedTeam("B (" + systemB + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), _ => new RotationCoach(data.Plays, b)));
     }
 
     /// <summary>Plays one match with rotation coaches.</summary>
@@ -64,7 +64,7 @@ public static class MatchCommand
     {
         var homeCoach = new RotationCoach(data.Plays, HarnessTeams.System(data, homeSystem));
         var awayCoach = new RotationCoach(data.Plays, HarnessTeams.System(data, awaySystem));
-        return MatchSimulator.Run(setup, homeCoach, awayCoach, new Pcg32(seed));
+        return MatchSimulator.Run(setup, homeCoach, awayCoach, new MatchStreams(seed).Simulation());
     }
 
     /// <summary>Runs the command and returns the printed output.</summary>

@@ -1,8 +1,9 @@
 namespace HockeyCoach.Sim.Random
 {
     /// <summary>
-    /// Deterministic source of randomness. A single instance is passed into a match as a parameter;
-    /// all random decisions in the simulation are drawn from it, in a fixed order.
+    /// Deterministic source of randomness. Every random stream of a match is derived from the match seed
+    /// (<see cref="MatchStreams"/>, D-077) and passed as a parameter: the simulation draws all its random decisions from
+    /// its own stream in a fixed order, and each coach from its own.
     /// </summary>
     public interface IRandom
     {

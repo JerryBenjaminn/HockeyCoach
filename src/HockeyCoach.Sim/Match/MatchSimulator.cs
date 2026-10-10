@@ -19,6 +19,10 @@ namespace HockeyCoach.Sim.Match
     public static class MatchSimulator
     {
         /// <summary>Runs the match.</summary>
+        /// <param name="setup">Rink, tuning, teams and caps.</param>
+        /// <param name="home">Home coach (holds its own random stream if it needs one, D-077).</param>
+        /// <param name="away">Away coach.</param>
+        /// <param name="random">The simulation stream, e.g. <see cref="MatchStreams.Simulation"/>; coaches never draw from it.</param>
         public static MatchResult Run(MatchSetup setup, ICoach home, ICoach away, IRandom random)
         {
             if (setup == null)

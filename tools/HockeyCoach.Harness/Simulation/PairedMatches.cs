@@ -12,8 +12,8 @@ namespace HockeyCoach.Harness.Simulation;
 /// </summary>
 /// <param name="Label">Name in output, e.g. "A (forecheck212)".</param>
 /// <param name="Team">The roster.</param>
-/// <param name="NewCoach">Creates the team's coach for one match.</param>
-public sealed record PairedTeam(string Label, Team Team, Func<ICoach> NewCoach);
+/// <param name="NewCoach">Creates the team's coach for one match from the coach's own random stream (D-077).</param>
+public sealed record PairedTeam(string Label, Team Team, Func<IRandom, ICoach> NewCoach);
 
 /// <summary>One played match of a paired series.</summary>
 /// <param name="Pair">Zero-based pair index.</param>
@@ -36,7 +36,8 @@ public sealed record PairedGame(int Pair, ulong Seed, bool TeamAIsHome, MatchSet
 /// <summary>
 /// Paired matches (D-069): every pair plays the same two rosters with the same seed twice, first team A at home, then
 /// the teams swap home and away (rosters, coaches and systems travel with the team). This separates home advantage from
-/// roster strength and seed luck. Shared by <c>match --count</c> and the upcoming <c>batch</c> command.
+/// roster strength and seed luck. Each match derives its streams from the pair seed (<see cref="MatchStreams"/>): the
+/// simulation stream, and the home and away coach streams by venue. Shared by <c>match --count</c> and the upcoming <c>batch</c> command.
 /// </summary>
 public static class PairedMatches
 {
@@ -78,8 +79,9 @@ public static class PairedMatches
         for (int i = 0; i < pairs; i++)
         {
             ulong seed = firstSeed + (ulong)i;
-            yield return new PairedGame(i, seed, true, aHome, MatchSimulator.Run(aHome, teamA.NewCoach(), teamB.NewCoach(), new Pcg32(seed)));
-            yield return new PairedGame(i, seed, false, bHome, MatchSimulator.Run(bHome, teamB.NewCoach(), teamA.NewCoach(), new Pcg32(seed)));
+            var streams = new MatchStreams(seed);
+            yield return new PairedGame(i, seed, true, aHome, MatchSimulator.Run(aHome, teamA.NewCoach(streams.HomeCoach()), teamB.NewCoach(streams.AwayCoach()), streams.Simulation()));
+            yield return new PairedGame(i, seed, false, bHome, MatchSimulator.Run(bHome, teamB.NewCoach(streams.HomeCoach()), teamA.NewCoach(streams.AwayCoach()), streams.Simulation()));
         }
     }
 }
