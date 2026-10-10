@@ -41,7 +41,7 @@ namespace HockeyCoach.Sim.Shift
         /// <summary><c>dump</c>: the puck flies to the target node, then the loose-puck battle there (no check on the way).</summary>
         private void Dump(TeamSide team, Position shooter, GridPoint target)
         {
-            _time += _tuning.Time.GetSecondsPerAction("dumpIn");
+            Spend("dumpIn");
             ClearActionHistory();
             Skater dumper = _state.SkaterAt(team, shooter);
             _state.SetLoosePuck(TeamFrame.ToRink(target, team, _rink));
@@ -55,7 +55,7 @@ namespace HockeyCoach.Sim.Shift
             if (_battleRetry)
             {
                 // M-6.5: both teams take one system step around the loose puck (Q-035 default: each by its own system).
-                _time += _tuning.Time.GetSecondsPerAction("systemStep");
+                Spend("systemStep");
                 _state.ApplySystem(attacker, Team(attacker).Plan.System, _tuning.Plays.MaxNodesPerBeat);
                 _state.ApplySystem(defender, Team(defender).Plan.System, _tuning.Plays.MaxNodesPerBeat);
             }
@@ -94,7 +94,7 @@ namespace HockeyCoach.Sim.Shift
                 outcome = result.Success ? BattleOutcome.Win : BattleOutcome.Loss;
             }
 
-            _time += _tuning.Time.GetSecondsPerAction("loosePuck");
+            Spend("loosePuck");
             ClearActionHistory();
             if (outcome != BattleOutcome.NoWinner)
             {

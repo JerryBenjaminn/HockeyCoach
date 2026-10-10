@@ -66,7 +66,7 @@ namespace HockeyCoach.Sim.Shift
             double xg = through * shotConfig.OnTargetShare * goalProbability;
             ChanceType chanceType = ChanceTypeOf(team);
             ChanceClass? chanceClass = ClassOf(xg);
-            _time += _tuning.Time.GetSecondsPerAction("shoot");
+            Spend("shoot");
             ClearActionHistory();
 
             if (blocked)
@@ -114,7 +114,7 @@ namespace HockeyCoach.Sim.Shift
                 new CheckParticipants().With(CheckRoles.Goalie, Team(defending).Goalie),
                 m,
                 _random);
-            _time += _tuning.Time.GetSecondsPerAction("rebound");
+            Spend("rebound");
             if (result.Success)
             {
                 _state.SetLoosePuck(TeamFrame.ToRink(LooseSpot(_tuning.LoosePuckSpots.ReboundSlot, shooterNode, null), team, _rink));
