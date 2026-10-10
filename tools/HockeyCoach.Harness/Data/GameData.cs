@@ -48,6 +48,12 @@ public sealed record GameData(Rink Rink, TuningConfig Tuning, TargetsConfig Targ
         TargetsConfig targets = TargetsLoader.Load(Path.Combine(dataDirectory, TargetsFile)).GetOrThrow(TargetsFile);
         IReadOnlyList<Play> plays = PlayLoader.LoadAll(Path.Combine(dataDirectory, PlaysDirectory), rink, tuning.Plays);
         IReadOnlyList<DefensiveSystem> systems = SystemLoader.LoadAll(Path.Combine(dataDirectory, SystemsDirectory), rink);
+        IReadOnlyList<string> aiErrors = AiConfigValidator.ValidateReferences(tuning.Ai, systems.Select(s => s.Id), plays.Select(p => p.Id));
+        if (aiErrors.Count > 0)
+        {
+            throw new DataLoadException(Path.GetFileName(tuningFile), aiErrors);
+        }
+
         return new GameData(rink, tuning, targets, plays, systems);
     }
 }

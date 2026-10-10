@@ -17,7 +17,7 @@ public static class TuningLoader
     private static readonly string[] MappedSections =
     {
         "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "plays", "chanceTypes", "chanceClasses",
-        "pressure", "loosePuckSpots", "energy", "organization", "familiarity", "transitions",
+        "pressure", "loosePuckSpots", "energy", "organization", "familiarity", "transitions", "ai",
     };
 
     /// <summary>Top-level sections of later milestones (data-schema.md); accepted and not mapped yet.</summary>
@@ -85,6 +85,7 @@ public static class TuningLoader
         OrganizationConfig? organization = MapOrganization(root.Required("organization"));
         FamiliarityConfig? familiarity = MapFamiliarity(root.Required("familiarity"));
         TransitionsConfig? transitions = MapTransitions(root.Required("transitions"));
+        AiConfig? ai = AiTuningLoader.Map(root.Required("ai"));
 
         var checks = new List<CheckDefinition>();
         ShotConfig? shot = null;
@@ -115,13 +116,13 @@ public static class TuningLoader
 
         if (stats == null || formula == null || positions == null || shot == null || time == null || plays == null
             || chanceTypes == null || chanceClasses == null || pressure == null || loosePuckSpots == null
-            || energy == null || organization == null || familiarity == null || transitions == null)
+            || energy == null || organization == null || familiarity == null || transitions == null || ai == null)
         {
             return null;
         }
 
         return new TuningConfig(
-            stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses, pressure, loosePuckSpots, energy, organization, familiarity, transitions);
+            stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses, pressure, loosePuckSpots, energy, organization, familiarity, transitions, ai);
     }
 
     /// <summary>Reports a renamed or removed key of <paramref name="section"/> with its replacement.</summary>
@@ -306,8 +307,9 @@ public static class TuningLoader
 
         reader.RejectUnknown(
             "periods", "periodSeconds", "forwardShiftSeconds", "defenceShiftSeconds", "stoppageChangeMinSeconds", "secondsPerAction", "setupSeconds",
-            "regroupSeconds");
+            "regroupSeconds", "timeoutsPerTeamPerMatch", "timeoutRestSeconds");
         int? periods = reader.Int("periods");
+        int? timeouts = reader.Int("timeoutsPerTeamPerMatch");
         var secondsPerAction = new List<KeyValuePair<string, double>>();
         JsonReader? actions = reader.Required("secondsPerAction");
         if (actions != null)
@@ -326,8 +328,10 @@ public static class TuningLoader
             secondsPerAction,
             reader.Double("setupSeconds"),
             reader.Double("regroupSeconds"),
-            reader.Double("stoppageChangeMinSeconds"));
-        return periods.HasValue ? time : null;
+            reader.Double("stoppageChangeMinSeconds"),
+            timeouts ?? 0,
+            reader.Double("timeoutRestSeconds"));
+        return periods.HasValue && timeouts.HasValue ? time : null;
     }
 
     private static PlaysConfig? MapPlays(JsonReader? reader)

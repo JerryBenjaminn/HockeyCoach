@@ -26,6 +26,8 @@ namespace HockeyCoach.Sim.Config
         /// <param name="setupSeconds">Time for players to reach a play's start nodes (Q-006, D-038).</param>
         /// <param name="regroupSeconds">Time of a regroup transition (Q-006).</param>
         /// <param name="stoppageChangeMinSeconds">A unit may change at a stoppage after this much ice time (O-2).</param>
+        /// <param name="timeoutsPerTeamPerMatch">Timeouts per team per match (AI-4).</param>
+        /// <param name="timeoutRestSeconds">Rest of a timeout in real seconds, not game clock (AI-4).</param>
         public TimeConfig(
             int periods,
             double periodSeconds,
@@ -34,7 +36,9 @@ namespace HockeyCoach.Sim.Config
             IEnumerable<KeyValuePair<string, double>> secondsPerAction,
             double setupSeconds,
             double regroupSeconds,
-            double stoppageChangeMinSeconds)
+            double stoppageChangeMinSeconds,
+            int timeoutsPerTeamPerMatch,
+            double timeoutRestSeconds)
         {
             if (secondsPerAction == null)
             {
@@ -48,6 +52,8 @@ namespace HockeyCoach.Sim.Config
             SetupSeconds = setupSeconds;
             RegroupSeconds = regroupSeconds;
             StoppageChangeMinSeconds = stoppageChangeMinSeconds;
+            TimeoutsPerTeamPerMatch = timeoutsPerTeamPerMatch;
+            TimeoutRestSeconds = timeoutRestSeconds;
             _secondsPerAction = new SortedDictionary<string, double>(StringComparer.Ordinal);
             foreach (KeyValuePair<string, double> entry in secondsPerAction)
             {
@@ -75,6 +81,12 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>A unit may change at a stoppage after this much ice time (O-2).</summary>
         public double StoppageChangeMinSeconds { get; }
+
+        /// <summary>Timeouts per team per match (AI-4).</summary>
+        public int TimeoutsPerTeamPerMatch { get; }
+
+        /// <summary>Rest of a timeout in real seconds (AI-4).</summary>
+        public double TimeoutRestSeconds { get; }
 
         /// <summary>Time cost per action or check name, in ordinal key order.</summary>
         public IReadOnlyDictionary<string, double> SecondsPerAction

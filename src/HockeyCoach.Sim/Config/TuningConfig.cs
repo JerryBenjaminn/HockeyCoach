@@ -5,7 +5,7 @@ namespace HockeyCoach.Sim.Config
 {
     /// <summary>
     /// Typed balance values from tuning.json (stats, checkFormula, checks, positions, time, energy, organization, pressure,
-    /// familiarity, plays, transitions, chanceTypes, chanceClasses, loosePuckSpots). form and chemistry are not used yet.
+    /// familiarity, plays, transitions, ai, chanceTypes, chanceClasses, loosePuckSpots). form and chemistry are not used yet.
     /// </summary>
     public sealed class TuningConfig
     {
@@ -27,6 +27,7 @@ namespace HockeyCoach.Sim.Config
         /// <param name="organization">Organization values (O-6).</param>
         /// <param name="familiarity">Familiarity values (O-11).</param>
         /// <param name="transitions">Rush values (O-7).</param>
+        /// <param name="ai">Coach AI thresholds (AI-3).</param>
         public TuningConfig(
             StatsConfig stats,
             CheckFormulaConfig checkFormula,
@@ -42,8 +43,10 @@ namespace HockeyCoach.Sim.Config
             EnergyConfig energy,
             OrganizationConfig organization,
             FamiliarityConfig familiarity,
-            TransitionsConfig transitions)
+            TransitionsConfig transitions,
+            AiConfig ai)
         {
+            Ai = ai ?? throw new ArgumentNullException(nameof(ai));
             Energy = energy ?? throw new ArgumentNullException(nameof(energy));
             Organization = organization ?? throw new ArgumentNullException(nameof(organization));
             Familiarity = familiarity ?? throw new ArgumentNullException(nameof(familiarity));
@@ -127,6 +130,9 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>Rush values (O-7).</summary>
         public TransitionsConfig Transitions { get; }
+
+        /// <summary>Coach AI thresholds (AI-3).</summary>
+        public AiConfig Ai { get; }
 
         /// <summary>Returns a check by id; throws if it does not exist.</summary>
         public CheckDefinition GetCheck(string id)

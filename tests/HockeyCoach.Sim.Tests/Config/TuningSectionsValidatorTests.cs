@@ -10,7 +10,7 @@ public class TuningSectionsValidatorTests
 
     private static TimeConfig Time(int periods = 3, double periodSeconds = 1200, double forward = 45, double defence = 50, double setup = 6, double regroup = 8, IEnumerable<KeyValuePair<string, double>>? actions = null, double stoppageChange = 20)
     {
-        return new TimeConfig(periods, periodSeconds, forward, defence, actions ?? ActionTimes, setup, regroup, stoppageChange);
+        return new TimeConfig(periods, periodSeconds, forward, defence, actions ?? ActionTimes, setup, regroup, stoppageChange, 1, 30.0);
     }
 
     [Theory]

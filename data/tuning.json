@@ -116,7 +116,25 @@
     "chanceTypes.turnoverWindowSeconds",
     "chanceClasses.topMinXg",
     "chanceClasses.goodMinXg",
-    "chanceClasses.moderateMinXg"
+    "chanceClasses.moderateMinXg",
+    "ai.random.onTheFlyChangeProbability",
+    "ai.random.timeoutProbabilityPerStoppage",
+    "ai.estimate.extraDrainPerSecondOnIce",
+    "ai.rulebased.changeEnergyThreshold",
+    "ai.rulebased.freshnessMargin",
+    "ai.rulebased.lateGameSeconds",
+    "ai.rulebased.protectLeadGoals",
+    "ai.rulebased.chaseDeficitGoals",
+    "ai.rulebased.modes",
+    "ai.rulebased.playBonusBySystem",
+    "ai.rulebased.timeout.tiredEnergy",
+    "ai.rulebased.timeout.lateGameSeconds",
+    "ai.rulebased.timeout.minDeficitGoals",
+    "ai.rulebased.timeout.maxDeficitGoals",
+    "ai.adaptive.windowSeconds",
+    "ai.adaptive.priorWeight",
+    "ai.adaptive.controlledEntryShareForPassive",
+    "ai.adaptive.controlledEntryShareForAggressive"
   ],
   "stats": {
     "min": 1,
@@ -466,7 +484,9 @@
       "systemStep": 2
     },
     "setupSeconds": 6,
-    "regroupSeconds": 8
+    "regroupSeconds": 8,
+    "timeoutsPerTeamPerMatch": 1,
+    "timeoutRestSeconds": 30
   },
   "energy": {
     "_notes": "Energy 0..1 (D-062, data-schema.md, Energia). On ice a skater loses drainPerSecondOnIce per game second and costPerAction per check he takes part in (every participant, loose-puck battlers included), both scaled by 1 - enduranceCostReductionPerPoint x (endurance - checkFormula.referenceValue). On the bench energy recovers exponentially: E <- 1 - (1 - E) x exp(-benchRecoveryRate x seconds). The goalie loses energy only from the opposing team pressure (pressure.energyDrainPerSecond). checkModifierAtZero = logit at energy 0 applied to every check, linear in between, per side as the mean of the side's participants.",
@@ -532,6 +552,46 @@
     "_notes": "Built-in rush (D-007, D-062, data-schema.md O-7): no play, no setup. At most rushMaxActions actions; the carrier shoots from an offensive-zone node whose checks.shot.baseXg is at least rushShotMinBaseXg, else passes to a teammate on such a node with a free lane, else skates toward one. Ends when the defence reaches organization.organizedThreshold.",
     "rushMaxActions": 4,
     "rushShotMinBaseXg": 0.05
+  },
+  "ai": {
+    "_notes": "Coach AI thresholds (data-schema.md AI-1..AI-6, D-077). Not tuned for win rate before the first batch report (D-077 item 8). Coaches see public info only; energy is estimated from ice and bench time.",
+    "random": {
+      "onTheFlyChangeProbability": 0.5,
+      "timeoutProbabilityPerStoppage": 0.02
+    },
+    "estimate": {
+      "extraDrainPerSecondOnIce": 0.0011
+    },
+    "rulebased": {
+      "changeEnergyThreshold": 0.7,
+      "freshnessMargin": 0.15,
+      "lateGameSeconds": 300,
+      "protectLeadGoals": 1,
+      "chaseDeficitGoals": 1,
+      "modes": {
+        "normal": { "system": "forecheck212", "transition": "rush", "netFrontAfterShot": true, "looseChasers": 1, "pinch": false },
+        "protect": { "system": "trap122", "transition": "regroup", "netFrontAfterShot": false, "looseChasers": 1, "pinch": false },
+        "chase": { "system": "forecheck212", "transition": "rush", "netFrontAfterShot": true, "looseChasers": 2, "pinch": true }
+      },
+      "playBonusBySystem": {
+        "forecheck212": { "breakoutReverse": 0.2, "breakoutUpWall": -0.1 },
+        "trap122": { "dumpAndChase": 0.2, "wideCarryDrive": -0.1 }
+      },
+      "timeout": {
+        "tiredEnergy": 0.5,
+        "lateGameSeconds": 120,
+        "minDeficitGoals": 1,
+        "maxDeficitGoals": 2
+      }
+    },
+    "adaptive": {
+      "windowSeconds": 600,
+      "priorWeight": 10,
+      "passiveSystem": "trap122",
+      "aggressiveSystem": "forecheck212",
+      "controlledEntryShareForPassive": 0.6,
+      "controlledEntryShareForAggressive": 0.4
+    }
   },
   "chanceTypes": {
     "_notes": "Shot classification by origin (data-schema.md O-12). Rush uses organization.organizedThreshold.",

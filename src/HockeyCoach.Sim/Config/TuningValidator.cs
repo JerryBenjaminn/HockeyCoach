@@ -52,6 +52,7 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Organization, tuning.Stats, tuning.CheckFormula));
             errors.AddRange(Validate(tuning.Familiarity));
             errors.AddRange(Validate(tuning.Transitions));
+            errors.AddRange(AiConfigValidator.Validate(tuning.Ai, tuning.Time));
             foreach (string id in OrganizationCheckIds)
             {
                 bool has = id == ShotConfig.Id
@@ -291,6 +292,13 @@ namespace HockeyCoach.Sim.Config
             {
                 errors.Add("time.stoppageChangeMinSeconds: must be less than min(forwardShiftSeconds, defenceShiftSeconds), was " + Format(time.StoppageChangeMinSeconds));
             }
+
+            if (time.TimeoutsPerTeamPerMatch < 0)
+            {
+                errors.Add("time.timeoutsPerTeamPerMatch: must be an integer >= 0, was " + time.TimeoutsPerTeamPerMatch);
+            }
+
+            RequirePositive("time.timeoutRestSeconds", time.TimeoutRestSeconds, errors);
             foreach (KeyValuePair<string, double> action in time.SecondsPerAction)
             {
                 RequireNonNegative("time.secondsPerAction." + action.Key, action.Value, errors);
