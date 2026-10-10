@@ -173,7 +173,7 @@
       }
     },
     "pass": {
-      "_notes": "Success = pass reaches the receiver. laneDefenderDistance is indexed by the nearest defender's node distance from the passing lane (0, 1, 2+). underPressure (condition, D-049): passer is under physical pressure (definitions M-7); placeholder derived from analysis (85 % -> about 70 % under pressure = about -0.9 logit). Not scaled by the team pressure state. interceptionShare (D-040): share of failed passes that are interceptions (lane defender gains the puck); the rest become a loose puck at the lane defender's node.",
+      "_notes": "Success = pass reaches the receiver. laneDefenderDistance is indexed by the nearest defender's node distance from the passing lane (0, 1, 2+). underPressure (condition, D-049): passer is under physical pressure (definitions M-7); calibrated so that all passes complete 81-85 % at the measured under-pressure share of about 68 % (D-075: the analysis 69 % / 68 % is a share, not a success rate). Not scaled by the team pressure state. interceptionShare (D-040): share of failed passes that are interceptions (lane defender gains the puck); the rest become a loose puck at the lane defender's node.",
       "kind": "twoSided",
       "p0": 0.85,
       "attacker": {
@@ -198,7 +198,7 @@
           0.5
         ],
         "crossIce": -0.2,
-        "underPressure": -0.9,
+        "underPressure": -0.2,
         "organization": 0.6
       }
     },
