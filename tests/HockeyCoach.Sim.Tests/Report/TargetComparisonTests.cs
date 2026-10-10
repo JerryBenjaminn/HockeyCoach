@@ -180,6 +180,71 @@ public class TargetComparisonTests
     }
 
     [Fact]
+    public void MatchupRecord_CountsWinsTiesAndLosses_TieIsHalfAWin()
+    {
+        var record = new MatchupRecord();
+        Assert.Null(record.WinRate);
+
+        record.Add(3, 1);
+        record.Add(4, 2);
+        record.Add(2, 2);
+        record.Add(1, 5);
+
+        Assert.Equal(2, record.Wins);
+        Assert.Equal(1, record.Ties);
+        Assert.Equal(1, record.Losses);
+        Assert.Equal(4, record.Matches);
+        Assert.Equal((2 + 0.5) / 4.0, record.WinRate!.Value, 9);
+    }
+
+    [Fact]
+    public void SmartVsRandom_WithARecord_IsComparedAndShowsWinsTiesLosses()
+    {
+        TargetCounts counts = Counts(Shot(1, 0.1, ShotOutcome.Goal));
+        var record = new MatchupRecord();
+        for (int i = 0; i < 7; i++)
+        {
+            record.Add(3, 1);
+        }
+
+        record.Add(2, 2);
+        record.Add(2, 2);
+        record.Add(0, 1);
+        counts.SmartVsRandom = record;
+
+        TargetRow row = Row(counts, Metric("smartVsRandomWinRate", 0.75, 0.85, "share", "perMatchup"));
+
+        Assert.Equal(0.8, row.Combined!.Values[0], 9); // (7 + 2 / 2) / 10
+        Assert.Equal(TargetStatus.Ok, row.Status);
+        Assert.Null(row.Teams);
+        string text = TargetComparison.Write(new[] { row }, new[] { "A", "B" });
+        Assert.Contains("80.0 %  (7 wins / 2 ties / 1 losses)  → OK", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SmartVsRandom_AllTies_IsHalf()
+    {
+        TargetCounts counts = Counts(Shot(1, 0.1, ShotOutcome.Goal));
+        counts.SmartVsRandom = new MatchupRecord();
+        counts.SmartVsRandom.Add(1, 1);
+        counts.SmartVsRandom.Add(0, 0);
+
+        TargetRow row = Row(counts, Metric("smartVsRandomWinRate", 0.75, 0.85, "share", "perMatchup"));
+
+        Assert.Equal(0.5, row.Combined!.Values[0], 9);
+        Assert.Equal(TargetStatus.TooLow, row.Status);
+    }
+
+    [Fact]
+    public void SmartVsRandom_WithAnEmptyRecord_IsNotMeasured()
+    {
+        TargetCounts counts = Counts(Shot(1, 0.1, ShotOutcome.Goal));
+        counts.SmartVsRandom = new MatchupRecord();
+
+        Assert.Equal(TargetStatus.NotMeasured, Row(counts, Metric("smartVsRandomWinRate", 0.75, 0.85, "share", "perMatchup")).Status);
+    }
+
+    [Fact]
     public void PairedMatches_TargetsMatchTheRecordAndTheSnapshots()
     {
         (PairedTeam a, PairedTeam b) = MatchCommand.PairTeams(ShiftTestData.Data, "forecheck212", "trap122");

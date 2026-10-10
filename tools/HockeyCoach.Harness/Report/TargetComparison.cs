@@ -47,7 +47,8 @@ public sealed record MeasuredValue(IReadOnlyList<double> Values, double Low, dou
 /// <param name="Teams">Per-team values (slot 0 and 1), or null for perMatch metrics or when not measured.</param>
 /// <param name="Status">Comparison result.</param>
 /// <param name="Note">Why the metric is not measured, or null.</param>
-public sealed record TargetRow(TargetMetric Metric, MeasuredValue? Combined, MeasuredValue?[]? Teams, TargetStatus Status, string? Note);
+/// <param name="Detail">Extra text shown after the value (wins / ties / losses for <c>smartVsRandomWinRate</c>), or null.</param>
+public sealed record TargetRow(TargetMetric Metric, MeasuredValue? Combined, MeasuredValue?[]? Teams, TargetStatus Status, string? Note, string? Detail = null);
 
 /// <summary>
 /// Automatic target comparison (D-071, docs/data-schema.md targets.json "Automaattinen vertailu" and "Mittarit ja
@@ -104,7 +105,8 @@ public static class TargetComparison
         {
             (MeasuredValue? combined, MeasuredValue?[]? teams, string? note) = Measure(metric.Name, counts);
             TargetStatus status = combined == null ? TargetStatus.NotMeasured : Compare(combined, metric);
-            rows.Add(new TargetRow(metric, combined, teams, status, combined == null ? note ?? "no events to compute it from" : null));
+            string? detail = combined != null && metric.Name == "smartVsRandomWinRate" ? RecordText(counts.SmartVsRandom!) : null;
+            rows.Add(new TargetRow(metric, combined, teams, status, combined == null ? note ?? "no events to compute it from" : null, detail));
         }
 
         return rows;
@@ -153,6 +155,11 @@ public static class TargetComparison
             if (row.Teams != null)
             {
                 sb.Append("  (" + string.Join(" / ", row.Teams.Select((t, i) => teamLabels[i] + " " + (t == null ? "-" : Format(t, m)))) + ")");
+            }
+
+            if (row.Detail != null)
+            {
+                sb.Append("  (" + row.Detail + ")");
             }
 
             sb.AppendLine(row.Status == TargetStatus.NoRange ? string.Empty : "  → " + StatusText(row.Status));
@@ -209,11 +216,17 @@ public static class TargetComparison
             case "shotXgTypical":
                 return (Percentiles(counts.Teams), counts.Teams.Select(t => Percentiles(new[] { t })).ToArray(), null);
             case "smartVsRandomWinRate":
-                return (null, null, NoMatchup);
+                // D-073: a tie is half a win.
+                double? rate = counts.SmartVsRandom?.WinRate;
+                return rate.HasValue ? (MeasuredValue.Of(rate.Value), null, null) : (null, null, NoMatchup);
             default:
                 return (null, null, "no calculation defined for this metric in the harness");
         }
     }
+
+    /// <summary>"W wins / T ties / L losses" (D-073: shown separately next to the rate).</summary>
+    public static string RecordText(MatchupRecord record) =>
+        record.Wins + " wins / " + record.Ties + " ties / " + record.Losses + " losses";
 
     private static MeasuredValue? RatioOf(Func<TeamTargetCounts, double>[] ratio, IEnumerable<TeamTargetCounts> teams)
     {

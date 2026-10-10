@@ -136,6 +136,12 @@ public sealed class TargetCounts
     /// <summary>Matches added.</summary>
     public int Matches { get; private set; }
 
+    /// <summary>
+    /// The smart AI's record against the random AI (<c>smartVsRandomWinRate</c>, D-073), or null when that matchup was
+    /// not played.
+    /// </summary>
+    public MatchupRecord? SmartVsRandom { get; set; }
+
     /// <summary>Goals by both teams.</summary>
     public int Goals => Teams[0].Goals + Teams[1].Goals;
 
