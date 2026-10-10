@@ -30,6 +30,7 @@ namespace HockeyCoach.Sim.Shift
         private readonly bool[] _pinchActive = new bool[2];
         private readonly int[] _goals = new int[2];
         private readonly Play[] _faceoffPlays = new Play[2];
+        private readonly IShotPressureTrace _trace;
 
         private Mode _mode = Mode.Faceoff;
         private double _time;
@@ -57,7 +58,13 @@ namespace HockeyCoach.Sim.Shift
         private GridPoint _lastShotNode;
 
         internal ShiftRun(ShiftSetup setup, IRandom random)
+            : this(setup, random, null)
         {
+        }
+
+        internal ShiftRun(ShiftSetup setup, IRandom random, IShotPressureTrace trace)
+        {
+            _trace = trace;
             _setup = setup;
             _rink = setup.Rink;
             _tuning = setup.Tuning;
@@ -345,11 +352,36 @@ namespace HockeyCoach.Sim.Shift
             _prepaid = false;
         }
 
-        /// <summary>The last puck action if it was a completed pass (M-3 condition 1, D-047 condition 2).</summary>
+        /// <summary>
+        /// M-7, D-070 condition 2: no opponent skater within <c>pressure.underPressureNodes</c> of the receiver's node, in the
+        /// positions the pass was resolved with. Nobody moves between the pass and the start of the next beat or rush action
+        /// (snapshot S), so this equals the value at S.
+        /// </summary>
+        private bool ReceiverFree(GridPoint receiverNode, IReadOnlyDictionary<Position, GridPoint> defenders)
+        {
+            return !UnderPressure(receiverNode, defenders);
+        }
+
+        /// <summary>
+        /// Tests only: evaluates D-070 condition 2 from snapshot S (start of a beat or rush action, before any movement) so
+        /// the stored pass-time value can be checked against it. No effect on the simulation.
+        /// </summary>
+        private void TraceSnapshotS(TeamSide team)
+        {
+            if (_trace == null || _lastPass == null || _lastPass.Team != team)
+            {
+                return;
+            }
+
+            _lastPass.ReceiverFreeAtBeatStart = ReceiverFree(TeamView(team, team, _lastPass.To), NodesInView(TeamSides.Opponent(team), team));
+        }
+
+        /// <summary>The last puck action if it was a completed pass (M-3 condition 1, D-047 condition 2, D-070 condition 1).</summary>
         private sealed class LastPass
         {
-            internal LastPass(TeamSide team, Position from, Position to, GridPoint passerNode, GridPoint receiverNode, bool crossIce)
+            internal LastPass(TeamSide team, Position from, Position to, GridPoint passerNode, GridPoint receiverNode, bool crossIce, bool receiverFree)
             {
+                ReceiverFree = receiverFree;
                 Team = team;
                 From = from;
                 To = to;
@@ -369,6 +401,12 @@ namespace HockeyCoach.Sim.Shift
             internal GridPoint ReceiverNode { get; }
 
             internal bool CrossIce { get; }
+
+            /// <summary>D-070 condition 2 at pass resolution (equals snapshot S).</summary>
+            internal bool ReceiverFree { get; }
+
+            /// <summary>Tests only: condition 2 evaluated at snapshot S; null until traced.</summary>
+            internal bool? ReceiverFreeAtBeatStart { get; set; }
         }
     }
 }

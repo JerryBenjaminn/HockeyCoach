@@ -159,7 +159,7 @@ namespace HockeyCoach.Sim.Shift
             if (result.Success)
             {
                 _state.GivePuckTo(team, to);
-                _lastPass = new LastPass(team, from, to, passerNode, receiverNode, crossIce);
+                _lastPass = new LastPass(team, from, to, passerNode, receiverNode, crossIce, ReceiverFree(receiverNode, defenders));
                 _log.Append(new PassEvent(Context(), passer.Id, receiver.Id, underPressure, true));
                 if (entry)
                 {

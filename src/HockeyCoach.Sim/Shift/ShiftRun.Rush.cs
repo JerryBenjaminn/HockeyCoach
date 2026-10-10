@@ -29,6 +29,7 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
+            TraceSnapshotS(team);
             IReadOnlyDictionary<Position, GridPoint>[] saved = _state.SaveNodes();
             bool[] pinch = (bool[])_pinchActive.Clone();
             MoveRushSupport(team);

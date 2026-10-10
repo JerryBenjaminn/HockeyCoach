@@ -224,6 +224,7 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
+            TraceSnapshotS(team);
             MoveSkaters(team, beat.Moves);
             TeamSide defending = TeamSides.Opponent(team);
             ApplyDefence(defending, _tuning.Plays.MaxNodesPerBeat);

@@ -26,5 +26,11 @@ namespace HockeyCoach.Sim.Shift
 
             return new ShiftRun(setup, random).Run();
         }
+
+        /// <summary>Runs the shift and reports how each shot's pressure was decided (tests only).</summary>
+        internal static ShiftResult Run(ShiftSetup setup, IRandom random, IShotPressureTrace trace)
+        {
+            return new ShiftRun(setup, random, trace).Run();
+        }
     }
 }

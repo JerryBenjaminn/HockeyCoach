@@ -30,7 +30,7 @@ namespace HockeyCoach.Sim.Shift
             _lastShotTeam = team;
             _lastShotNode = _state.NodeOf(team, shooterPosition);
 
-            bool underPressure = UnderPressure(shooterNode, defenders);
+            bool underPressure = ShotUnderPressure(team, shooterPosition, shooterNode, defenders, shooter.Id);
             bool crease = UsesCrease(team, shooterPosition, shooterNode, netFront);
             string xgZone = crease ? "crease" : _rink.GetNode(shooterNode.X, shooterNode.Y).XgZone;
             bool royalRoad = RoyalRoad(team, shooterPosition);
@@ -229,6 +229,25 @@ namespace HockeyCoach.Sim.Shift
                 default:
                     return reference ?? throw new System.InvalidOperationException("Rule " + rule + " needs a reference node here.");
             }
+        }
+
+        /// <summary>
+        /// M-7 for the shooter with the D-070 exception: a shot that is the next puck action after a completed pass to the
+        /// shooter is not under pressure when the receiver was free at the pass (snapshot S). The exception only removes
+        /// pressure; it changes the event field and the report, not the shot's probabilities.
+        /// </summary>
+        private bool ShotUnderPressure(TeamSide team, Position shooterPosition, GridPoint shooterNode, IReadOnlyDictionary<Position, GridPoint> defenders, int shooterId)
+        {
+            bool atShot = UnderPressure(shooterNode, defenders);
+            LastPass pass = _lastPass;
+            bool offPass = pass != null && pass.Team == team && pass.To == shooterPosition;
+            bool underPressure = atShot && !(offPass && pass.ReceiverFree);
+            if (_trace != null)
+            {
+                _trace.OnShot(new ShotPressureSample(shooterId, offPass, offPass && pass.ReceiverFree, offPass ? pass.ReceiverFreeAtBeatStart : null, atShot, underPressure));
+            }
+
+            return underPressure;
         }
 
         /// <summary>M-3 Royal Road.</summary>
