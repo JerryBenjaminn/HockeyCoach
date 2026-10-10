@@ -25,6 +25,7 @@ namespace HockeyCoach.Sim.Config
         /// <param name="secondsPerAction">Time cost per action or check name.</param>
         /// <param name="setupSeconds">Time for players to reach a play's start nodes (Q-006, D-038).</param>
         /// <param name="regroupSeconds">Time of a regroup transition (Q-006).</param>
+        /// <param name="stoppageChangeMinSeconds">A unit may change at a stoppage after this much ice time (O-2).</param>
         public TimeConfig(
             int periods,
             double periodSeconds,
@@ -32,7 +33,8 @@ namespace HockeyCoach.Sim.Config
             double defenceShiftSeconds,
             IEnumerable<KeyValuePair<string, double>> secondsPerAction,
             double setupSeconds,
-            double regroupSeconds)
+            double regroupSeconds,
+            double stoppageChangeMinSeconds)
         {
             if (secondsPerAction == null)
             {
@@ -45,6 +47,7 @@ namespace HockeyCoach.Sim.Config
             DefenceShiftSeconds = defenceShiftSeconds;
             SetupSeconds = setupSeconds;
             RegroupSeconds = regroupSeconds;
+            StoppageChangeMinSeconds = stoppageChangeMinSeconds;
             _secondsPerAction = new SortedDictionary<string, double>(StringComparer.Ordinal);
             foreach (KeyValuePair<string, double> entry in secondsPerAction)
             {
@@ -69,6 +72,9 @@ namespace HockeyCoach.Sim.Config
 
         /// <summary>Time of a regroup transition.</summary>
         public double RegroupSeconds { get; }
+
+        /// <summary>A unit may change at a stoppage after this much ice time (O-2).</summary>
+        public double StoppageChangeMinSeconds { get; }
 
         /// <summary>Time cost per action or check name, in ordinal key order.</summary>
         public IReadOnlyDictionary<string, double> SecondsPerAction

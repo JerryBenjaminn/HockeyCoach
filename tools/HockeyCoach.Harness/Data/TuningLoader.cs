@@ -17,19 +17,21 @@ public static class TuningLoader
     private static readonly string[] MappedSections =
     {
         "schemaVersion", "stats", "checkFormula", "checks", "positions", "time", "plays", "chanceTypes", "chanceClasses",
-        "pressure", "loosePuckSpots",
+        "pressure", "loosePuckSpots", "energy", "organization", "familiarity", "transitions",
     };
 
     /// <summary>Top-level sections of later milestones (data-schema.md); accepted and not mapped yet.</summary>
     private static readonly string[] LaterSections =
     {
-        "energy", "organization", "form", "chemistry", "familiarity",
+        "form", "chemistry",
     };
 
-    /// <summary>Team pressure state keys of <c>pressure</c> (milestone 3): accepted, not mapped yet.</summary>
-    private static readonly string[] LaterPressureKeys =
+    /// <summary>Keys renamed in milestone 3 (D-062): old path → new name, reported with a clear message.</summary>
+    private static readonly (string Section, string Old, string New)[] RenamedKeys =
     {
-        "gainOnZoneEntry", "gainOnShot", "gainPerSecondInZone", "keepOnStoppage", "energyDrainPerSecond", "mentalToughnessReductionPerPoint",
+        ("energy", "benchRecoveryPerSecond", "benchRecoveryRate"),
+        ("organization", "recoveryPerEvent", "recoveryPerSecond"),
+        ("chanceTypes", "rushOrganizationBelow", "organization.organizedThreshold"),
     };
 
     private static readonly string[] CheckKeys = { "kind", "side", "p0", "attacker", "defender", "modifiers" };
@@ -79,6 +81,10 @@ public static class TuningLoader
         ChanceClassesConfig? chanceClasses = MapChanceClasses(root.Required("chanceClasses"));
         PressureConfig? pressure = MapPressure(root.Required("pressure"));
         LoosePuckSpotsConfig? loosePuckSpots = MapLoosePuckSpots(root.Required("loosePuckSpots"));
+        EnergyConfig? energy = MapEnergy(root.Required("energy"));
+        OrganizationConfig? organization = MapOrganization(root.Required("organization"));
+        FamiliarityConfig? familiarity = MapFamiliarity(root.Required("familiarity"));
+        TransitionsConfig? transitions = MapTransitions(root.Required("transitions"));
 
         var checks = new List<CheckDefinition>();
         ShotConfig? shot = null;
@@ -108,12 +114,128 @@ public static class TuningLoader
         }
 
         if (stats == null || formula == null || positions == null || shot == null || time == null || plays == null
-            || chanceTypes == null || chanceClasses == null || pressure == null || loosePuckSpots == null)
+            || chanceTypes == null || chanceClasses == null || pressure == null || loosePuckSpots == null
+            || energy == null || organization == null || familiarity == null || transitions == null)
         {
             return null;
         }
 
-        return new TuningConfig(stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses, pressure, loosePuckSpots);
+        return new TuningConfig(
+            stats, formula, checks, shot, positions, time, plays, chanceTypes, chanceClasses, pressure, loosePuckSpots, energy, organization, familiarity, transitions);
+    }
+
+    /// <summary>Reports a renamed or removed key of <paramref name="section"/> with its replacement.</summary>
+    private static void RejectRenamed(JsonReader reader, string section)
+    {
+        foreach ((string Section, string Old, string New) renamed in RenamedKeys)
+        {
+            if (renamed.Section == section && reader.Optional(renamed.Old) != null)
+            {
+                reader.Error(renamed.Old, "renamed or removed in milestone 3 (D-062); use " + renamed.New);
+            }
+        }
+    }
+
+    private static readonly string[] EnergyKeys =
+    {
+        "start", "drainPerSecondOnIce", "costPerAction", "enduranceCostReductionPerPoint", "benchRecoveryRate", "checkModifierAtZero",
+    };
+
+    private static EnergyConfig? MapEnergy(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        RejectRenamed(reader, "energy");
+        reader.RejectUnknown(EnergyKeys.Concat(new[] { "benchRecoveryPerSecond" }).ToArray());
+        return new EnergyConfig(
+            reader.Double("start"),
+            reader.Double("drainPerSecondOnIce"),
+            reader.Double("costPerAction"),
+            reader.Double("enduranceCostReductionPerPoint"),
+            reader.Double("benchRecoveryRate"),
+            reader.Double("checkModifierAtZero"));
+    }
+
+    private static OrganizationConfig? MapOrganization(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        RejectRenamed(reader, "organization");
+        reader.RejectUnknown(
+            "dropOnTurnover", "dropFactorOnShotOrDump", "dropPerCommittedPlayer", "recoveryPerSecond", "recoveryWeights", "recoveryPerStatPoint",
+            "organizedThreshold", "recoveryPerEvent");
+        double defensive = double.NaN;
+        double neutral = double.NaN;
+        double offensive = double.NaN;
+        JsonReader? drop = reader.Required("dropOnTurnover");
+        if (drop != null)
+        {
+            drop.RejectUnknown("defensive", "neutral", "offensive");
+            defensive = drop.Double("defensive");
+            neutral = drop.Double("neutral");
+            offensive = drop.Double("offensive");
+        }
+
+        var weights = new List<KeyValuePair<SkaterStat, double>>();
+        JsonReader? weightsReader = reader.Required("recoveryWeights");
+        if (weightsReader != null)
+        {
+            foreach (KeyValuePair<string, JsonReader> weight in weightsReader.Properties())
+            {
+                if (!StatNames.TryParseSkater(weight.Key, out SkaterStat stat))
+                {
+                    weight.Value.Error("unknown skater stat");
+                    continue;
+                }
+
+                weights.Add(new KeyValuePair<SkaterStat, double>(stat, weight.Value.AsDouble()));
+            }
+        }
+
+        return new OrganizationConfig(
+            defensive,
+            neutral,
+            offensive,
+            reader.Double("dropFactorOnShotOrDump"),
+            reader.Double("dropPerCommittedPlayer"),
+            reader.Double("recoveryPerSecond"),
+            weights,
+            reader.Double("recoveryPerStatPoint"),
+            reader.Double("organizedThreshold"));
+    }
+
+    private static FamiliarityConfig? MapFamiliarity(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown("freeUses", "penaltyPerRepeat", "maxPenalty", "intermissionMultiplier");
+        return new FamiliarityConfig(
+            reader.Double("freeUses"),
+            reader.Double("penaltyPerRepeat"),
+            reader.Double("maxPenalty"),
+            reader.Double("intermissionMultiplier"));
+    }
+
+    private static TransitionsConfig? MapTransitions(JsonReader? reader)
+    {
+        if (reader == null)
+        {
+            return null;
+        }
+
+        reader.RejectUnknown("rushMaxActions", "rushShotMinBaseXg");
+        int? maxActions = reader.Int("rushMaxActions");
+        double minXg = reader.Double("rushShotMinBaseXg");
+        return maxActions.HasValue ? new TransitionsConfig(maxActions.Value, minXg) : null;
     }
 
     private static PressureConfig? MapPressure(JsonReader? reader)
@@ -123,9 +245,20 @@ public static class TuningLoader
             return null;
         }
 
-        reader.RejectUnknown(LaterPressureKeys.Append("underPressureNodes").ToArray());
+        reader.RejectUnknown(
+            "underPressureNodes", "gainOnZoneEntry", "gainOnShot", "gainPerSecondInZone", "decayPerSecond", "keepOnStoppage", "energyDrainPerSecond",
+            "mentalToughnessReductionPerPoint");
         int? nodes = reader.Int("underPressureNodes");
-        return nodes.HasValue ? new PressureConfig(nodes.Value) : null;
+        var pressure = new PressureConfig(
+            nodes ?? 0,
+            reader.Double("gainOnZoneEntry"),
+            reader.Double("gainOnShot"),
+            reader.Double("gainPerSecondInZone"),
+            reader.Double("decayPerSecond"),
+            reader.Double("keepOnStoppage"),
+            reader.Double("energyDrainPerSecond"),
+            reader.Double("mentalToughnessReductionPerPoint"));
+        return nodes.HasValue ? pressure : null;
     }
 
     private static LoosePuckSpotsConfig? MapLoosePuckSpots(JsonReader? reader)
@@ -170,7 +303,8 @@ public static class TuningLoader
         }
 
         reader.RejectUnknown(
-            "periods", "periodSeconds", "forwardShiftSeconds", "defenceShiftSeconds", "secondsPerAction", "setupSeconds", "regroupSeconds");
+            "periods", "periodSeconds", "forwardShiftSeconds", "defenceShiftSeconds", "stoppageChangeMinSeconds", "secondsPerAction", "setupSeconds",
+            "regroupSeconds");
         int? periods = reader.Int("periods");
         var secondsPerAction = new List<KeyValuePair<string, double>>();
         JsonReader? actions = reader.Required("secondsPerAction");
@@ -189,7 +323,8 @@ public static class TuningLoader
             reader.Double("defenceShiftSeconds"),
             secondsPerAction,
             reader.Double("setupSeconds"),
-            reader.Double("regroupSeconds"));
+            reader.Double("regroupSeconds"),
+            reader.Double("stoppageChangeMinSeconds"));
         return periods.HasValue ? time : null;
     }
 
@@ -213,8 +348,9 @@ public static class TuningLoader
             return null;
         }
 
-        reader.RejectUnknown("rushOrganizationBelow", "turnoverWindowSeconds");
-        return new ChanceTypesConfig(reader.Double("rushOrganizationBelow"), reader.Double("turnoverWindowSeconds"));
+        RejectRenamed(reader, "chanceTypes");
+        reader.RejectUnknown("turnoverWindowSeconds", "rushOrganizationBelow");
+        return new ChanceTypesConfig(reader.Double("turnoverWindowSeconds"));
     }
 
     private static ChanceClassesConfig? MapChanceClasses(JsonReader? reader)

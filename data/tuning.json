@@ -80,6 +80,7 @@
     "time.secondsPerAction.systemStep",
     "time.setupSeconds",
     "time.regroupSeconds",
+    "time.stoppageChangeMinSeconds",
     "energy.start",
     "energy.drainPerSecondOnIce",
     "energy.costPerAction",
@@ -103,13 +104,15 @@
     "pressure.keepOnStoppage",
     "pressure.energyDrainPerSecond",
     "pressure.mentalToughnessReductionPerPoint",
+    "pressure.decayPerSecond",
     "chemistry.maxPassModifier",
     "chemistry.maxOrganizationRecoveryBonus",
     "familiarity.freeUses",
     "familiarity.penaltyPerRepeat",
     "familiarity.maxPenalty",
     "plays.maxNodesPerBeat",
-    "chanceTypes.rushOrganizationBelow",
+    "transitions.rushMaxActions",
+    "transitions.rushShotMinBaseXg",
     "chanceTypes.turnoverWindowSeconds",
     "chanceClasses.topMinXg",
     "chanceClasses.goodMinXg",
@@ -446,6 +449,7 @@
     "periodSeconds": 1200,
     "forwardShiftSeconds": 45,
     "defenceShiftSeconds": 50,
+    "stoppageChangeMinSeconds": 20,
     "secondsPerAction": {
       "faceoff": 2,
       "skate": 3,
@@ -502,7 +506,8 @@
     "keepOnStoppage": 0.5,
     "energyDrainPerSecond": 0.002,
     "mentalToughnessReductionPerPoint": 0.03,
-    "underPressureNodes": 0
+    "underPressureNodes": 0,
+    "decayPerSecond": 0.01
   },
   "form": {
     "maxStatDelta": 2
@@ -522,9 +527,13 @@
     "maxBeats": 4,
     "maxNodesPerBeat": 2
   },
+  "transitions": {
+    "_notes": "Built-in rush (D-007, D-062, data-schema.md O-7): no play, no setup. At most rushMaxActions actions; the carrier shoots from an offensive-zone node whose checks.shot.baseXg is at least rushShotMinBaseXg, else passes to a teammate on such a node with a free lane, else skates toward one. Ends when the defence reaches organization.organizedThreshold.",
+    "rushMaxActions": 4,
+    "rushShotMinBaseXg": 0.05
+  },
   "chanceTypes": {
-    "_notes": "Shot classification by origin (stats-and-checks.md, Paikkatyypit).",
-    "rushOrganizationBelow": 0.8,
+    "_notes": "Shot classification by origin (data-schema.md O-12). Rush uses organization.organizedThreshold.",
     "turnoverWindowSeconds": 8
   },
   "chanceClasses": {

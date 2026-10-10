@@ -17,6 +17,12 @@ namespace HockeyCoach.Sim.Config
         /// </summary>
         public const double WeightSumTolerance = 1e-6;
 
+        /// <summary>The <c>modifiers.organization</c> key (O-6).</summary>
+        public const string OrganizationModifier = "organization";
+
+        /// <summary>Checks that must carry <c>modifiers.organization</c> when present (O-16).</summary>
+        public static readonly IReadOnlyList<string> OrganizationCheckIds = new[] { "pass", "zoneEntryCarry", "deke", "breakout", "shot", "block" };
+
         /// <summary>Validates the whole tuning config against the rink's xG zone names.</summary>
         public static IReadOnlyList<string> Validate(TuningConfig tuning, IReadOnlyList<string> xgZones)
         {
@@ -40,13 +46,164 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Plays));
             errors.AddRange(Validate(tuning.ChanceTypes));
             errors.AddRange(Validate(tuning.ChanceClasses));
-            if (tuning.Pressure.UnderPressureNodes < 0)
+            errors.AddRange(Validate(tuning.Pressure, tuning.Stats, tuning.CheckFormula));
+            errors.AddRange(Validate(tuning.LoosePuckSpots));
+            errors.AddRange(Validate(tuning.Energy, tuning.Stats, tuning.CheckFormula));
+            errors.AddRange(Validate(tuning.Organization, tuning.Stats, tuning.CheckFormula));
+            errors.AddRange(Validate(tuning.Familiarity));
+            errors.AddRange(Validate(tuning.Transitions));
+            foreach (string id in OrganizationCheckIds)
             {
-                errors.Add("pressure.underPressureNodes: must be >= 0, was " + tuning.Pressure.UnderPressureNodes);
+                bool has = id == ShotConfig.Id
+                    ? tuning.Shot.Modifiers.Scalars.ContainsKey(OrganizationModifier)
+                    : !tuning.Checks.TryGetValue(id, out CheckDefinition check) || check.Modifiers.Scalars.ContainsKey(OrganizationModifier);
+                if (!has)
+                {
+                    errors.Add("checks." + id + ".modifiers." + OrganizationModifier + ": missing (O-6)");
+                }
             }
 
-            errors.AddRange(Validate(tuning.LoosePuckSpots));
             return errors;
+        }
+
+        /// <summary>Validates <c>pressure</c> (O-16): gains, decay and drain at least 0, keepOnStoppage in [0, 1], radius at least 0, goalie factor positive.</summary>
+        public static IReadOnlyList<string> Validate(PressureConfig pressure, StatsConfig stats, CheckFormulaConfig formula)
+        {
+            var errors = new List<string>();
+            if (pressure == null)
+            {
+                errors.Add("pressure: missing");
+                return errors;
+            }
+
+            if (pressure.UnderPressureNodes < 0)
+            {
+                errors.Add("pressure.underPressureNodes: must be >= 0, was " + pressure.UnderPressureNodes);
+            }
+
+            RequireNonNegative("pressure.gainOnZoneEntry", pressure.GainOnZoneEntry, errors);
+            RequireNonNegative("pressure.gainOnShot", pressure.GainOnShot, errors);
+            RequireNonNegative("pressure.gainPerSecondInZone", pressure.GainPerSecondInZone, errors);
+            RequireNonNegative("pressure.decayPerSecond", pressure.DecayPerSecond, errors);
+            RequireNonNegative("pressure.energyDrainPerSecond", pressure.EnergyDrainPerSecond, errors);
+            RequireUnit("pressure.keepOnStoppage", pressure.KeepOnStoppage, errors);
+            RequireReductionFactor("pressure.mentalToughnessReductionPerPoint", pressure.MentalToughnessReductionPerPoint, stats, formula, errors);
+            return errors;
+        }
+
+        /// <summary>Validates <c>energy</c> (O-16).</summary>
+        public static IReadOnlyList<string> Validate(EnergyConfig energy, StatsConfig stats, CheckFormulaConfig formula)
+        {
+            var errors = new List<string>();
+            if (energy == null)
+            {
+                errors.Add("energy: missing");
+                return errors;
+            }
+
+            if (!(energy.Start > 0.0 && energy.Start <= 1.0))
+            {
+                errors.Add("energy.start: must be in (0, 1], was " + Format(energy.Start));
+            }
+
+            RequireUnit("energy.drainPerSecondOnIce", energy.DrainPerSecondOnIce, errors);
+            RequireUnit("energy.costPerAction", energy.CostPerAction, errors);
+            RequireReductionFactor("energy.enduranceCostReductionPerPoint", energy.EnduranceCostReductionPerPoint, stats, formula, errors);
+            RequirePositive("energy.benchRecoveryRate", energy.BenchRecoveryRate, errors);
+            if (!(energy.CheckModifierAtZero <= 0.0))
+            {
+                errors.Add("energy.checkModifierAtZero: must be <= 0, was " + Format(energy.CheckModifierAtZero));
+            }
+
+            return errors;
+        }
+
+        /// <summary>Validates <c>organization</c> (O-16).</summary>
+        public static IReadOnlyList<string> Validate(OrganizationConfig organization, StatsConfig stats, CheckFormulaConfig formula)
+        {
+            var errors = new List<string>();
+            if (organization == null)
+            {
+                errors.Add("organization: missing");
+                return errors;
+            }
+
+            RequireUnit("organization.dropOnTurnover.defensive", organization.DropDefensive, errors);
+            RequireUnit("organization.dropOnTurnover.neutral", organization.DropNeutral, errors);
+            RequireUnit("organization.dropOnTurnover.offensive", organization.DropOffensive, errors);
+            RequireUnit("organization.dropFactorOnShotOrDump", organization.DropFactorOnShotOrDump, errors);
+            RequireUnit("organization.dropPerCommittedPlayer", organization.DropPerCommittedPlayer, errors);
+            RequirePositive("organization.recoveryPerSecond", organization.RecoveryPerSecond, errors);
+            double sum = 0.0;
+            foreach (KeyValuePair<SkaterStat, double> weight in organization.RecoveryWeights)
+            {
+                sum += weight.Value;
+            }
+
+            if (Math.Abs(sum - 1.0) > WeightSumTolerance)
+            {
+                errors.Add("organization.recoveryWeights: weights must sum to 1, sum is " + Format(sum));
+            }
+
+            RequireNonNegative("organization.recoveryPerStatPoint", organization.RecoveryPerStatPoint, errors);
+            if (stats != null && formula != null && organization.RecoveryPerStatPoint >= 0.0
+                && !(1.0 + (organization.RecoveryPerStatPoint * (stats.Min - formula.ReferenceValue)) > 0.0))
+            {
+                errors.Add("organization.recoveryPerStatPoint: factor 1 + value x (stats.min - referenceValue) must be > 0");
+            }
+
+            if (!(organization.OrganizedThreshold > 0.0 && organization.OrganizedThreshold <= 1.0))
+            {
+                errors.Add("organization.organizedThreshold: must be in (0, 1], was " + Format(organization.OrganizedThreshold));
+            }
+
+            return errors;
+        }
+
+        /// <summary>Validates <c>familiarity</c> (O-16).</summary>
+        public static IReadOnlyList<string> Validate(FamiliarityConfig familiarity)
+        {
+            var errors = new List<string>();
+            if (familiarity == null)
+            {
+                errors.Add("familiarity: missing");
+                return errors;
+            }
+
+            RequireNonNegative("familiarity.freeUses", familiarity.FreeUses, errors);
+            RequireNonNegative("familiarity.penaltyPerRepeat", familiarity.PenaltyPerRepeat, errors);
+            RequireNonNegative("familiarity.maxPenalty", familiarity.MaxPenalty, errors);
+            RequireUnit("familiarity.intermissionMultiplier", familiarity.IntermissionMultiplier, errors);
+            return errors;
+        }
+
+        /// <summary>Validates <c>transitions</c> (O-16).</summary>
+        public static IReadOnlyList<string> Validate(TransitionsConfig transitions)
+        {
+            var errors = new List<string>();
+            if (transitions == null)
+            {
+                errors.Add("transitions: missing");
+                return errors;
+            }
+
+            if (transitions.RushMaxActions < 1)
+            {
+                errors.Add("transitions.rushMaxActions: must be an integer >= 1, was " + transitions.RushMaxActions);
+            }
+
+            RequireUnit("transitions.rushShotMinBaseXg", transitions.RushShotMinBaseXg, errors);
+            return errors;
+        }
+
+        /// <summary>A reduction slope: at least 0 and 1 - value x (stats.max - referenceValue) above 0.</summary>
+        private static void RequireReductionFactor(string path, double value, StatsConfig stats, CheckFormulaConfig formula, List<string> errors)
+        {
+            RequireNonNegative(path, value, errors);
+            if (stats != null && formula != null && value >= 0.0 && !(1.0 - (value * (stats.Max - formula.ReferenceValue)) > 0.0))
+            {
+                errors.Add(path + ": factor 1 - value x (stats.max - referenceValue) must be > 0");
+            }
         }
 
         /// <summary>
@@ -120,6 +277,11 @@ namespace HockeyCoach.Sim.Config
             RequirePositive("time.defenceShiftSeconds", time.DefenceShiftSeconds, errors);
             RequireNonNegative("time.setupSeconds", time.SetupSeconds, errors);
             RequireNonNegative("time.regroupSeconds", time.RegroupSeconds, errors);
+            RequirePositive("time.stoppageChangeMinSeconds", time.StoppageChangeMinSeconds, errors);
+            if (time.StoppageChangeMinSeconds >= Math.Min(time.ForwardShiftSeconds, time.DefenceShiftSeconds))
+            {
+                errors.Add("time.stoppageChangeMinSeconds: must be less than min(forwardShiftSeconds, defenceShiftSeconds), was " + Format(time.StoppageChangeMinSeconds));
+            }
             foreach (KeyValuePair<string, double> action in time.SecondsPerAction)
             {
                 RequireNonNegative("time.secondsPerAction." + action.Key, action.Value, errors);
@@ -159,7 +321,7 @@ namespace HockeyCoach.Sim.Config
             return errors;
         }
 
-        /// <summary>Validates the chanceTypes section: organization threshold in [0, 1], non-negative window.</summary>
+        /// <summary>Validates the chanceTypes section: non-negative turnover window.</summary>
         public static IReadOnlyList<string> Validate(ChanceTypesConfig chanceTypes)
         {
             var errors = new List<string>();
@@ -169,7 +331,6 @@ namespace HockeyCoach.Sim.Config
                 return errors;
             }
 
-            RequireUnit("chanceTypes.rushOrganizationBelow", chanceTypes.RushOrganizationBelow, errors);
             RequireNonNegative("chanceTypes.turnoverWindowSeconds", chanceTypes.TurnoverWindowSeconds, errors);
             return errors;
         }

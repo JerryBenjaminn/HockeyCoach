@@ -8,9 +8,18 @@ public class TuningSectionsValidatorTests
         .Select(k => new KeyValuePair<string, double>(k, 2.0))
         .ToArray();
 
-    private static TimeConfig Time(int periods = 3, double periodSeconds = 1200, double forward = 45, double defence = 50, double setup = 6, double regroup = 8, IEnumerable<KeyValuePair<string, double>>? actions = null)
+    private static TimeConfig Time(int periods = 3, double periodSeconds = 1200, double forward = 45, double defence = 50, double setup = 6, double regroup = 8, IEnumerable<KeyValuePair<string, double>>? actions = null, double stoppageChange = 20)
     {
-        return new TimeConfig(periods, periodSeconds, forward, defence, actions ?? ActionTimes, setup, regroup);
+        return new TimeConfig(periods, periodSeconds, forward, defence, actions ?? ActionTimes, setup, regroup, stoppageChange);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(45)]
+    [InlineData(-1)]
+    public void Time_RejectsStoppageChangeMinSecondsOutsideZeroAndTheShortestShift(double value)
+    {
+        Assert.Contains(TuningValidator.Validate(Time(stoppageChange: value)), e => e.StartsWith("time.stoppageChangeMinSeconds", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -53,13 +62,11 @@ public class TuningSectionsValidatorTests
         Assert.Empty(TuningValidator.Validate(new PlaysConfig(4, 2)));
     }
 
-    [Theory]
-    [InlineData(-0.1, 8)]
-    [InlineData(1.1, 8)]
-    [InlineData(0.8, -1)]
-    public void ChanceTypes_IsInvalid_WithBadValues(double organization, double window)
+    [Fact]
+    public void ChanceTypes_RejectsANegativeWindow()
     {
-        Assert.NotEmpty(TuningValidator.Validate(new ChanceTypesConfig(organization, window)));
+        Assert.NotEmpty(TuningValidator.Validate(new ChanceTypesConfig(-1)));
+        Assert.Empty(TuningValidator.Validate(new ChanceTypesConfig(8)));
     }
 
     [Fact]

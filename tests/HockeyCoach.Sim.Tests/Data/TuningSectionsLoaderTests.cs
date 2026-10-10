@@ -37,7 +37,6 @@ public class TuningSectionsLoaderTests
 
         Assert.Equal(4, tuning.Plays.MaxBeats);
         Assert.Equal(2, tuning.Plays.MaxNodesPerBeat);
-        Assert.Equal(0.8, tuning.ChanceTypes.RushOrganizationBelow);
         Assert.Equal(8.0, tuning.ChanceTypes.TurnoverWindowSeconds);
         Assert.Equal(0.15, tuning.ChanceClasses.TopMinXg);
         Assert.Equal(0.07, tuning.ChanceClasses.GoodMinXg);
@@ -119,7 +118,7 @@ public class TuningLoosePuckAndPressureTests
     }
 
     [Fact]
-    public void PressureSection_RequiresUnderPressureNodes_AndAcceptsLaterKeys()
+    public void PressureSection_RequiresEveryKey()
     {
         Assert.Contains("pressure.underPressureNodes: missing", Load(r => r["pressure"]!.AsObject().Remove("underPressureNodes")).Errors);
         Assert.Contains("pressure.radius: unknown key", Load(r => r["pressure"]!["radius"] = 1).Errors);

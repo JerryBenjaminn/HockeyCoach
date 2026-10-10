@@ -15,21 +15,21 @@
       "p0": 0.85,
       "attacker": {"passer": {"passing": 0.6}, "receiver": {"hands": 0.4}},
       "defender": {"nearestDefender": {"awareness": 0.5, "positioning": 0.5}},
-      "modifiers": {"laneDefenderDistance": [-1.2, -0.5, 0.0], "crossIce": -0.4}
+      "modifiers": {"laneDefenderDistance": [-1.2, -0.5, 0.0], "crossIce": -0.4, "organization": 0.6}
     },
     "breakout": {
       "kind": "twoSided",
       "p0": 0.7,
       "attacker": {"carrier": {"passing": 0.5, "awareness": 0.5}},
       "defender": {"forecheckers": {"speed": 0.5, "awareness": 0.5}},
-      "modifiers": {}
+      "modifiers": {"organization": 0.6}
     },
     "block": {
       "kind": "oneSided",
       "side": "defender",
       "p0": 0.75,
       "defender": {"nearestDefender": {"positioning": 1.0}},
-      "modifiers": {"distancePerNode": 0.15}
+      "modifiers": {"distancePerNode": 0.15, "organization": 0.5}
     },
     "rebound": {
       "kind": "oneSided",
@@ -54,7 +54,7 @@
       "onTargetShare": 0.55,
       "minProbability": 0.001,
       "maxProbability": 0.6,
-      "modifiers": {"screen": 0.3}
+      "modifiers": {"screen": 0.3, "organization": 0.7}
     }
   },
   "positions": {"offSideCheckModifier": -0.3},
@@ -63,14 +63,19 @@
     "periodSeconds": 1200,
     "forwardShiftSeconds": 45,
     "defenceShiftSeconds": 50,
+    "stoppageChangeMinSeconds": 20,
     "secondsPerAction": {"skate": 3, "pass": 2, "shoot": 1, "driveNet": 2, "dumpIn": 2, "loosePuck": 3, "faceoff": 2},
     "setupSeconds": 6,
     "regroupSeconds": 8
   },
   "plays": {"maxBeats": 4, "maxNodesPerBeat": 2},
-  "chanceTypes": {"rushOrganizationBelow": 0.8, "turnoverWindowSeconds": 8},
+  "chanceTypes": {"turnoverWindowSeconds": 8},
   "chanceClasses": {"topMinXg": 0.15, "goodMinXg": 0.07, "moderateMinXg": 0.03},
-  "pressure": {"underPressureNodes": 1, "gainOnShot": 0.08},
+  "pressure": {"underPressureNodes": 1, "gainOnZoneEntry": 0.1, "gainOnShot": 0.08, "gainPerSecondInZone": 0.005, "decayPerSecond": 0.01, "keepOnStoppage": 0.5, "energyDrainPerSecond": 0.002, "mentalToughnessReductionPerPoint": 0.03},
+  "transitions": {"rushMaxActions": 4, "rushShotMinBaseXg": 0.05},
+  "organization": {"dropOnTurnover": {"defensive": 0.35, "neutral": 0.5, "offensive": 0.65}, "dropFactorOnShotOrDump": 0.5, "dropPerCommittedPlayer": 0.1, "recoveryPerSecond": 0.04, "recoveryWeights": {"speed": 0.5, "awareness": 0.5}, "recoveryPerStatPoint": 0.06, "organizedThreshold": 0.8},
+  "familiarity": {"freeUses": 2, "penaltyPerRepeat": 0.08, "maxPenalty": 0.5, "intermissionMultiplier": 0.5},
   "loosePuckSpots": {"reboundSlot": "netFront", "reboundCorner": "shooterSideCorner", "missedShot": "endRowShooterLane", "blockedShot": "blockerNode", "failedPass": "laneDefenderNode"},
-  "energy": {"anythingForLater": {"x": 1}}
+  "energy": {"start": 1.0, "drainPerSecondOnIce": 0.0055, "costPerAction": 0.02, "enduranceCostReductionPerPoint": 0.03, "benchRecoveryRate": 0.011, "checkModifierAtZero": -1.2},
+  "chemistry": {"anythingForLater": {"x": 1}}
 }
