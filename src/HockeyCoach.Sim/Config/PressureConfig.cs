@@ -7,7 +7,7 @@ namespace HockeyCoach.Sim.Config
     public sealed class PressureConfig
     {
         /// <summary>Creates the config. Use <see cref="TuningValidator"/> to check it.</summary>
-        /// <param name="underPressureNodes">A player is under pressure when an opposing skater is within this Chebyshev distance.</param>
+        /// <param name="underPressureNodes">A carrier is under pressure when the defending presser (M-7, D-072) is within this Chebyshev distance.</param>
         /// <param name="gainOnZoneEntry">Gain per controlled zone entry that kept the puck.</param>
         /// <param name="gainOnShot">Gain per shot attempt.</param>
         /// <param name="gainPerSecondInZone">Gain per second with the puck in the offensive zone.</param>
@@ -35,7 +35,7 @@ namespace HockeyCoach.Sim.Config
             MentalToughnessReductionPerPoint = mentalToughnessReductionPerPoint;
         }
 
-        /// <summary>A player is under pressure when an opposing skater is within this Chebyshev distance.</summary>
+        /// <summary>A carrier is under pressure when the defending presser (M-7, D-072) is within this Chebyshev distance.</summary>
         public int UnderPressureNodes { get; }
 
         /// <summary>Gain per controlled zone entry that kept the puck.</summary>

@@ -192,7 +192,7 @@ namespace HockeyCoach.Sim.Shift
             }
 
             _secondChance = true;
-            Shoot(team, shooter);
+            Shoot(team, shooter, PresserSource.Nearest);
         }
 
         /// <summary>The node (home view) is a slot node of <paramref name="team"/>'s offensive zone, in its own view.</summary>

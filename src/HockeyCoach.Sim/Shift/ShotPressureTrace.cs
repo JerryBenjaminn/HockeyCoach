@@ -31,7 +31,7 @@ namespace HockeyCoach.Sim.Shift
         /// </summary>
         internal bool? ReceiverFreeAtBeatStart { get; }
 
-        /// <summary>The ordinary M-7 rule at the moment of the shot.</summary>
+        /// <summary>The ordinary M-7 rule (presser, D-072) at the moment of the shot.</summary>
         internal bool PressureAtShot { get; }
 
         /// <summary>The value logged in the shot event.</summary>

@@ -61,10 +61,10 @@ namespace HockeyCoach.Sim.Shift
             switch (action)
             {
                 case RushAction.Shoot:
-                    Shoot(team, carrier);
+                    Shoot(team, carrier, PresserSource.Nearest);
                     break;
                 case RushAction.Pass:
-                    Pass(team, carrier, receiver);
+                    Pass(team, carrier, receiver, PresserSource.Nearest);
                     break;
                 default:
                     Skate(team, carrier, target);

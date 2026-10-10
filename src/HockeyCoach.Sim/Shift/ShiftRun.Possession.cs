@@ -204,7 +204,7 @@ namespace HockeyCoach.Sim.Shift
                 return;
             }
 
-            if (holder == _play.PuckCarrier || Pass(team, holder, _play.PuckCarrier))
+            if (holder == _play.PuckCarrier || Pass(team, holder, _play.PuckCarrier, PresserSource.System))
             {
                 _mode = Mode.PlayBeat;
             }
@@ -236,14 +236,14 @@ namespace HockeyCoach.Sim.Shift
                     continues = Skate(team, action.Actor, action.Target.Value);
                     break;
                 case PlayActionType.Pass:
-                    continues = Pass(team, action.Actor, action.Receiver.Value);
+                    continues = Pass(team, action.Actor, action.Receiver.Value, PresserSource.System);
                     break;
                 case PlayActionType.DriveNet:
                     DriveNet(team, action.Actor);
                     continues = true;
                     break;
                 case PlayActionType.Shoot:
-                    Shoot(team, action.Actor);
+                    Shoot(team, action.Actor, PresserSource.System);
                     continues = false;
                     break;
                 default:

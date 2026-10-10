@@ -96,7 +96,11 @@ namespace HockeyCoach.Sim.Shift
         /// the breakout check when the pass leaves the defensive zone (D-039). Failure: interception or a loose puck at the
         /// lane defender (D-040).
         /// </summary>
-        private bool Pass(TeamSide team, Position from, Position to)
+        /// <param name="team">The passing team.</param>
+        /// <param name="from">The passer.</param>
+        /// <param name="to">The receiver.</param>
+        /// <param name="presserSource">How the passer's presser is picked (M-7, D-072).</param>
+        private bool Pass(TeamSide team, Position from, Position to, PresserSource presserSource)
         {
             TeamSide defending = TeamSides.Opponent(team);
             GridPoint passerNode = TeamView(team, team, from);
@@ -104,7 +108,7 @@ namespace HockeyCoach.Sim.Shift
             IReadOnlyDictionary<Position, GridPoint> defenders = NodesInView(defending, team);
             IReadOnlyList<GridPoint> lane = LineGeometry.PassLane(passerNode, receiverNode);
             LineGeometry.LineDefender(defenders, lane, receiverNode, out Position laneDefender, out int distance);
-            bool underPressure = UnderPressure(passerNode, defenders);
+            bool underPressure = CarrierUnderPressure(team, passerNode, defenders, presserSource);
             bool crossIce = LineGeometry.IsCrossIce(passerNode, receiverNode, _rink);
             RinkZone passerZone = _rink.ZoneAtX(passerNode.X);
             RinkZone receiverZone = _rink.ZoneAtX(receiverNode.X);

@@ -15,7 +15,7 @@ namespace HockeyCoach.Sim.Shift
     /// </summary>
     internal sealed partial class ShiftRun
     {
-        private void Shoot(TeamSide team, Position shooterPosition)
+        private void Shoot(TeamSide team, Position shooterPosition, PresserSource presserSource)
         {
             TrackEntry();
             TeamSide defending = TeamSides.Opponent(team);
@@ -30,7 +30,7 @@ namespace HockeyCoach.Sim.Shift
             _lastShotTeam = team;
             _lastShotNode = _state.NodeOf(team, shooterPosition);
 
-            bool underPressure = ShotUnderPressure(team, shooterPosition, shooterNode, defenders, shooter.Id);
+            bool underPressure = ShotUnderPressure(team, shooterPosition, shooterNode, defenders, shooter.Id, presserSource);
             bool crease = UsesCrease(team, shooterPosition, shooterNode, netFront);
             string xgZone = crease ? "crease" : _rink.GetNode(shooterNode.X, shooterNode.Y).XgZone;
             bool royalRoad = RoyalRoad(team, shooterPosition);
@@ -232,13 +232,13 @@ namespace HockeyCoach.Sim.Shift
         }
 
         /// <summary>
-        /// M-7 for the shooter with the D-070 exception: a shot that is the next puck action after a completed pass to the
+        /// M-7 for the shooter (presser rule, D-072) with the D-070 exception: a shot that is the next puck action after a completed pass to the
         /// shooter is not under pressure when the receiver was free at the pass (snapshot S). The exception only removes
         /// pressure; it changes the event field and the report, not the shot's probabilities.
         /// </summary>
-        private bool ShotUnderPressure(TeamSide team, Position shooterPosition, GridPoint shooterNode, IReadOnlyDictionary<Position, GridPoint> defenders, int shooterId)
+        private bool ShotUnderPressure(TeamSide team, Position shooterPosition, GridPoint shooterNode, IReadOnlyDictionary<Position, GridPoint> defenders, int shooterId, PresserSource presserSource)
         {
-            bool atShot = UnderPressure(shooterNode, defenders);
+            bool atShot = CarrierUnderPressure(team, shooterNode, defenders, presserSource);
             LastPass pass = _lastPass;
             bool offPass = pass != null && pass.Team == team && pass.To == shooterPosition;
             bool underPressure = atShot && !(offPass && pass.ReceiverFree);

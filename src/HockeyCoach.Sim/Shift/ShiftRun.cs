@@ -100,6 +100,13 @@ namespace HockeyCoach.Sim.Shift
             Regroup,
         }
 
+        /// <summary>Who picks the presser (M-7, D-072): the defending system, or the nearest defender when none directs.</summary>
+        private enum PresserSource
+        {
+            System,
+            Nearest,
+        }
+
         private enum LastPuckAction
         {
             Other,
@@ -247,7 +254,35 @@ namespace HockeyCoach.Sim.Shift
             return _rink.ZoneAtX(TeamFrame.ToTeamView(rinkNode, team, _rink).X);
         }
 
-        /// <summary>M-7: an opposing skater within <c>pressure.underPressureNodes</c>.</summary>
+        /// <summary>
+        /// M-7 with the presser rule (D-072): the carrier is under pressure when the defending team's presser is within
+        /// <c>pressure.underPressureNodes</c> (Chebyshev) of him. Other defenders, even in his node, give no pressure.
+        /// </summary>
+        /// <param name="team">The carrier's team.</param>
+        /// <param name="carrierNode">The carrier's node in <paramref name="team"/>'s view.</param>
+        /// <param name="defenders">The defending skaters in <paramref name="team"/>'s view.</param>
+        /// <param name="source">Whether the system or the nearest-defender rule picks the presser.</param>
+        private bool CarrierUnderPressure(TeamSide team, GridPoint carrierNode, IReadOnlyDictionary<Position, GridPoint> defenders, PresserSource source)
+        {
+            Position presser;
+            bool found;
+            if (source == PresserSource.System)
+            {
+                TeamSide defending = TeamSides.Opponent(team);
+                GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, defending, _rink);
+                bool pinched = Team(defending).Plan.Instructions.Pinch && _state.IsPinchSpot(puck);
+                found = PresserSelector.FromSystem(
+                    Team(defending).Plan.System, _rink, puck, _state.PuckState, _state.NodesInTeamView(defending), pinched, out presser);
+            }
+            else
+            {
+                found = PresserSelector.Nearest(defenders, carrierNode, out presser);
+            }
+
+            return found && GridPoint.Chebyshev(carrierNode, defenders[presser]) <= _tuning.Pressure.UnderPressureNodes;
+        }
+
+        /// <summary>Any opposing skater within <c>pressure.underPressureNodes</c> (D-070 condition 2, receiver free).</summary>
         private bool UnderPressure(GridPoint player, IReadOnlyDictionary<Position, GridPoint> opponents)
         {
             foreach (KeyValuePair<Position, GridPoint> opponent in opponents)
