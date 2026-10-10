@@ -14,7 +14,8 @@ using HockeyCoach.Sim.Tactics;
 namespace HockeyCoach.Harness.Simulation;
 
 /// <summary>
-/// <c>match</c>: plays a full match with the default <see cref="RotationCoach"/> on both sides and prints it as text
+/// <c>match</c>: plays a full match with the coaches named by <c>--home</c> and <c>--away</c> (default
+/// <see cref="RotationCoach"/>, see <see cref="CoachRegistry"/>) and prints it as text
 /// (events, goal explanations, period and match summaries) or JSON. With an even <c>--count N</c> it plays N / 2 pairs
 /// (<see cref="PairedMatches"/>, D-069: pair i uses seed + i twice, first team A with the home system at home, then
 /// team B with the away system at home) and prints only the averages, the venue and team split and the target
@@ -35,7 +36,9 @@ public static class MatchCommand
     /// <param name="AwaySystem">Away defensive system id (team B's system with --count).</param>
     /// <param name="Json">Print JSON instead of text (single match).</param>
     /// <param name="Count">Number of matches: 1 plays a single match, an even number above 1 plays paired matches and prints averages only.</param>
-    public sealed record Options(ulong Seed, string HomeSystem, string AwaySystem, bool Json, int Count);
+    /// <param name="HomeCoach">Home coach name (team A's coach with --count).</param>
+    /// <param name="AwayCoach">Away coach name (team B's coach with --count).</param>
+    public sealed record Options(ulong Seed, string HomeSystem, string AwaySystem, bool Json, int Count, string HomeCoach = CoachRegistry.Rotation, string AwayCoach = CoachRegistry.Rotation);
 
     /// <summary>The match setup used by the command: harness teams (home ids from 1, away from 101) with the given caps.</summary>
     public static MatchSetup Setup(GameData data, int maxStepsPerSegment = DefaultMaxStepsPerSegment, int maxSegments = DefaultMaxSegments)
@@ -48,23 +51,32 @@ public static class MatchCommand
     /// <summary>
     /// The two teams of a paired series: team A (the single-match home roster, ids from 1) with
     /// <paramref name="systemA"/> and team B (the single-match away roster, ids from 101) with <paramref name="systemB"/>,
-    /// each with a fresh rotation coach per match.
+    /// each with a fresh coach per match (<paramref name="coachA"/> and <paramref name="coachB"/>, default rotation).
     /// </summary>
-    public static (PairedTeam A, PairedTeam B) PairTeams(GameData data, string systemA, string systemB)
+    public static (PairedTeam A, PairedTeam B) PairTeams(
+        GameData data, string systemA, string systemB, string coachA = CoachRegistry.Rotation, string coachB = CoachRegistry.Rotation)
     {
-        DefensiveSystem a = HarnessTeams.System(data, systemA);
-        DefensiveSystem b = HarnessTeams.System(data, systemB);
+        Func<IRandom, ICoach> a = CoachRegistry.Factory(coachA, data, systemA);
+        Func<IRandom, ICoach> b = CoachRegistry.Factory(coachB, data, systemB);
         return (
-            new PairedTeam("A (" + systemA + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), _ => new RotationCoach(data.Plays, a)),
-            new PairedTeam("B (" + systemB + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), _ => new RotationCoach(data.Plays, b)));
+            new PairedTeam("A (" + CoachRegistry.Label(coachA, systemA) + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), a),
+            new PairedTeam("B (" + CoachRegistry.Label(coachB, systemB) + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), b));
     }
 
     /// <summary>Plays one match with rotation coaches.</summary>
-    public static MatchResult Play(GameData data, MatchSetup setup, string homeSystem, string awaySystem, ulong seed)
+    public static MatchResult Play(GameData data, MatchSetup setup, string homeSystem, string awaySystem, ulong seed) =>
+        Play(data, setup, CoachRegistry.Rotation, homeSystem, CoachRegistry.Rotation, awaySystem, seed);
+
+    /// <summary>
+    /// Plays one match with the named coaches. The simulation and each coach use their own streams derived from
+    /// <paramref name="seed"/> (<see cref="MatchStreams"/>, D-077).
+    /// </summary>
+    public static MatchResult Play(GameData data, MatchSetup setup, string homeCoach, string homeSystem, string awayCoach, string awaySystem, ulong seed)
     {
-        var homeCoach = new RotationCoach(data.Plays, HarnessTeams.System(data, homeSystem));
-        var awayCoach = new RotationCoach(data.Plays, HarnessTeams.System(data, awaySystem));
-        return MatchSimulator.Run(setup, homeCoach, awayCoach, new MatchStreams(seed).Simulation());
+        var streams = new MatchStreams(seed);
+        ICoach home = CoachRegistry.Factory(homeCoach, data, homeSystem)(streams.HomeCoach());
+        ICoach away = CoachRegistry.Factory(awayCoach, data, awaySystem)(streams.AwayCoach());
+        return MatchSimulator.Run(setup, home, away, streams.Simulation());
     }
 
     /// <summary>Runs the command and returns the printed output.</summary>
@@ -76,7 +88,7 @@ public static class MatchCommand
         }
 
         MatchSetup setup = Setup(data);
-        MatchResult result = Play(data, setup, options.HomeSystem, options.AwaySystem, options.Seed);
+        MatchResult result = Play(data, setup, options.HomeCoach, options.HomeSystem, options.AwayCoach, options.AwaySystem, options.Seed);
         return options.Json ? MatchJson.Write(result, setup, options.Seed) : MatchText.Write(result, setup, data, options);
     }
 
@@ -89,10 +101,18 @@ public static class MatchCommand
         string away = "trap122";
         bool json = false;
         int count = 1;
+        string homeCoach = CoachRegistry.Rotation;
+        string awayCoach = CoachRegistry.Rotation;
         for (int i = 1; i < args.Length; i++)
         {
             switch (args[i])
             {
+                case "--home" when i + 1 < args.Length:
+                    homeCoach = args[++i];
+                    break;
+                case "--away" when i + 1 < args.Length:
+                    awayCoach = args[++i];
+                    break;
                 case "--seed" when i + 1 < args.Length && ulong.TryParse(args[i + 1], NumberStyles.None, CultureInfo.InvariantCulture, out ulong s):
                     seed = s;
                     i++;
@@ -126,7 +146,16 @@ public static class MatchCommand
             return null;
         }
 
-        return new Options(seed, home, away, json, count);
+        foreach (string coach in new[] { homeCoach, awayCoach })
+        {
+            if (!CoachRegistry.Names.Contains(coach))
+            {
+                error = "Unknown coach " + coach + " (known: " + string.Join(", ", CoachRegistry.Names) + ")";
+                return null;
+            }
+        }
+
+        return new Options(seed, home, away, json, count, homeCoach, awayCoach);
     }
 
     /// <summary>Player id → team side for a setup.</summary>
@@ -152,7 +181,7 @@ public static class MatchCommand
     private static string Averages(GameData data, Options options)
     {
         int pairs = PairedMatches.PairCount(options.Count);
-        (PairedTeam teamA, PairedTeam teamB) = PairTeams(data, options.HomeSystem, options.AwaySystem);
+        (PairedTeam teamA, PairedTeam teamB) = PairTeams(data, options.HomeSystem, options.AwaySystem, options.HomeCoach, options.AwayCoach);
         var total = new TeamStats();
         var perSide = new[] { new TeamStats(), new TeamStats() };
         var perTeam = new[] { new TeamStats(), new TeamStats() };
@@ -188,8 +217,9 @@ public static class MatchCommand
         double teamMatches = 2.0 * n;
         var sb = new StringBuilder();
         sb.AppendLine("Match averages: " + n + " matches in " + pairs + " pairs, seeds " + options.Seed + "–" + (options.Seed + (ulong)pairs - 1)
-            + " (one seed per pair), team " + teamA.Label + " vs team " + teamB.Label + ", rotation coaches, transition rush.");
-        sb.AppendLine("Pairing: each pair plays its seed twice, first A at home, then B at home (rosters, systems and coaches travel with the team).");
+            + " (one seed per pair), team " + teamA.Label + " vs team " + teamB.Label + ".");
+        sb.AppendLine("Pairing: each pair plays its seed twice, first A at home, then B at home (rosters, systems and coaches travel with the team;"
+            + " coach random streams follow the venue).");
         sb.AppendLine("Stalled matches: " + stalled + ". Events per match " + F1(events / (double)n) + ".");
         sb.AppendLine();
         sb.AppendLine("By venue: home wins " + record.HomeWins + ", ties " + record.Ties + ", away wins " + record.AwayWins

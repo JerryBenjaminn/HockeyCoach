@@ -21,8 +21,9 @@ public static class MatchText
         Dictionary<int, string> names = Names(setup);
         var text = new EventText(id => names.TryGetValue(id, out string? n) ? n : "#" + id);
         var sb = new StringBuilder();
-        sb.AppendLine("Match, seed " + options.Seed.ToString(CultureInfo.InvariantCulture) + ": Home (" + options.HomeSystem + ") vs Away (" + options.AwaySystem
-            + "). Coaches: rotation (trios 1→4, pairs 1→3, least-used play first), transition rush, system-mode defaults.");
+        sb.AppendLine("Match, seed " + options.Seed.ToString(CultureInfo.InvariantCulture) + ": Home (" + CoachRegistry.Label(options.HomeCoach, options.HomeSystem)
+            + ") vs Away (" + CoachRegistry.Label(options.AwayCoach, options.AwaySystem) + "). Coaches: rotation = trios 1→4, pairs 1→3, least-used play first,"
+            + " transition rush, system-mode defaults; random = everything drawn (AI-2).");
         foreach (Team team in new[] { setup.Home, setup.Away })
         {
             sb.AppendLine(team.Name + ": " + string.Join(" | ", team.ForwardLines.Select(l => l.Name + " " + string.Join(",", l.Skaters.Select(s => "#" + s.Id))))
