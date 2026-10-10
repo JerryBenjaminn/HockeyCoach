@@ -97,7 +97,6 @@
     "pressure.keepOnStoppage",
     "pressure.energyDrainPerSecond",
     "pressure.mentalToughnessReductionPerPoint",
-    "pressure.underPressureNodes",
     "chemistry.maxPassModifier",
     "chemistry.maxOrganizationRecoveryBonus",
     "familiarity.penaltyPerRepeat",
@@ -480,14 +479,14 @@
     "organizedThreshold": 0.8
   },
   "pressure": {
-    "_notes": "0..1 per attacking team. underPressureNodes: a player is under pressure when an opposing skater is within this Chebyshev distance (definitions M-7, D-049). Physical pressure, not the team pressure state.",
+    "_notes": "0..1 per attacking team. underPressureNodes: a player is under pressure when an opposing skater is within this Chebyshev distance (definitions M-7, D-049); 0 = same node (D-056), calibrated later against the analysis (Q-032). Physical pressure, not the team pressure state.",
     "gainOnZoneEntry": 0.1,
     "gainOnShot": 0.08,
     "gainPerSecondInZone": 0.005,
     "keepOnStoppage": 0.5,
     "energyDrainPerSecond": 0.002,
     "mentalToughnessReductionPerPoint": 0.03,
-    "underPressureNodes": 1
+    "underPressureNodes": 0
   },
   "form": {
     "maxStatDelta": 2

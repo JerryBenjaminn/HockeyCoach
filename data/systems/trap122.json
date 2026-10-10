@@ -2,9 +2,34 @@
   "schemaVersion": 1,
   "id": "trap122",
   "name": "1-2-2 trap",
-  "_notes": "One forechecker angles the carrier to the boards from the inside, two forwards wait in the neutral zone and the D hold the red line area. Neutral zone: the forwards collapse to the defensive side of the red line, D on the own blue line. Own zone: collapsed box with F1 on the puck.",
+  "_notes": "One forechecker angles the carrier to the boards from the inside (D-057): offensive and neutral zone F1 target is one node towards the own goal and one lane towards the middle of the carrier (puck on the centre lane: straight in front of it), so he steers the carrier wide instead of pressing. Two forwards wait in the neutral zone and the D hold the red line area. Neutral zone: the forwards collapse to the defensive side of the red line, D on the own blue line. Own zone: collapsed box with F1 straight at the carrier (D-062).",
   "mirrorY": true,
   "rules": [
+    {
+      "when": {
+        "puckZones": [
+          "offensive"
+        ],
+        "puckY": [2, 2]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [-1, 0]
+        },
+        "F2": {
+          "node": [6, 1]
+        },
+        "F3": {
+          "node": [6, 3]
+        },
+        "D1": {
+          "node": [4, 1]
+        },
+        "D2": {
+          "node": [4, 3]
+        }
+      }
+    },
     {
       "when": {
         "puckZones": [
@@ -26,6 +51,31 @@
         },
         "D2": {
           "node": [4, 3]
+        }
+      }
+    },
+    {
+      "when": {
+        "puckZones": [
+          "neutral"
+        ],
+        "puckY": [2, 2]
+      },
+      "targets": {
+        "F1": {
+          "puckOffset": [-1, 0]
+        },
+        "F2": {
+          "node": [4, 1]
+        },
+        "F3": {
+          "node": [4, 3]
+        },
+        "D1": {
+          "node": [3, 1]
+        },
+        "D2": {
+          "node": [3, 3]
         }
       }
     },
