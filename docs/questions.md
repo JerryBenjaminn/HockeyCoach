@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-071 · 2026-10-11 · kirjaaja: Jerry (myöhemmin)
+**Kysymys:** pitäisikö laitureiden sijoittua suorahyökkäyksessä kiekollisen edelle?
+**Konteksti:** E-006:n analyysi (D-084): O-7:n suorahyökkäyssäännössä tukipelaajien kohde on kiekollisen x-rivi, joten alueelle tulossa hyökkääjiä on kolme 63 %:ssa tuonneista, kun Wisehockeyssa yleensä 1–2. Esim. laiturit riviä kiekollisen edellä muuttaisivat voimasuhteita ja paikkojen syntyä.
+**Ehdotettu oletus:** ei muutosta nyt. Palataan, kun paluukarvaus on mitattu.
+
 ### Q-070 · 2026-10-11 · kirjaaja: Jerry (idea myöhemmäksi, ei virstanpylväisiin)
 **Kysymys:** lisätäänkö peliin ottelun jälkeinen kertomusraportti pelaajalle Wisehockeyn AI-analyysin tyyliin?
 **Konteksti:** raportti kertoo, kumpi joukkue hallitsi (hyökkäysalueaika, xG), mistä paikat syntyivät (paikkatyypit, maski, Royal Road, voimasuhteet) ja miksi tulos meni niin kuin meni (esim. "loit 4,8 xG, mutta maalivahti torjui"). Data on jo tapahtumalokissa. Tukee visiota ja pilaria "jokainen tappio opettaa".
