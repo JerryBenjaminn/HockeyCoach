@@ -14,12 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-064 · 2026-10-11 · kirjaaja: programmer
-**Kysymys:** missä solmussa karvaaja saa kiekon, kun kokoamisen `breakout`-tarkistus epäonnistuu (D-078 K1)? O-7:n kohta 5 sanoo "Lähin karvaaja saa kiekon kiekollisen solmussa samalla polulla kuin epäonnistuneessa `skate`-kuljetuksessa", mutta epäonnistuneessa kuljetuksessa riistäjä saa kiekon omassa solmussaan, eikä kukaan siirry.
-**Konteksti:** lähin karvaaja on usein 1–2 solmun päässä kiekollisesta. Jos hänet siirretään kiekollisen solmuun, D-058 (yksi pelaaja per joukkue per solmu) voi estää siirron, jos joukkuetoveri on jo siinä. Vaikuttaa Kiekonmenetys-tapahtuman solmuun ja riistäjän siirtymän lähtöpisteeseen. Järjestäytyneisyyden pudotus on sama (molemmat solmut ovat kokoavan joukkueen omalla alueella).
-**Ehdotettu oletus:** toteutettu kuten `skate`: riistäjä saa kiekon omassa solmussaan, kukaan ei siirry, ja tapahtuman solmu on riistäjän solmu (commit "feat: forecheckers challenge an own-zone regroup", testi `FailedRegroupCheck_IsATakeawayByTheNearestCountedForechecker_AfterRegroupTimeOnly`).
-**Vastaus:** (Jerry täyttää)
-
 ### Q-063 · 2026-10-11 · kirjaaja: game-designer
 **Kysymys:** koskeeko alueelle tulon voimasuhdemuokkaaja (D-078 K4) myös syöttämällä tehtyä alueelle tuloa?
 **Konteksti:** `stats-and-checks.md`:n tarkistustaulukossa muokkaaja "puolustusjärjestelmä" on vain rivillä "Kuljetus alueelle" (`zoneEntryCarry`). Syöttämällä tehty alueelle tulo (M-8, tapa "syöttö") käyttää `pass`-tarkistusta, joten trap ei rankaisisi siniviivan yli syöttämistä. Oikeassa kiekossa tiivis 1-2-2 vaikeuttaa myös syöttöä siniviivan yli, mutta syöttöä haittaavat jo syöttölinjan puolustaja (M-1) ja paine (M-7). `data-schema.md` M-9.
@@ -140,6 +134,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-064 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** missä solmussa karvaaja saa kiekon, kun kokoamisen `breakout`-tarkistus epäonnistuu (D-078 K1)? O-7:n kohta 5 sanoo "Lähin karvaaja saa kiekon kiekollisen solmussa samalla polulla kuin epäonnistuneessa `skate`-kuljetuksessa", mutta epäonnistuneessa kuljetuksessa riistäjä saa kiekon omassa solmussaan, eikä kukaan siirry.
+**Konteksti:** lähin karvaaja on usein 1–2 solmun päässä kiekollisesta. Jos hänet siirretään kiekollisen solmuun, D-058 (yksi pelaaja per joukkue per solmu) voi estää siirron, jos joukkuetoveri on jo siinä. Vaikuttaa Kiekonmenetys-tapahtuman solmuun ja riistäjän siirtymän lähtöpisteeseen. Järjestäytyneisyyden pudotus on sama (molemmat solmut ovat kokoavan joukkueen omalla alueella).
+**Ehdotettu oletus:** toteutettu kuten `skate`: riistäjä saa kiekon omassa solmussaan, kukaan ei siirry, ja tapahtuman solmu on riistäjän solmu (commit "feat: forecheckers challenge an own-zone regroup", testi `FailedRegroupCheck_IsATakeawayByTheNearestCountedForechecker_AfterRegroupTimeOnly`).
+**Vastaus (Jerry, 2026-10-11):** oletus hyväksytty.
 
 ### Q-056 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys:** ovatko Wisehockeyn paineluvut (syötöt 69 % / 68 %, laukaukset 68 % / 76 %) osuuksia vai onnistumisprosentteja?
