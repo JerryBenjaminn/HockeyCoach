@@ -10,6 +10,7 @@
     "checks.pass.interceptionShare",
     "checks.zoneEntryCarry.p0",
     "checks.zoneEntryCarry.modifiers.organization",
+    "checks.zoneEntryCarry.modifiers.strengthDifferencePerPlayer",
     "checks.dumpIn.goaliePuckHandlingPerPoint",
     "checks.dumpIn.goalieReachNodes",
     "checks.deke.p0",
@@ -17,6 +18,7 @@
     "checks.deke.modifiers.organization",
     "checks.breakout.p0",
     "checks.breakout.modifiers.organization",
+    "checks.breakout.modifiers.perForechecker",
     "checks.shot.attackerByXgZone.crease.shooter.shotAccuracy",
     "checks.shot.attackerByXgZone.crease.shooter.shotPower",
     "checks.shot.attackerByXgZone.highSlot.shooter.shotAccuracy",
@@ -222,7 +224,7 @@
       }
     },
     "zoneEntryCarry": {
-      "_notes": "Success = carrier enters the offensive zone with possession.",
+      "_notes": "Success = carrier enters the offensive zone with possession. strengthDifferencePerPlayer: logit per player of N - M (M-8), data-schema.md M-9 (D-078 K4).",
       "kind": "twoSided",
       "p0": 0.6,
       "attacker": {
@@ -238,7 +240,8 @@
         }
       },
       "modifiers": {
-        "organization": 0.8
+        "organization": 0.8,
+        "strengthDifferencePerPlayer": 0.25
       }
     },
     "dumpIn": {
@@ -273,7 +276,7 @@
       }
     },
     "breakout": {
-      "_notes": "Breakout from own zone. Success = puck leaves the defensive zone with possession. forecheckers = mean of the forechecking players' stats. Defensive system effect is a later modifier (Q-003).",
+      "_notes": "Breakout from own zone. Success = puck leaves the defensive zone with possession. forecheckers = mean of the forechecking players' stats. perForechecker: logit per forechecker (F1-F3) in the attacking team's defensive zone, data-schema.md M-9 (D-078 K4).",
       "kind": "twoSided",
       "p0": 0.7,
       "attacker": {
@@ -289,7 +292,8 @@
         }
       },
       "modifiers": {
-        "organization": 0.6
+        "organization": 0.6,
+        "perForechecker": -0.25
       }
     },
     "shot": {

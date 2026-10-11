@@ -19,6 +19,8 @@ namespace HockeyCoach.Sim.Shift
             new[] { "rebound", "goalieEnergy" },
             new[] { "loosePuck", "extraPlayer" },
             new[] { "loosePuck", "distancePerNode" },
+            new[] { "zoneEntryCarry", TuningValidator.StrengthDifferencePerPlayerModifier },
+            new[] { "breakout", TuningValidator.PerForecheckerModifier },
         };
 
         private static readonly string[][] Tables =

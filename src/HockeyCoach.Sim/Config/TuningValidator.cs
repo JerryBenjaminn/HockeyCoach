@@ -20,6 +20,12 @@ namespace HockeyCoach.Sim.Config
         /// <summary>The <c>modifiers.organization</c> key (O-6).</summary>
         public const string OrganizationModifier = "organization";
 
+        /// <summary>The <c>checks.zoneEntryCarry.modifiers.strengthDifferencePerPlayer</c> key (M-9, D-078 K4).</summary>
+        public const string StrengthDifferencePerPlayerModifier = "strengthDifferencePerPlayer";
+
+        /// <summary>The <c>checks.breakout.modifiers.perForechecker</c> key (M-9, D-078 K4).</summary>
+        public const string PerForecheckerModifier = "perForechecker";
+
         /// <summary>Checks that must carry <c>modifiers.organization</c> when present (O-16).</summary>
         public static readonly IReadOnlyList<string> OrganizationCheckIds = new[] { "pass", "zoneEntryCarry", "deke", "breakout", "shot", "block" };
 
@@ -53,6 +59,7 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Familiarity));
             errors.AddRange(Validate(tuning.Transitions));
             errors.AddRange(AiConfigValidator.Validate(tuning.Ai, tuning.Time));
+            errors.AddRange(ValidateSystemModifiers(tuning.Checks));
             foreach (string id in OrganizationCheckIds)
             {
                 bool has = id == ShotConfig.Id
@@ -62,6 +69,36 @@ namespace HockeyCoach.Sim.Config
                 {
                     errors.Add("checks." + id + ".modifiers." + OrganizationModifier + ": missing (O-6)");
                 }
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// M-9 (D-078 K4), when the checks are present: <c>zoneEntryCarry.modifiers.strengthDifferencePerPlayer</c> must be
+        /// at least 0 and <c>breakout.modifiers.perForechecker</c> at most 0. Missing keys are reported by the shift
+        /// requirements.
+        /// </summary>
+        public static IReadOnlyList<string> ValidateSystemModifiers(IReadOnlyDictionary<string, CheckDefinition> checks)
+        {
+            var errors = new List<string>();
+            if (checks == null)
+            {
+                return errors;
+            }
+
+            if (checks.TryGetValue("zoneEntryCarry", out CheckDefinition entry)
+                && entry.Modifiers.Scalars.TryGetValue(StrengthDifferencePerPlayerModifier, out double perPlayer)
+                && !(perPlayer >= 0.0))
+            {
+                errors.Add("checks.zoneEntryCarry.modifiers." + StrengthDifferencePerPlayerModifier + ": must be >= 0, was " + Format(perPlayer));
+            }
+
+            if (checks.TryGetValue("breakout", out CheckDefinition breakout)
+                && breakout.Modifiers.Scalars.TryGetValue(PerForecheckerModifier, out double perForechecker)
+                && !(perForechecker <= 0.0))
+            {
+                errors.Add("checks.breakout.modifiers." + PerForecheckerModifier + ": must be <= 0, was " + Format(perForechecker));
             }
 
             return errors;

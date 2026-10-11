@@ -22,7 +22,7 @@
       "p0": 0.7,
       "attacker": {"carrier": {"passing": 0.5, "awareness": 0.5}},
       "defender": {"forecheckers": {"speed": 0.5, "awareness": 0.5}},
-      "modifiers": {"organization": 0.6}
+      "modifiers": {"organization": 0.6, "perForechecker": -0.25}
     },
     "block": {
       "kind": "oneSided",
