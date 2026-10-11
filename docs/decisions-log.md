@@ -104,6 +104,85 @@ Kirjaa uusin ylimmäksi.
 **Päätös:** (Jerry täyttää) hyväksytty / hylätty + lyhyt syy.
 -->
 
+### E-006 · 2026-10-11 · ehdotettu
+**Ehdotus:** M-8:n N lasketaan tiukasti samalla rajalla kuin M (D-083 kohta 2). N = kiekollinen tai syöttäjä aina ja hyökkäävän joukkueen kenttäpelaajat, joiden x > kiekon x. M pysyy ennallaan (x > kiekon x). Kiekon tasalla olevaa pelaajaa ei lasketa kummallekaan. Muutos koskee D-080:n kohtaa 1 (lukittu), joten se vaatii Jerryn hyväksynnän. Mekaniikkaan ja dataan ei kosketa nyt.
+
+**Perustelu.** Analyysi tehtiin 120 ottelusta `rulebased` vs `rulebased` (siemenet 1–120). Otoksessa on 10 349 onnistunutta hallittua alueelletuontia. Sijainnit luettiin tapahtumien `placement`-kentästä, ja kiekon x ja nykyinen N vs M saatiin rekonstruoitua kaikille. Nykyinen jakauma 22,0 / 28,3 / 49,7 % vastaa batchin lukua 22,2 / 28,3 / 49,4 %.
+
+- **Missä alueelletuonnit tapahtuvat:**
+  - 88,9 % on suorahyökkäyksen kuljetuksia: N < M 11,9 %, N = M 31,7 %, N > M 56,3 % (vs forecheck212).
+  - 11,1 % tulee kuvioista: kuljetuksia 2,9 % ja syöttöjä 8,2 %. Kuvioissa jakauma on aina N < M (3v4), koska tukipelaajat ovat jo kiekon edellä.
+  - Puolustava järjestelmä on 99 %:ssa forecheck212, joten trapia ei näy tavoiteosiossa käytännössä lainkaan.
+  - Kiekon x alueelle tultaessa on 5 (62 %) tai 6 (38 %), eli 0,5–1,5 riviä ennen siniviivaa.
+- **Kiekon saantipaikka ratkaisee.**
+  - Oman alueen riistosta (x ≤ 3, 44 % alueelletuonneista) suorahyökkäys on ylivoimainen: x = 3 91 %, x = 2 85 %.
+  - Keskialueen riistoista ylivoimaisia on vähemmän: x = 5 9 %, x = 6 27 %.
+- **Puolustajat suhteessa kiekkoon, keskimäärin per alueelletuonti:**
+  - Takana (kiekon ja maalin välissä) 2,55: hyökkääjät 0,80, pakit 1,75.
+  - Tasalla 1,80: hyökkääjät 1,55, pakit 0,25.
+  - Edellä eli väärällä puolella 0,65, kaikki hyökkääjiä.
+  - Tasalla oleva on tyypillisesti F1 (`puckOffset [0, 0]`, painostaa kiekollista) tai F3 (4, 3).
+  - Oman alueen riistosta lähtevissä suorahyökkäyksissä väärällä puolella on 1,64 hyökkääjää.
+- **Hyökkääjät:** kiekottomia on tasalla 1,31 ja edellä 0,66. Suorahyökkäyksessä tasalla on 1,47, koska O-7:n tukipelaajien kohde on kiekollisen x. Siksi suorahyökkäyksessä N = 3 63 %:ssa (Wisehockey: N on usein 1–2).
+- **Syy 1, määritelmä.**
+  - 11 × 5 -verkon rivi on n. 5,5 m. "Tasalla" tarkoittaa siis oikeassa kiekossa puoliksi edellä ja puoliksi takana.
+  - Nykyinen M-8 antaa tasalla olevat aina hyökkääjälle. Tämä yksin siirtää n. 1,3 pelaajaa N:ään.
+  - Symmetrinen versio (tasalla olevat kummallekin) ylikorjaa, koska tasalla on enemmän puolustajia (1,80) kuin hyökkääjiä (1,31).
+- **Syy 2, mekaniikka (ei ehdoteta nyt).**
+  - Puolustajien kohteet lasketaan kiekon solmusta ennen kiekollisen liikettä (D-041). Lisäksi kiekollinen ja puolustajat liikkuvat yhtä nopeasti, 2 solmua per tahti.
+  - Syvällä karvaava ei siksi koskaan ehdi kiekon taakse.
+  - Painostajan reaktioviive (D-074) ei selitä tätä, koska suorahyökkäyksen alueelletuonnit ovat kuljetuksia.
+- **Vaihtoehdot samalla otoksella** (N < M / N = M / N > M, tavoite 50–75 / 20–40 / 0–15):
+
+| Vaihtoehto | Tulos | Tila |
+| --- | --- | --- |
+| Nykyinen M-8 | 22,0 / 28,3 / 49,7 | ei |
+| Symmetrinen, tasalla molemmille | 84,0 / 15,2 / 0,8 | ei |
+| Tasalla puolipainolla molemmille | 86,3 / 12,9 / 0,8 | ei |
+| Tasalla puolipainolla vain M:lle | 60,7 / 23,3 / 16,0 | ylivoima 1 %-yks. yli |
+| Tasalla oleva puolustaja kiekollisen kaistalla (\|dy\| ≤ 1) M:ään | 77,7 / 21,4 / 0,8 | ei |
+| Data: forecheck212:n pakit hyökkäysalueella rivin alemmas (nykyinen M-8) | 19,7 / 32,0 / 48,3 | ei |
+| **Ehdotus: tasalla ei kummallekaan** | **64,6 / 35,4 / 0,0** | **kaikki haarukassa** |
+
+- Ehdotuksen yleisimmät voimasuhteet: 1v1 25,2 %, 1v2 22,3 %, 2v4 13,3 %, 3v4 10,8 %, 3v3 10,0 %, 2v3 9,2 % ja 1v3 6,4 %. Wisehockeyssa yleisimmät ovat 2v3, 1v2, 3v4, 1v3, 2v2, 3v3 ja 4v4.
+
+**Riskit ja vaikutus taktiikkaan (arvio, ei mitattu):**
+
+- **Ylivoima häviää lähes kokonaan:** 0,0 %, kun Wisehockeyssa se on 6 %. Ylivoima vaatii jatkossa tukipelaajan kiekon edelle, mitä O-7:n tukisääntö ei tee. Haarukka 0–15 täyttyy silti.
+- **M-9:n syöte muuttuu, koska se käyttää samoja lukuja.** Suorahyökkäyksen kuljetuksissa N − M:n keskiarvo muuttuu näin:
+
+| Vastustajan järjestelmä | N − M nyt | N − M ehdotuksella | Logit-muutos (`strengthDifferencePerPlayer` 0,25) | Kuljetuksen onnistuminen |
+| --- | --- | --- | --- | --- |
+| forecheck212 | +0,61 | −0,86 | −0,37 | arvio n. −7 %-yks. (71 → 64 %) |
+| trap122 | −0,66 | −2,61 | −0,49 | ei arviota |
+
+- Kuvioiden alueelletuonnit eivät muutu.
+- **Taktiikkamatriisi (m8fix):** rush − regroup karvausta vastaan on nyt +16,4 %-yks. Ero pienenee, mutta pysynee vähintään +5:ssä. Regroup karvausta vastaan (33,6 %) nousee. Regroup − rush trapia vastaan (+19,4) kasvaa.
+- **Jos D-078:n raja ei täyty:** D-083:n kohdan 3 sallima K4:n kertasäätö, esim. `strengthDifferencePerPlayer` 0,25 → 0,15 (data).
+- **Määritelmä on herkkä järjestelmädatalle.** Kun forecheck212:n pakkeja siirrettiin rivi alemmas, ehdotettu määritelmä antoi 90,5 / 9,5 / 0,0. Jokainen järjestelmien sijaintimuutos mitataan siksi uudelleen.
+
+**Mittaus:**
+
+1. `batch --matches 1000 --matchups all --seed 1`, tavoiteosio `rulebased` vs `rulebased` (`zoneEntryStrength*`). Lisäksi alueelletuontien onnistuminen voimasuhteittain ja `zoneEntrySuccessCarry` (nyt 70,5 %).
+2. Taktiikkamatriisi 2000 ottelua per solu ja D-078:n rajat (D-083 kohta 3).
+
+**Jatko, jos Jerry haluaa realistisen ylivoiman (n. 5 %), erillisenä ehdotuksena myöhemmin:**
+
+- O-7:n tukisääntö, jossa laituri ajaa kaistaansa rivin kiekollisen edellä.
+- Tai paluuliike riiston jälkeen (D-041:n muutos).
+
+Molemmat ovat mekaniikkamuutoksia, eikä niitä ehdoteta ennen tämän mittausta.
+
+**Vaikutus:**
+
+- Dokumentit: `data-schema.md` M-8 (N:n ehto x > kiekon x) ja M-9 (esimerkit), D-080 kohta 1.
+- Koodi (programmer):
+  - `EntryStrength.Count`: vertailu `>=` → `>` hyökkääjille, kiekollinen aina mukana.
+  - Testi tasalla olevalle hyökkääjälle ja puolustajalle (kumpaakaan ei lasketa).
+- Data ei muutu, ellei K4:n kertasäätöä tarvita.
+
+**Päätös:** (Jerry täyttää)
+
 ### E-005 · 2026-10-11 · hyväksytty
 **Ehdotus:** taktiikan vastapeli (handoff, seuraava askel 1). Muutoksia on neljä:
 
