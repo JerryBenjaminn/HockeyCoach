@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-075 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** D-036:n kuvionvalinta ja peilaus: verrataanko kiekollista kuvion kirjoitettuun vai pelattavaan (tarvittaessa peilattuun) `puckCarrier`-pelipaikkaan? Nykyinen koodi vertaa kirjoitettuun ja peilaa vasta sen jälkeen. Jos kiekollinen on `LW` ja kuvion kirjoitettu kiekollinen `LW`, mutta kuvio peilataan (`LW` → `RW`), avaussyöttöä ei tehdä. Silloin kuvion tahdit ajaa `RW`, jolla kiekkoa ei ole: esim. `skate` siirtää `RW`:n alueelle, lokiin kirjataan hänen alueelletuontinsa, mutta kiekko jää `LW`:lle.
+**Konteksti:** löytyi D-085:n raporttiosion testistä (`PlaySelector.Select` ja `ShiftRun.SelectPlayStep`; `data-schema.md` Peilaus ja D-036). Batch-raportin osio "Entry strength by possession origin" kertoo, kuinka moni onnistunut kuljetus on tällainen. Siemenen 1 ottelussa 2 / 25 kuljetusta. Tämä on bugi, ja sen korjaus muuttaa kaikkia lokeja. Siksi sitä ei korjattu D-085:n mittauksen keskellä.
+**Ehdotettu oletus:** verrataan pelattavaan (peilattuun) kuvioon. Valinta tehdään peilauksen jälkeen: kiekollinen = peilatun kuvion `puckCarrier` → ei syöttöä, muuten avaussyöttö peilatun kuvion kiekolliselle. Korjaus omana `fix:`-committinaan ja batch ennen/jälkeen, kun Jerry hyväksyy.
+**Vastaus:**
+
 ### Q-074 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** paluukarvauksen (D-085) reunatapaus: väärällä puolella oleva puolustaja, joka on jo riviä x_t lähempänä omaa maaliaan. Esimerkki: kiekko on puolustavan joukkueen maalin takana (hyökkäävän näkökulmasta x_k = 10), joten x_t = `opponentGoal.x` − 1 = 8, ja puolustaja on maalin vieressä x = 9. Speksin askel on aina (+1, 0) kohti omaa maalia, mutta kohde (x_t, y_p) on hänen takanaan. Liikkuuko hän taaksepäin riville x_t, pysyykö paikallaan vai liikkuuko järjestelmän mukaan?
 **Konteksti:** `data-schema.md`, Paluukarvaus suorahyökkäyksessä, Liike kohdat 2–3. Tilanne on harvinainen (rushin kiekollinen maalin takana).
