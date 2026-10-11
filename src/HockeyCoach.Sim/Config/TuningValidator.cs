@@ -57,7 +57,7 @@ namespace HockeyCoach.Sim.Config
             errors.AddRange(Validate(tuning.Energy, tuning.Stats, tuning.CheckFormula));
             errors.AddRange(Validate(tuning.Organization, tuning.Stats, tuning.CheckFormula));
             errors.AddRange(Validate(tuning.Familiarity));
-            errors.AddRange(Validate(tuning.Transitions));
+            errors.AddRange(Validate(tuning.Transitions, tuning.Plays));
             errors.AddRange(AiConfigValidator.Validate(tuning.Ai, tuning.Time));
             errors.AddRange(ValidateSystemModifiers(tuning.Checks));
             foreach (string id in OrganizationCheckIds)
@@ -224,8 +224,16 @@ namespace HockeyCoach.Sim.Config
             return errors;
         }
 
-        /// <summary>Validates <c>transitions</c> (O-16).</summary>
+        /// <summary>Validates <c>transitions</c> (O-16) without the plays cross-check of <c>backcheckNodesPerBeat</c>.</summary>
         public static IReadOnlyList<string> Validate(TransitionsConfig transitions)
+        {
+            return Validate(transitions, null);
+        }
+
+        /// <summary>
+        /// Validates <c>transitions</c> (O-16); <c>backcheckNodesPerBeat</c> must be 0..2 x <c>plays.maxNodesPerBeat</c> (D-085).
+        /// </summary>
+        public static IReadOnlyList<string> Validate(TransitionsConfig transitions, PlaysConfig plays)
         {
             var errors = new List<string>();
             if (transitions == null)
@@ -243,6 +251,12 @@ namespace HockeyCoach.Sim.Config
             if (transitions.RegroupForecheckersAllowed < 0 || transitions.RegroupForecheckersAllowed > ForwardLine.Size)
             {
                 errors.Add("transitions.regroupForecheckersAllowed: must be an integer 0.." + ForwardLine.Size + ", was " + transitions.RegroupForecheckersAllowed);
+            }
+
+            if (transitions.BackcheckNodesPerBeat < 0 || (plays != null && transitions.BackcheckNodesPerBeat > 2 * plays.MaxNodesPerBeat))
+            {
+                errors.Add("transitions.backcheckNodesPerBeat: must be an integer between 0 and 2 x plays.maxNodesPerBeat"
+                    + (plays != null ? " (" + (2 * plays.MaxNodesPerBeat) + ")" : string.Empty) + ", was " + transitions.BackcheckNodesPerBeat);
             }
 
             return errors;

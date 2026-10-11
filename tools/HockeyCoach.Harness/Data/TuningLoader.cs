@@ -233,11 +233,14 @@ public static class TuningLoader
             return null;
         }
 
-        reader.RejectUnknown("rushMaxActions", "rushShotMinBaseXg", "regroupForecheckersAllowed");
+        reader.RejectUnknown("rushMaxActions", "rushShotMinBaseXg", "regroupForecheckersAllowed", "backcheckNodesPerBeat");
         int? maxActions = reader.Int("rushMaxActions");
         double minXg = reader.Double("rushShotMinBaseXg");
         int? regroupAllowed = reader.Int("regroupForecheckersAllowed");
-        return maxActions.HasValue && regroupAllowed.HasValue ? new TransitionsConfig(maxActions.Value, minXg, regroupAllowed.Value) : null;
+        int? backcheck = reader.Int("backcheckNodesPerBeat");
+        return maxActions.HasValue && regroupAllowed.HasValue && backcheck.HasValue
+            ? new TransitionsConfig(maxActions.Value, minXg, regroupAllowed.Value, backcheck.Value)
+            : null;
     }
 
     private static PressureConfig? MapPressure(JsonReader? reader)

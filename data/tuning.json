@@ -116,6 +116,7 @@
     "transitions.rushMaxActions",
     "transitions.rushShotMinBaseXg",
     "transitions.regroupForecheckersAllowed",
+    "transitions.backcheckNodesPerBeat",
     "chanceTypes.turnoverWindowSeconds",
     "chanceClasses.topMinXg",
     "chanceClasses.goodMinXg",
@@ -557,10 +558,11 @@
     "maxNodesPerBeat": 2
   },
   "transitions": {
-    "_notes": "Built-in rush (D-007, D-062, data-schema.md O-7): no play, no setup. At most rushMaxActions actions; the carrier shoots from an offensive-zone node whose checks.shot.baseXg is at least rushShotMinBaseXg, else passes to a teammate on such a node with a free lane, else skates toward one. Ends when the defence reaches organization.organizedThreshold. regroupForecheckersAllowed: in the own zone, a regroup faces one breakout check when more forecheckers (F1-F3) than this are in the zone after the defence's regroup move; failure is a takeaway by the nearest forechecker (D-078 K1).",
+    "_notes": "Built-in rush (D-007, D-062, data-schema.md O-7): no play, no setup. At most rushMaxActions actions; the carrier shoots from an offensive-zone node whose checks.shot.baseXg is at least rushShotMinBaseXg, else passes to a teammate on such a node with a free lane, else skates toward one. Ends when the defence reaches organization.organizedThreshold. regroupForecheckersAllowed: in the own zone, a regroup faces one breakout check when more forecheckers (F1-F3) than this are in the zone after the defence's regroup move; failure is a takeaway by the nearest forechecker (D-078 K1). backcheckNodesPerBeat: during the opponent's rush, a defender behind the puck (x < puck x, attacking view) ignores his system target and skates straight toward his own goal, at most this many nodes, to the row one past the puck (D-084). 0 = off.",
     "rushMaxActions": 4,
     "rushShotMinBaseXg": 0.05,
-    "regroupForecheckersAllowed": 1
+    "regroupForecheckersAllowed": 1,
+    "backcheckNodesPerBeat": 2
   },
   "ai": {
     "_notes": "Coach AI thresholds (data-schema.md AI-1..AI-6, D-077). Not tuned for win rate before the first batch report (D-077 item 8). Coaches see public info only; energy is estimated from ice and bench time. adaptive system: opponent transition style from the public log (first action of a non-faceoff possession: empty play id = rush, play id = regroup), counted only against adaptive's current system; switch at a stoppage when at least styleMinEvents such observations show a clear share (data-schema.md A-T2, D-080).",

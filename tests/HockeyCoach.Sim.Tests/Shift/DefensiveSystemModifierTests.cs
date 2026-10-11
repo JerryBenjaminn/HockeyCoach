@@ -88,6 +88,10 @@ public class DefensiveSystemModifierTests
     {
         r["checks"]!["zoneEntryCarry"]!["modifiers"]!["strengthDifferencePerPlayer"] = strengthPerPlayer;
         r["checks"]!["breakout"]!["modifiers"]!["perForechecker"] = perForechecker;
+
+        // The back-check (D-085) makes even carries rare in a few matches; this test reads the modifier's scope from the
+        // logged strengths, so it runs without it to keep all three groups (ahead / behind / even) in the sample.
+        r["transitions"]!["backcheckNodesPerBeat"] = 0;
     });
 
     private static readonly Lazy<GameData> ExtremeData = new(() => DataWith(Extreme, -Extreme));

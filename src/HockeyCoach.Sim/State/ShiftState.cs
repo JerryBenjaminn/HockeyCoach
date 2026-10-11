@@ -191,14 +191,25 @@ namespace HockeyCoach.Sim.State
                 throw new ArgumentNullException(nameof(orderedTargets));
             }
 
+            var steps = new Dictionary<Position, int>();
+            foreach (KeyValuePair<Position, GridPoint> target in orderedTargets)
+            {
+                steps[target.Key] = limited.HasValue && limited.Value == target.Key ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
+            }
+
+            Move(team, orderedTargets, steps);
+        }
+
+        /// <summary>Moves skaters in the given order, each at most its own step count (D-053, D-058).</summary>
+        private void Move(TeamSide team, IReadOnlyList<KeyValuePair<Position, GridPoint>> orderedTargets, IReadOnlyDictionary<Position, int> steps)
+        {
             GridPoint puck = TeamFrame.ToTeamView(PuckNode, team, _rink);
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(team);
             var moves = new List<OccupancyMove>();
             foreach (KeyValuePair<Position, GridPoint> target in orderedTargets)
             {
                 RequireSkaterNode(target.Value, nameof(orderedTargets));
-                int steps = limited.HasValue && limited.Value == target.Key ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
-                moves.Add(new OccupancyMove(target.Key, SystemMovement.Path(skaters[target.Key], target.Value, puck, steps, _rink)));
+                moves.Add(new OccupancyMove(target.Key, SystemMovement.Path(skaters[target.Key], target.Value, puck, steps[target.Key], _rink)));
             }
 
             SetTeam(team, OccupancyResolver.Resolve(skaters, moves, _rink));
@@ -260,19 +271,67 @@ namespace HockeyCoach.Sim.State
         public SystemTargets ApplySystem(
             TeamSide defending, DefensiveSystem system, int maxSteps, bool pinch, Position? limited, int limitedSteps, out bool pinched)
         {
+            return ApplySystem(defending, system, maxSteps, pinch, limited, limitedSteps, 0, out pinched);
+        }
+
+        /// <summary>
+        /// Like <see cref="ApplySystem(TeamSide, DefensiveSystem, int, bool, Position?, int, out bool)"/>, with the back-check
+        /// of the opponent's rush (D-085): with <paramref name="backcheckSteps"/> &gt; 0, a defender on the wrong side of the
+        /// puck (x &gt; puck x in the defending team's view) ignores his system target (also a pinch or trap target) and skates
+        /// in his own lane toward his own goal, to the row one past the puck (at most the net-front row), at most
+        /// <paramref name="backcheckSteps"/> steps (the delayed presser at most min(backcheckSteps, limitedSteps)). Roles and
+        /// the D-058 order are unchanged. 0 = off.
+        /// </summary>
+        /// <param name="defending">The moving team.</param>
+        /// <param name="system">Its system.</param>
+        /// <param name="maxSteps">Most steps per skater.</param>
+        /// <param name="pinch">The team's pinch instruction.</param>
+        /// <param name="limited">The delayed presser, or null.</param>
+        /// <param name="limitedSteps">Most steps of <paramref name="limited"/>.</param>
+        /// <param name="backcheckSteps"><c>transitions.backcheckNodesPerBeat</c> during the opponent's rush, else 0.</param>
+        /// <param name="pinched">Whether D1's target was replaced by the puck node.</param>
+        public SystemTargets ApplySystem(
+            TeamSide defending,
+            DefensiveSystem system,
+            int maxSteps,
+            bool pinch,
+            Position? limited,
+            int limitedSteps,
+            int backcheckSteps,
+            out bool pinched)
+        {
             GridPoint puck = TeamFrame.ToTeamView(PuckNode, defending, _rink);
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(defending);
             SystemTargets targets = SystemTargetResolver.Resolve(system, _rink, puck, PuckState, skaters);
             pinched = pinch && IsPinchSpot(puck);
             var ordered = new List<KeyValuePair<Position, GridPoint>>();
+            var steps = new Dictionary<Position, int>();
             foreach (SystemRole role in OccupancyResolver.SystemOrder)
             {
                 Position position = targets.Roles[role];
-                GridPoint target = pinched && role == SystemRole.D1 ? puck : targets.Targets[position];
+                bool delayed = limited.HasValue && limited.Value == position;
+                GridPoint target;
+                int mySteps;
+                if (backcheckSteps > 0 && Backcheck.IsBehindPuck(skaters[position], puck))
+                {
+                    target = Backcheck.Target(skaters[position], puck, _rink);
+                    mySteps = delayed ? Math.Max(0, Math.Min(backcheckSteps, limitedSteps)) : backcheckSteps;
+                    if (role == SystemRole.D1)
+                    {
+                        pinched = false;
+                    }
+                }
+                else
+                {
+                    target = pinched && role == SystemRole.D1 ? puck : targets.Targets[position];
+                    mySteps = delayed ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
+                }
+
                 ordered.Add(new KeyValuePair<Position, GridPoint>(position, target));
+                steps.Add(position, mySteps);
             }
 
-            Move(defending, ordered, maxSteps, limited, limitedSteps);
+            Move(defending, ordered, steps);
             return targets;
         }
 

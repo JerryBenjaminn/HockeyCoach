@@ -238,6 +238,7 @@ namespace HockeyCoach.Sim.Shift
         /// D-041 phase 2 of a play beat or rush action, after the attackers' moves. After a completed pass the presser
         /// (D-074) takes at most <c>pressure.presserReactionNodes</c> steps: the M-7 selector evaluated before this move
         /// with the pass receiver as carrier (system rule in a play, nearest defender in a rush). No presser, no delay.
+        /// In a rush, defenders behind the puck back-check instead of following the system (D-085).
         /// </summary>
         /// <param name="attacking">The team with the puck.</param>
         /// <param name="source">How the presser is picked (M-7, D-072).</param>
@@ -268,6 +269,7 @@ namespace HockeyCoach.Sim.Shift
                 Team(defending).Plan.Instructions.Pinch,
                 delayed,
                 _tuning.Pressure.PresserReactionNodes,
+                rush ? _tuning.Transitions.BackcheckNodesPerBeat : 0,
                 out bool pinched);
             _pinchActive[(int)defending] = pinched;
             if (_moveTrace != null)

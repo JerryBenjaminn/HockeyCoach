@@ -63,6 +63,7 @@ public class TuningStateSectionsLoaderTests
     [InlineData("pressure", "decayPerSecond")]
     [InlineData("time", "stoppageChangeMinSeconds")]
     [InlineData("transitions", "regroupForecheckersAllowed")]
+    [InlineData("transitions", "backcheckNodesPerBeat")]
     public void RequiredKey_IsReported(string section, string key)
     {
         Assert.Contains(section + "." + key + ": missing", Load(r => r[section]!.AsObject().Remove(key)).Errors);
@@ -133,6 +134,41 @@ public class TuningStateSectionsLoaderTests
     public void RegroupForecheckersAllowed_NotAnInteger_IsRejected()
     {
         Assert.Contains(Load(r => r["transitions"]!["regroupForecheckersAllowed"] = 1.5).Errors, e => e.StartsWith("transitions.regroupForecheckersAllowed", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(5)]
+    public void BackcheckNodesPerBeat_OutsideZeroToTwiceMaxNodesPerBeat_IsRejected(int value)
+    {
+        Assert.Contains(
+            "transitions.backcheckNodesPerBeat: must be an integer between 0 and 2 x plays.maxNodesPerBeat (4), was " + value,
+            Load(r => r["transitions"]!["backcheckNodesPerBeat"] = value).Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    [InlineData(4)]
+    public void BackcheckNodesPerBeat_InRange_IsAccepted(int value)
+    {
+        LoadResult<TuningConfig> result = Load(r => r["transitions"]!["backcheckNodesPerBeat"] = value);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(value, result.Value!.Transitions.BackcheckNodesPerBeat);
+    }
+
+    [Fact]
+    public void BackcheckNodesPerBeat_NotAnInteger_IsRejected()
+    {
+        Assert.Contains(Load(r => r["transitions"]!["backcheckNodesPerBeat"] = 1.5).Errors, e => e.StartsWith("transitions.backcheckNodesPerBeat", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BackcheckNodesPerBeat_IsAPlaceholder_WithTheRepositoryValue()
+    {
+        Assert.Equal(2, GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning.Transitions.BackcheckNodesPerBeat);
+        Assert.Contains(RepositoryTuning.Read()["_placeholders"]!.AsArray(), n => n!.GetValue<string>() == "transitions.backcheckNodesPerBeat");
     }
 
     [Fact]
