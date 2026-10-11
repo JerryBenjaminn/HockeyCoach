@@ -1,6 +1,6 @@
 # Handoff
 
-Tilanne 2026-10-11 (päivitetty virstanpylvään 4 hyväksynnän jälkeen). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
+Tilanne 2026-10-11 (päivitetty virstanpylvään 5 ensimmäisen kierroksen jälkeen). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
 
 ## Missä ollaan
 
@@ -17,7 +17,7 @@ Tilanne 2026-10-11 (päivitetty virstanpylvään 4 hyväksynnän jälkeen). Täm
     - M = kiekon ja oman maalin välissä olevat.
   - Uusi mittari: voimasuhdejakauma Wisehockeyn datasta, `targets.json` (D-081).
   - `adaptive` valitsee järjestelmänsä vastustajan siirtymätyylin mukaan julkisesta lokista (A-T2, D-082).
-- 841 testiä menee läpi, ja `validate` hyväksyy datan.
+- 873 testiä menee läpi, ja `validate` hyväksyy datan.
 
 ## Päätulokset (batch 5000 / pari, siemen 1, `reports/d082-batch5000`)
 
@@ -71,14 +71,44 @@ Kysymysten sisältö on tiedostossa `docs/questions.md`.
   - `adaptive`n vastapelattu aika
   - `strengthDifferencePerPlayer`-arvon kalibrointi
 
-## Seuraavat askeleet järjestyksessä (virstanpylväs 5, D-083)
+## Virstanpylväs 5: ensimmäinen kierros (voimasuhteet, D-083–D-085)
 
-1. **Voimasuhdejakauma:**
-   1. Määritelmätesti: symmetrinen M-8, jossa myös kiekon tasalla olevat puolustajat lasketaan, mitattuna 1000 ottelulla.
-   2. Jos ylivoimaisia on yhä yli 15 %, designer analysoi puolustajien paluuliikkeen siirtymissä ja hyökkääjien sijoittumisen suorahyökkäyksessä ja tekee muutosehdotuksen.
-   3. Korjauksen jälkeen taktiikkamatriisi ja K4:n porras ajetaan uudelleen. K4:ää saa säätää yhden kerran, jos taktiikkarajat eivät täyty.
-2. Muut virstanpylvään 5 kalibroinnit tavoitearvoihin. Jerry täyttää `targets.json`-haarukat.
-3. Pitkä kiekko (Q-042) ja `compare`-komento.
+- **E-006 (D-084):** kiekon tasalla olevia ei lasketa kummallekaan puolelle. Batch 1000 ottelua, rb vs rb: 66,4 / 33,6 / 0,0 % (tavoite 50–75 / 20–40 / 0–15), kaikki haarukoissa.
+- **Paluukarvaus (D-085, `transitions.backcheckNodesPerBeat` = 2)** on toteutettu, testejä 873.
+
+  | | E-006 (k = 0) | Paluukarvaus (k = 2) | Tavoite |
+  | --- | --- | --- | --- |
+  | Alivoima / tasavoima / ylivoima | 66,4 / 33,6 / 0,0 % | **89,4 / 10,6 / 0,0 %** | 50–75 / 20–40 / 0–15 |
+  | Kuljetuksen onnistuminen | 63,3 % | 60,3 % | |
+  | `rulebased` vs `random` | 78,7 % | 78,9 % | ≥ 75 % |
+  | Maalit / ottelu (rb vs rb) | 6,41 | 6,48 | 4–7 |
+
+  - Paluukarvaus ylikorjaa (designerin arvio oli "muutama prosenttiyksikkö"). Syy: puolustaja, joka on riviä kiekon takana, päätyy riviä kiekon ohi ja lasketaan M:ään. Kiekollinen liikkuu kaksi riviä, ja sama toistuu.
+  - Oman alueen riistojen jälkeen ylivoimaisia on 0 % sekä ennen että jälkeen.
+  - Raportissa on uusi osio, jossa voimasuhteet on eritelty hallinnan alkupaikan mukaan.
+- **Taktiikkamatriisi paluukarvauksen kanssa** (`reports/tactic-counterplay/backcheck`):
+
+  | Oma siirtymä | forecheck212 | trap122 |
+  | --- | --- | --- |
+  | Suorahyökkäys | 50,0 % | 57,2 % |
+  | Uudelleenryhmittyminen | 34,7 % (32,8–36,5) | 75,9 % |
+
+  - Rajat täyttyvät: karvausta vastaan +15,4 %-yks., trapia vastaan +18,6 %-yks.
+  - Uudelleenryhmittyminen karvausta vastaan jää rajan 35 % alle, mutta luottamusväli sisältää rajan, joten K4:ää ei säädetty (D-082).
+  - K4:n porras laskee voimasuhteen mukaan: 3v3 70 %, 1v1 67 %, 1v2 62 %, 1v3 57 %, 1v5 45 %.
+- **Uudet kysymykset:**
+  - Q-074: paluukarvauksen reunatapaus.
+  - Q-075: bugi, peilattu kuvio ohittaa alueelletuontisyötön (0,0–0,1 % kuljetuksista), ei korjattu.
+
+## Seuraavat askeleet
+
+1. **Jerry päättää paluukarvauksen ylikorjauksesta.** Vaihtoehdot:
+   - `backcheckNodesPerBeat` = 1
+   - kohderivi kiekon tasalle eikä riviä sen ohi
+   - hyväksytään ja palataan siihen ansaittujen ylivoimien kanssa (Q-071)
+2. **Ansaitut ylivoimat (Q-071):** laiturit kiekollisen edelle, ja nopeusero tai nopea siirtymä ratkaisee.
+3. **Muut virstanpylvään 5 kalibroinnit tavoitearvoihin.** Jerry täyttää `targets.json`-haarukat.
+4. Pitkä kiekko (Q-042) ja `compare`-komento.
 
 ## Työtapa
 
