@@ -880,7 +880,7 @@ Kun rush päättyy (O ≥ raja tai toiminnot käytetty), sääntö lakkaa heti, 
 1. Roolit (F1–F3, D1–D2) ja järjestelmän sääntö jaetaan kuten ennen kaikille viidelle. Roolia tarvitaan D-058:n käsittelyjärjestykseen ja M-7:n painostajaan.
 2. Väärällä puolella olevan pelaajan järjestelmäkohde ohitetaan tässä liikkeessä. Ohitus koskee myös `pinch`-D1:n korvattua kohdetta ja trap122:n F1:n siirtymää.
    - Pelaajan uusi kohde on (x_t, y_p) hyökkäävän joukkueen näkökulmasta.
-   - x_t = min(x_k + 1, `opponentGoal.x` − 1), eli rivi kiekon ja puolustajan oman maalin välissä, enintään oman maalin edustan rivi.
+   - x_t = x_k, eli kiekon rivi: paluukarvaaja saa kuljettajan kiinni, mutta ei ohita häntä (D-086; aiemmin min(x_k + 1, `opponentGoal.x` − 1), joka ylikorjasi voimasuhteet 89,4 / 10,6 / 0,0 %:iin). Kiekon tasalla oleva puolustaja ei kuulu M:ään (M-8, E-006).
    - y_p on puolustajan oma kaista, eli kaista ei vaihdu.
 3. Askel on suoraan kohti omaa maalia: (+1, 0) hyökkäävän joukkueen näkökulmasta. Askeleita otetaan enintään k = `transitions.backcheckNodesPerBeat`, kunnes x = x_t.
    - Pelaaja ei ylitä kohdettaan, joten tasalla tai edellä olevaksi ehtinyt jää riville x_t.

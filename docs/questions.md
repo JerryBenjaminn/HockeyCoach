@@ -14,18 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-075 · 2026-10-11 · kirjaaja: programmer
-**Kysymys:** D-036:n kuvionvalinta ja peilaus: verrataanko kiekollista kuvion kirjoitettuun vai pelattavaan (tarvittaessa peilattuun) `puckCarrier`-pelipaikkaan? Nykyinen koodi vertaa kirjoitettuun ja peilaa vasta sen jälkeen. Jos kiekollinen on `LW` ja kuvion kirjoitettu kiekollinen `LW`, mutta kuvio peilataan (`LW` → `RW`), avaussyöttöä ei tehdä. Silloin kuvion tahdit ajaa `RW`, jolla kiekkoa ei ole: esim. `skate` siirtää `RW`:n alueelle, lokiin kirjataan hänen alueelletuontinsa, mutta kiekko jää `LW`:lle.
-**Konteksti:** löytyi D-085:n raporttiosion testistä (`PlaySelector.Select` ja `ShiftRun.SelectPlayStep`; `data-schema.md` Peilaus ja D-036). Batch-raportin osio "Entry strength by possession origin" kertoo, kuinka moni onnistunut kuljetus on tällainen. Siemenen 1 ottelussa 2 / 25 kuljetusta. Tämä on bugi, ja sen korjaus muuttaa kaikkia lokeja. Siksi sitä ei korjattu D-085:n mittauksen keskellä.
-**Ehdotettu oletus:** verrataan pelattavaan (peilattuun) kuvioon. Valinta tehdään peilauksen jälkeen: kiekollinen = peilatun kuvion `puckCarrier` → ei syöttöä, muuten avaussyöttö peilatun kuvion kiekolliselle. Korjaus omana `fix:`-committinaan ja batch ennen/jälkeen, kun Jerry hyväksyy.
-**Vastaus:**
-
-### Q-074 · 2026-10-11 · kirjaaja: programmer
-**Kysymys:** paluukarvauksen (D-085) reunatapaus: väärällä puolella oleva puolustaja, joka on jo riviä x_t lähempänä omaa maaliaan. Esimerkki: kiekko on puolustavan joukkueen maalin takana (hyökkäävän näkökulmasta x_k = 10), joten x_t = `opponentGoal.x` − 1 = 8, ja puolustaja on maalin vieressä x = 9. Speksin askel on aina (+1, 0) kohti omaa maalia, mutta kohde (x_t, y_p) on hänen takanaan. Liikkuuko hän taaksepäin riville x_t, pysyykö paikallaan vai liikkuuko järjestelmän mukaan?
-**Konteksti:** `data-schema.md`, Paluukarvaus suorahyökkäyksessä, Liike kohdat 2–3. Tilanne on harvinainen (rushin kiekollinen maalin takana).
-**Ehdotettu oletus (toteutettu):** pysyy rivillään. Kohde on (max(x_t, x_p), y_p) hyökkäävän näkökulmasta, eli askel ei koskaan vie poispäin omasta maalista. Samalla tavalla toteutettiin kohta, jota speksi ei mainitse: jos `pinch`-D1 paluukarvaa, korvattua kohdetta ei ole, joten hän ei ole sitoutunut (O-10: "`pinch`-D1 korvatun kohteen ajan").
-**Vastaus:**
-
 ### Q-073 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys veljelle:** palaavatko paluukarvauksessa hyökkääjät keskikaistaa ja pakit omia kaistojaan?
 **Konteksti:** paluukarvaus (`data-schema.md`, D-085). Nyt kaikki väärällä puolella kiekkoa olevat palaavat omaa kaistaansa.
@@ -161,6 +149,19 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-075 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** D-036:n kuvionvalinta ja peilaus: verrataanko kiekollista kuvion kirjoitettuun vai pelattavaan (tarvittaessa peilattuun) `puckCarrier`-pelipaikkaan? Nykyinen koodi vertaa kirjoitettuun ja peilaa vasta sen jälkeen. Jos kiekollinen on `LW` ja kuvion kirjoitettu kiekollinen `LW`, mutta kuvio peilataan (`LW` → `RW`), avaussyöttöä ei tehdä. Silloin kuvion tahdit ajaa `RW`, jolla kiekkoa ei ole: esim. `skate` siirtää `RW`:n alueelle, lokiin kirjataan hänen alueelletuontinsa, mutta kiekko jää `LW`:lle.
+**Konteksti:** löytyi D-085:n raporttiosion testistä (`PlaySelector.Select` ja `ShiftRun.SelectPlayStep`; `data-schema.md` Peilaus ja D-036). Batch-raportin osio "Entry strength by possession origin" kertoo, kuinka moni onnistunut kuljetus on tällainen. Siemenen 1 ottelussa 2 / 25 kuljetusta. Tämä on bugi, ja sen korjaus muuttaa kaikkia lokeja. Siksi sitä ei korjattu D-085:n mittauksen keskellä.
+**Ehdotettu oletus:** verrataan pelattavaan (peilattuun) kuvioon. Valinta tehdään peilauksen jälkeen: kiekollinen = peilatun kuvion `puckCarrier` → ei syöttöä, muuten avaussyöttö peilatun kuvion kiekolliselle. Korjaus omana `fix:`-committinaan ja batch ennen/jälkeen, kun Jerry hyväksyy.
+**Vastaus:**
+**Vastaus (Jerry, 2026-10-11):** korjataan ehdotetulla tavalla ja lisätään testi. Kirjattu: D-086.
+### Q-074 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** paluukarvauksen (D-085) reunatapaus: väärällä puolella oleva puolustaja, joka on jo riviä x_t lähempänä omaa maaliaan. Esimerkki: kiekko on puolustavan joukkueen maalin takana (hyökkäävän näkökulmasta x_k = 10), joten x_t = `opponentGoal.x` − 1 = 8, ja puolustaja on maalin vieressä x = 9. Speksin askel on aina (+1, 0) kohti omaa maalia, mutta kohde (x_t, y_p) on hänen takanaan. Liikkuuko hän taaksepäin riville x_t, pysyykö paikallaan vai liikkuuko järjestelmän mukaan?
+**Konteksti:** `data-schema.md`, Paluukarvaus suorahyökkäyksessä, Liike kohdat 2–3. Tilanne on harvinainen (rushin kiekollinen maalin takana).
+**Ehdotettu oletus (toteutettu):** pysyy rivillään. Kohde on (max(x_t, x_p), y_p) hyökkäävän näkökulmasta, eli askel ei koskaan vie poispäin omasta maalista. Samalla tavalla toteutettiin kohta, jota speksi ei mainitse: jos `pinch`-D1 paluukarvaa, korvattua kohdetta ei ole, joten hän ei ole sitoutunut (O-10: "`pinch`-D1 korvatun kohteen ajan").
+**Vastaus:**
+**Vastaus (Jerry, 2026-10-11):** oletus hyväksytty. Kirjattu: D-086.
 
 ### Q-072 · 2026-10-11 · kirjaaja: game-designer (kirjannut koordinaattori)
 **Kysymys:** paluukarvauksen speksin (`data-schema.md`, Paluukarvaus suorahyökkäyksessä, D-084 kohta 2) avoimet kohdat: (1) riittääkö `transitions.backcheckNodesPerBeat` = 2 (vain suunta muuttuu), vai pitäisikö kiekottoman pelaajan olla kiekollista nopeampi (arvio: 3 ylikorjaa, alivoimaisia yli 80 %)? (2) Rakennetaanko paluukarvaus, kun E-006 yksin toi jakauman haarukoihin (66,4 / 33,6 / 0,0 %)? Hyöty olisi realismi, ei jakauma. (3) **Kysymys veljelle:** palaavatko karvaajat omaa kaistaansa vai keskikautta?
