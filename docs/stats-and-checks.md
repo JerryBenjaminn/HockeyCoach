@@ -63,10 +63,10 @@ P = \frac{1}{1 + e^{-\left(a + k\,(H - D) + M\right)}}, \qquad a = \ln\frac{p_0}
 | --- | --- | --- | --- | --- |
 | Aloitus | Aloitus 0,8, Kädet 0,2 | Aloitus 0,8, Kädet 0,2 | 50 % | Kotijoukkueen etu (pieni) |
 | Syöttö | Syöttäjän Syöttö 0,6, vastaanottajan Kädet 0,4 | Lähimmän puolustajan Pelinluku 0,5, Asemapeli 0,5 | 85 % (analyysi) | Etäisyys syöttölinjasta, poikittaislinja vaikeampi, järjestäytyneisyys, paine (analyysissa paineen alaiset syötöt onnistuivat n. 13–15 %-yksikköä heikommin) |
-| Kuljetus alueelle | Nopeus 0,5, Kädet 0,5 | Asemapeli 0,5, Nopeus 0,5 | Täytetään analyyseista | Järjestäytyneisyys, puolustusjärjestelmä |
+| Kuljetus alueelle | Nopeus 0,5, Kädet 0,5 | Asemapeli 0,5, Nopeus 0,5 | Täytetään analyyseista | Järjestäytyneisyys, puolustusjärjestelmä: voimasuhde N vs M alueelle tultaessa (D-078 K4, toteutetaan; kaava ja avain `data-schema.md` M-9) |
 | Kiekko päätyyn | Ei tarkistusta | Ei tarkistusta | – | Johtaa irtokiekkoon, MV:n kiekonkäsittely |
 | Harhautus 1v1 | Kädet 0,5, Ketteryys 0,5 | Asemapeli 0,6, Ketteryys 0,4 | Täytetään | Energia |
-| Avaus omasta päästä | Syöttö 0,5, Pelinluku 0,5 | Karvaajien Nopeus 0,5, Pelinluku 0,5 | Täytetään | Puolustusjärjestelmä (karvaus vs. trap) |
+| Avaus omasta päästä | Syöttö 0,5, Pelinluku 0,5 | Karvaajien Nopeus 0,5, Pelinluku 0,5 | Täytetään | Puolustusjärjestelmä (karvaus vs. trap): karvaajien määrä omalla alueella (D-078 K4, toteutetaan; kaava ja avain `data-schema.md` M-9). Karvaus voi haastaa myös kokoamisen omassa päässä (D-078 K1, `data-schema.md` O-7) |
 | Laukaus | Tarkkuus ja Voima etäisyyden mukaan painotettuna | MV Sijoittuminen 0,6, Refleksit 0,4 | Laukauspaikan xG | Royal Road -syöttö, maski, paine, järjestäytyneisyys |
 | Blokki (yksipuolinen) | – (referenssiarvo) | Asemapeli 1,0 | Täytetään | Laukauksen etäisyys |
 | Rebound (yksipuolinen) | – (referenssiarvo) | MV Reboundikontrolli | Jakauma: pito / kulmaan / keskelle | Laukaisuvoima, MV:n energia |

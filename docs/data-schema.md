@@ -126,7 +126,7 @@ Ylimmän tason osiot:
 | `familiarity` | 3 | `freeUses`, `penaltyPerRepeat`, `maxPenalty`, `intermissionMultiplier`. Ks. O-11 |
 | `form`, `chemistry` | myöhemmin | Vire (±`maxStatDelta`), ketjukemia. Eivät käytössä virstanpylväässä 3 (vaikutus 0) |
 | `plays` | 2 | `maxBeats` (4), `maxNodesPerBeat` |
-| `transitions` | 3 | `rushMaxActions`, `rushShotMinBaseXg`: sisäänrakennettu suorahyökkäys. Ks. O-7 |
+| `transitions` | 3 | `rushMaxActions`, `rushShotMinBaseXg`: sisäänrakennettu suorahyökkäys. `regroupForecheckersAllowed` (D-078 K1): kuinka monta karvaajaa omalla alueella kokoaminen sietää ilman `breakout`-tarkistusta. Ks. O-7 |
 | `chanceTypes` | 2–3 | `turnoverWindowSeconds`. Suorahyökkäyksen raja on `organization.organizedThreshold` (O-12); `rushOrganizationBelow` poistuu |
 | `chanceClasses` | 4 | Paikkaluokkien xG-rajat (Q-004) |
 | `loosePuckSpots` | 2 | Irtokiekon paikkasäännöt (D-044, D-049), ks. Määritelmät, Irtokiekon paikat. Data ja lataajan tuki commitoidaan yhdessä (D-030) |
@@ -173,6 +173,7 @@ Ylimmän tason osiot:
 - `loosePuck`: kolme lopputulosta. Ensin `noWinnerShare`, sitten jäljelle jäävä osuus jaetaan voittoon ja häviöön logistisella tarkistuksella (Q-007). `extraPlayerRadius` ja `modifiers.distancePerNode`: kamppailijat ja lisäpelaaja, ks. Määritelmät M-6.
 - `pass`: `interceptionShare` = epäonnistuneista syötöistä syötönkatkojen osuus, loput irtokiekkoja (D-040, ks. Määritelmät). `modifiers.underPressure` on ehtomuokkaaja: syöttäjä on paineen alla (M-7, D-049). Se ei skaalaudu joukkueen painetilalla.
 - `block`: `maxLaneDistance` (blokkaajaehdokkaan suurin etäisyys laukauslinjasta) ja `modifiers.laneDistance` (taulukko), ks. Määritelmät M-5.
+- `zoneEntryCarry`: `modifiers.strengthDifferencePerPlayer` (voimasuhde N − M) ja `breakout`: `modifiers.perForechecker` (karvaajien määrä), ks. Määritelmät M-9 (D-078 K4).
 - `rebound`: onnistuminen = rebound slottiin. Muuten maalivahti hallitsee kiekon: `controlledHoldShare` pitää (katko), loput kulmaan.
 
 **Validointi.** Lataaja ohittaa `_`-avaimet ja hylkää tiedoston, jos: `kind` puuttuu tai on tuntematon; `twoSided`-tarkistukselta puuttuu jompikumpi puoli (`shot`: `attackerByXgZone` korvaa `attacker`-puolen) tai sillä on `side`; `oneSided`-tarkistukselta puuttuu `side`, `side`-puoli puuttuu tai toinen puoli on kirjoitettu; `noCheck`-tarkistuksella on `p0`, `attacker` tai `defender`; läsnä olevan puolen painojen summa poikkeaa 1:stä yli 1e-6; stat- tai roolinimi on tuntematon; p0 tai osuus on välin (0, 1) ulkopuolella; `checkFormula`:n tai `checks.shot`:n `minProbability` ≥ `maxProbability` tai jompikumpi on välin (0, 1) ulkopuolella; `referenceValue` on välin `stats.min`–`stats.max` ulkopuolella; `baseXg` tai `attackerByXgZone` ei kata täsmälleen `rink.json`:n `xgZones`-listaa; jokin `baseXg`-arvo on välin 0–1 ulkopuolella tai suurempi kuin `checks.shot.maxProbability` (Q-023: perustaso, jota laukauksen yläraja leikkaisi jo ennen statseja, on datavirhe); tai arvosanarajat eivät kata väliä `min`–`max` aukottomasti. Ylimmän tason tuntematon avain hylätään (ks. Sallitut ylimmän tason avaimet).
@@ -646,6 +647,29 @@ Lasketaan toiminnon hetkellä ennen tarkistusta:
 - **M** = puolustavan joukkueen kenttäpelaajat, joiden x ≥ kiekon x (kiekollisen tai syöttäjän solmu), eli kiekon tasalla tai kiekon ja oman maalinsa välissä.
 - Kirjataan muodossa "N vs M", esim. "3 vs 2". Kiekon kuljettaja = kiekollinen (kuljetus) tai vastaanottaja (syöttö). Lopputulos: hallinta säilytetty (tarkistus onnistui) tai menetetty.
 
+### M-9 Puolustusjärjestelmän muokkaajat: voimasuhde ja karvaajat (D-078 K4)
+
+`stats-and-checks.md`:n tarkistustaulukko antaa kuljetukselle alueelle muokkaajan "Puolustusjärjestelmä" ja avaukselle omasta päästä muokkaajan "Puolustusjärjestelmä (karvaus vs. trap)". Ne toteutetaan sijainneista lasketuilla luvuilla, ei järjestelmän id:llä. Järjestelmä vaikuttaa niihin sijoittamalla pelaajat: trap pitää useamman pelaajan kiekon takana (M kasvaa), karvaus vie hyökkääjät syvälle (f kasvaa). Sama luku toimii myös rushissa, siirtymissä ja järjestäytymättömässä tilassa, eikä uusi järjestelmä tarvitse omaa arvoaan.
+
+Molemmat ovat tavallisia logit-muokkaajia hyökkääjän hyväksi (M kaavassa), ja ne lasketaan muiden muokkaajien (järjestäytyneisyys, energia, väärä puoli, tuttuus) päälle. Sijainnit luetaan tarkistuksen hetkellä, eli tahdin siirtojen ja puolustajien järjestelmäliikkeen jälkeen (D-041).
+
+**Kuljetus alueelle (`zoneEntryCarry`):**
+
+- M += `checks.zoneEntryCarry.modifiers.strengthDifferencePerPlayer` × (N − M_def).
+- N ja M_def ovat M-8:n luvut samalta hetkeltä, eli samat, jotka kirjataan Hallittu alueelletuonti -tapahtumaan. Näin raportin "N vs M" ja vaikutus eivät voi olla ristiriidassa.
+- Ei rajausta: N − M_def on välillä −4…+5, ja tarkistuksen 2–98 %:n raja (D-014) riittää.
+- Koskee kaikkia `zoneEntryCarry`-tarkistuksia: kuvion `skate` ja rushin `skate` (O-7). Syöttämällä tehty alueelle tulo käyttää `pass`-tarkistusta, eikä muokkaaja koske sitä (Q-063).
+- Paikkamerkki 0,25: 3 vs 2 → +0,25, 2 vs 2 → 0, 2 vs 3 → −0,25, 2 vs 5 → −0,75 logitia. p0 0,6:lla ja H = D: 66 %, 60 %, 54 %, 41 %.
+
+**Avaus omasta päästä (`breakout`):**
+
+- M += `checks.breakout.modifiers.perForechecker` × f.
+- f = puolustavan joukkueen hyökkääjien (F1–F3) määrä hyökkäävän joukkueen omalla alueella (`defensive`), 0–3. Sama f kuin O-7:n K1-säännössä. M-1:n varasääntö (F1 rooliin, kun alueella ei ole ketään) koskee vain statsien keskiarvoa, ei f:ää.
+- Koskee kaikkia `breakout`-tarkistuksia: kuljetus omalta alueelta (`skate`), syöttö omalta alueelta pois (D-075), rushin kuljetus ja kokoamisen tarkistus (O-7, K1).
+- Paikkamerkki −0,25: f = 1 → −0,25, f = 2 → −0,5, f = 3 → −0,75 logitia. p0 0,7:llä ja H = D: 64 %, 59 %, 52 % (f = 0: 70 %). E-005:n luvuilla karvausta vastaan f on keskimäärin 2,6 ja trapia vastaan 1,6, joten ero on n. 0,25 logitia, eli n. 5 %-yksikköä.
+
+**Kalibrointi (D-078 järjestys, kohta 3).** Kumpikin muokkaaja siirtää koko onnistumisprosenttia, koska tyypillinen N − M_def on negatiivinen ja f positiivinen. Muokkaajat otetaan käyttöön paikkamerkkiarvoilla ja mitataan taktiikkamatriisilla (2000 ottelua per solu). Sen jälkeen designer kalibroi arvot ja tarvittaessa `p0`:n omana muutoksenaan. Raporttiin tarvitaan alueelle tulon onnistuminen voimasuhteittain (kuljetus ja syöttö erikseen, esim. 3v2, 2v2, 2v3, 2v5) ja avauksen onnistuminen f:n mukaan (0–3) sekä vastustajan järjestelmän mukaan. Alueelle tulot johdetaan tapahtumalokista (N vs M on jo Hallittu alueelletuonti -tapahtumassa). Jos avauksen f:ää ei saa lokin sijainneista, programmer lisää sen raporttimerkintään (ei uutta tapahtumatyyppiä).
+
 ### Irtokiekon paikat (D-044) ja epäonnistunut syöttö (D-040)
 
 Paikkasäännöt ovat `tuning.json`:n ylimmän tason osiossa `loosePuckSpots` (D-044, hyväksytty D-049). Arvo on säännön nimi alla olevasta taulukosta. Osio vaatii lataajan tuen (D-030), joten data ja lataajan tuki commitoidaan yhdessä:
@@ -809,7 +833,19 @@ Siirtymäohje (valmentajan päätös, oletus `rush`) koskee kiekon saamista muut
 - **Kiekottomat:** hyökkääjät liikkuvat enintään `plays.maxNodesPerBeat` askelta kohti solmua (min(kiekollisen x, `opponentGoal.x` − 1), kaista), kaistat `LW` y = 1, `C` y = 2, `RW` y = 3. Pakit liikkuvat kohti solmua (max(0, min(kiekollisen x − 1, keskiviiva)), y = 1 `LD` / y = 3 `RD`), eli enintään keskiviivalle. Päätteet D-058:n mukaan.
 - **Ajat:** toiminnon `secondsPerAction`. Kiekonmenetys, laukaus ja `dump` päättävät rushin normaalisti.
 
-**`regroup` (kokoaminen).** Jos kiekko saadaan omalla alueella tai keskialueella (saajan näkökulmasta), kuluu `time.regroupSeconds` (8): joukkue pitää kiekon ilman tarkistuksia, eikä kukaan hyökkääjä liiku. Sen jälkeen kuvio valitaan D-036:n mukaan setupin kanssa, ja puolustajat liikkuvat regroupin ja setupin yhteisen askelmäärän (O-6). Hyökkäysalueella kiekon saanut joukkue menee suoraan D-036:een (pelkkä setup).
+**`regroup` (kokoaminen).** Jos kiekko saadaan omalla alueella tai keskialueella (saajan näkökulmasta), kuluu `time.regroupSeconds` (8): joukkue pitää kiekon, eikä kukaan hyökkääjä liiku. Sen jälkeen kuvio valitaan D-036:n mukaan setupin kanssa, ja puolustajat liikkuvat regroupin ja setupin yhteisen askelmäärän (O-6). Hyökkäysalueella kiekon saanut joukkue menee suoraan D-036:een (pelkkä setup). Keskialueen kokoaminen on tarkistukseton. Omalla alueella karvaus voi haastaa kokoamisen (D-078 K1, alla).
+
+**Karvaus haastaa kokoamisen omassa päässä (D-078 K1).** Kun kiekollisen solmu on regroupin alkaessa joukkueen omalla alueella (`defensive`, sen omasta näkökulmasta), regroup etenee näin. Merkinnät: r = `plays.maxNodesPerBeat` / `time.secondsPerAction.skate`, n_tot = floor((`regroupSeconds` + `setupSeconds`) × r) (O-6:n nykyinen yhteinen askelmäärä), n_reg = floor(`regroupSeconds` × r), n_set = n_tot − n_reg. Nykydatalla n_reg = 5, n_set = 4, n_tot = 9.
+
+1. **Puolustajien liike.** Kun regroup on alkanut (kokonaisuus mahtuu kelloon kuten nykyisessä `regroup`-askeleessa; muuten toimitaan kuten nyt), puolustava joukkue liikkuu n_reg askelta kohti järjestelmänsä kohteita, jotka lasketaan kiekon solmusta ennen liikettä (O-6, D-053, D-058). Hyökkääjät eivät liiku.
+2. **Aika.** `regroupSeconds` kuluu yhtenä kokonaisuutena (O-1, O-14). Kuluminen tapahtuu kummassakin lopputuloksessa, ja sekuntivaikutukset lasketaan kokonaisuutta edeltävästä tilasta kuten ennen.
+3. **Karvaajat.** f = puolustavan joukkueen hyökkääjien (järjestelmäroolit F1–F3) määrä kokoavan joukkueen omalla alueella liikkeen jälkeen, 0–3. f on todellinen määrä: M-1:n varasääntö (F1 rooliin, kun alueella ei ole ketään) ei kasvata f:ää.
+4. **Tarkistus.** Jos f > `transitions.regroupForecheckersAllowed`, kiekollinen ratkaisee yhden `breakout`-tarkistuksen ajan kulumisen jälkeen. Tarkistus käyttää samoja rooleja ja muokkaajia kuin muut `breakout`-tarkistukset: `carrier` = kiekollinen, `forecheckers` = M-1, `modifiers.organization` (O-6, puolustavan joukkueen O kulumisen jälkeen), energia (O-5), väärän puolen miinus ja K4:n jälkeen `modifiers.perForechecker` (M-9). Tuttuusrangaistus on 0, koska kuviota ei ole käynnissä. Osallistujat maksavat `energy.costPerAction`-arvon (O-5). Tarkistuksella ei ole omaa `secondsPerAction`-aikaa, koska se sisältyy `regroupSeconds`-aikaan. Jos f ≤ raja, tarkistusta ei tehdä.
+5. **Epäonnistuminen = riisto.** Lähin karvaaja saa kiekon kiekollisen solmussa samalla polulla kuin epäonnistuneessa `skate`-kuljetuksessa: tapahtuma Kiekonmenetys / riisto (menettäjä = kiekollinen, riistäjä = karvaaja), järjestäytyneisyyden pudotus `dropOnTurnover.defensive` (O-6, kokoavan joukkueen näkökulmasta) ja riistäjän joukkueen siirtymä (O-7, hyökkäysalueella saatu kiekko). Lähin karvaaja = pienin Chebyshev-etäisyys kiekollisen solmuun, sitten Manhattan, sitten pelipaikkajärjestys `C`, `LW`, `RW`. Ehdokkaita ovat vain kohdan 3 f karvaajaa.
+6. **Onnistuminen.** Kokoaminen jatkuu nykyiseen tapaan: kuvio valitaan D-036:n mukaan, ja puolustajat liikkuvat setupissa jäljellä olevat n_set askelta. Näin yhteinen askelmäärä on sama n_tot kuin ilman tarkistusta. Onnistunut tarkistus ei kirjaa uutta tapahtumaa (uusia tapahtumatyyppejä ei lisätä).
+7. **Kun tarkistusta ei tehdä** (f ≤ raja), jatketaan kuten kohdassa 6. Kohdan 1 liike tehdään aina omalla alueella, joten setupissa liikutaan n_set askelta myös silloin.
+
+Raja `transitions.regroupForecheckersAllowed` = 1: 1-2-2-trapin F1 yksin ei estä kokoamista, mutta kaksi tai kolme syvällä karvaavaa (2-1-2) haastaa sen. Kiekkoperuste: 2-1-2-karvaus on rakennettu estämään rauhallinen kokoaminen omassa päässä, ja trapia vastaan kiekkoa kierrätetään ja kootaan (E-005). Testit: f = raja → ei tarkistusta, f = raja + 1 → tarkistus; epäonnistuminen tuottaa riiston ja oikean riistäjän; askelmäärä n_reg + n_set = n_tot; keskialueen kokoaminen ei koskaan tarkista; determinismi (sama siemen → sama loki).
 
 ### O-8 Toinen yritys (D-059, D-065)
 
@@ -1021,8 +1057,9 @@ Jokainen AI toteuttaa `ICoach`-rajapinnan (AI-5). Ketjut ja taktiikka ovat erill
 
 **S-T Sääntöpohjainen taktiikka** (katkolla):
 
-1. **Tila.** Viimeisessä erässä, kun jäljellä ≤ `ai.rulebased.lateGameSeconds`: johto ≥ `protectLeadGoals` → `protect`; johto ≤ −`chaseDeficitGoals` → `chase`. Muuten `normal`. Järjestelmä, siirtymäohje ja järjestelmätilan ohjeet luetaan suoraan `ai.rulebased.modes.<tila>`-objektista.
+1. **Tila.** Viimeisessä erässä, kun jäljellä ≤ `ai.rulebased.lateGameSeconds`: johto ≥ `protectLeadGoals` → `protect`; johto ≤ −`chaseDeficitGoals` → `chase`. Muuten `normal`. Järjestelmä, siirtymäohje ja järjestelmätilan ohjeet luetaan suoraan `ai.rulebased.modes.<tila>`-objektista, paitsi siirtymäohje tilassa `normal` (kohta 2, Siirtymäohje vastustajan järjestelmän mukaan).
 2. **Vastustajan järjestelmä s.** Viimeisin julkinen tapahtuma, jossa vastustaja puolusti ja jolla on järjestelmän id (D-045). Jos sellaista ei ole, s puuttuu ja kaikki bonukset ovat 0.
+   - **Siirtymäohje vastustajan järjestelmän mukaan (D-078 K2).** Tilassa `normal`: jos s tiedetään ja `ai.rulebased.transitionBySystem` sisältää avaimen s, siirtymäohje = `transitionBySystem[s]`. Muuten (s puuttuu tai avainta ei ole) `modes.normal.transition`. Tiloissa `protect` ja `chase` käytetään aina `modes`-arvoa, koska tilanne ohittaa vastapelin. Kiekkoperuste: 2-1-2-karvausta vastaan suorahyökkäys karistaa syvällä olevat karvaajat ennen kuin kokoaminen jää kiinni (O-7, K1), ja 1-2-2-trapia vastaan kiekko kootaan ja kuvio pelataan järjestäytyneesti (E-005).
 3. **Kuviot.** Pisteet kuviolle k: B(k) = `playBonusBySystem[s][k]` (puuttuva = 0) − L(u_k + 1), jossa L on O-11:n tuttuusrangaistus ja u_k oma käyttölaskuri (julkinen: tapahtumien kuvio-id:t). Järjestys: suurempi B, sitten pienempi u_k, sitten latausjärjestys. Koko kirjasto palautetaan. Samoilla bonuksilla tämä on O-4:n kierto, joten tuttuus ohjaa vaihtelua. Bonus on logit-yksikköä, jotta se on verrannollinen tuttuusrangaistukseen.
 4. **Aikalisä:** AI-4, Sääntöpohjainen laukaisu.
 
@@ -1030,7 +1067,8 @@ Jokainen AI toteuttaa `ICoach`-rajapinnan (AI-5). Ketjut ja taktiikka ovat erill
 
 1. **Vastustajan järjestelmäjakauma** S-T:n kohdan 2 yhden havainnon sijaan. n_s = ikkunan tapahtumat, joissa vastustaja puolusti järjestelmällä s; N = Σ n_s; S = ladattujen järjestelmien määrä. P(s) = (n_s + `priorWeight` / S) / (N + `priorWeight`). Kuvion bonus = Σ_s P(s) × `playBonusBySystem[s][k]`; muuten S-T:n kohta 3 ennallaan.
 2. **Oma järjestelmä tilassa `normal`.** Tilat `protect` ja `chase` käyttävät `modes`-arvoja kuten S-T. Vastustajan hallittujen alueelle tulojen osuus ikkunassa: c = vastustajan Hallittu alueelletuonti -tapahtumat (tapa kuljetus tai syöttö), d = vastustajan Kiekko päätyyn -tapahtumat; q = (c + `priorWeight` × 0,5) / (c + d + `priorWeight`). Jos q ≥ `controlledEntryShareForPassive` → `passiveSystem`; jos q ≤ `controlledEntryShareForAggressive` → `aggressiveSystem`; muuten edellinen oma valinta (hystereesi; ensimmäisellä kerralla `modes.normal.system`). Peruste: trap pysäyttää keskialueen kuljetukset ja pakottaa kiekon päätyyn, ja kiekkoa päätyyn pelaavaa vastustajaa vastaan karvaus kannattaa.
-3. Siirtymäohje, järjestelmätilan ohjeet, ketjut ja aikalisä kuten `rulebased`.
+3. **Siirtymäohje tilassa `normal`** (D-078 K2): S-T:n kohdan 2 siirtymäsääntö, mutta s = todennäköisin järjestelmä, eli suurin P(s) kohdan 1 jakaumasta. Tasatilanteessa järjestelmä `id`:n ordinaalijärjestyksessä ensimmäinen (AI-1). Jos ikkunassa ei ole yhtään havaintoa (N = 0), s puuttuu ja käytetään `modes.normal.transition`ia, koska pelkkä priori antaa kaikille saman P(s):n.
+4. Järjestelmätilan ohjeet, ketjut ja aikalisä kuten `rulebased`.
 
 ### AI-3 `ai`-osio (`tuning.json`, uusi ylimmän tason osio)
 
@@ -1047,6 +1085,7 @@ Kaikki avaimet ovat pakollisia, ja tuntematon avain hylätään (tyypitetty osio
 | `ai.rulebased.protectLeadGoals`, `chaseDeficitGoals` | 1, 1 | maaleja | ei kokonaisluku tai < 1 | S-T, A-T |
 | `ai.rulebased.modes` | ks. JSON | tila → `system`, `transition`, `netFrontAfterShot`, `looseChasers`, `pinch` | avaimet eivät ole tasan `normal`, `protect`, `chase`; kentästä puuttuu tai on ylimääräinen; tuntematon järjestelmä; `transition` ei `rush`/`regroup`; `looseChasers` ∉ {1, 2}; totuusarvo ei bool | S-T, A-T |
 | `ai.rulebased.playBonusBySystem` | ks. JSON | järjestelmä → kuvio → logit | tuntematon järjestelmä tai kuvio; arvo ei välillä [−2, 2] | S-T, A-T |
+| `ai.rulebased.transitionBySystem` (D-078 K2) | `forecheck212` → `rush`, `trap122` → `regroup` | vastustajan järjestelmä → siirtymäohje | tuntematon järjestelmä; arvo ei `rush`/`regroup`. Kaikkia järjestelmiä ei tarvitse luetella (puuttuva = `modes.normal.transition`); tyhjä objekti sallittu | S-T (kohta 2), A-T (kohta 3) |
 | `ai.rulebased.timeout.tiredEnergy` | 0,5 | energia 0–1 | ei välillä [0, 1] | AI-4 |
 | `ai.rulebased.timeout.lateGameSeconds` | 120 | pelisekuntia | ≤ 0 tai > `time.periodSeconds` | AI-4 |
 | `ai.rulebased.timeout.minDeficitGoals`, `maxDeficitGoals` | 1, 2 | maaleja | ei kokonaislukuja, min < 1 tai max < min | AI-4 |
@@ -1156,3 +1195,58 @@ Järjestelmä- ja kuviotunnukset tarkistetaan ladattuja `data/systems`- ja `data
   }
 }
 ```
+
+## Taktiikan vastapeli (D-078): toteutusjärjestys, tasapainoarvot ja lataaja
+
+D-078 hyväksyi E-005:n kohdat K1–K4. K3 (taktiikkamatriisi ja `--rotation-transition`) on toteutettu. Loput toteutetaan tässä järjestyksessä, yksi muutos ja mittaus kerrallaan (taktiikkamatriisi, 2000 ottelua per solu):
+
+| Vaihe | Muutos | Speksi | Mittaus ennen seuraavaa vaihetta |
+| --- | --- | --- | --- |
+| 1 | K1: karvaus haastaa kokoamisen omassa päässä | O-7, Karvaus haastaa kokoamisen | Taktiikkamatriisi: rush vs regroup karvausta ja trapia vastaan, regroup karvausta vastaan ≥ 35 % |
+| 2 | K4: voimasuhde- ja karvaajamuokkaajat | M-9 | Taktiikkamatriisi, alueelle tulon onnistuminen voimasuhteittain, avauksen onnistuminen f:n mukaan |
+| 3 | K2: `rulebased` valitsee siirtymän vastustajan järjestelmän mukaan | AI-2 (S-T kohta 2, A-T kohta 3), AI-3 | Täysi batch: `rulebased` vs `randomTactics` ≥ 55 %, `rulebased` vs `random`, maalit per ottelu 4–7 |
+
+D-078:n mittausrajat: karvausta vastaan rush − regroup ≥ +5 %-yks., trapia vastaan regroup − rush ≥ +5 %-yks., regroup karvausta vastaan ≥ 35 %, `rulebased` vs `randomTactics` ≥ 55 %, maalit per ottelu 4–7. E-005:n säätönuppia `transitions.regroupForecheckModifier` ei lisätä: K4:n `perForechecker` vaikuttaa myös kokoamisen tarkistukseen (O-7, kohta 4).
+
+**Tasapainoarvot.** Kaikki avaimet ovat pakollisia siitä commitista alkaen, jossa ne lisätään (puuttuva = virhe). Data ja lataajan tuki commitoidaan yhdessä (D-030), ja polut lisätään `_placeholders`-listaan.
+
+| Vaihe | Polku | Arvo | Hylätään, jos | Käyttäjä |
+| --- | --- | --- | --- | --- |
+| 1 | `transitions.regroupForecheckersAllowed` | 1 | ei kokonaisluku, < 0 tai > 3 | O-7, K1 |
+| 2 | `checks.zoneEntryCarry.modifiers.strengthDifferencePerPlayer` | 0,25 | < 0 tai puuttuu | M-9 |
+| 2 | `checks.breakout.modifiers.perForechecker` | −0,25 | > 0 tai puuttuu | M-9, O-7 (K1) |
+| 3 | `ai.rulebased.transitionBySystem` | ks. JSON | ks. AI-3 | S-T, A-T |
+
+Arvo 0 on sallittu kaikissa, ja se poistaa vaikutuksen (`regroupForecheckersAllowed` 3 = kokoamista ei koskaan tarkisteta). Näin jokaisen vaiheen voi mitata myös ilman muutosta samalla koodilla.
+
+**Data, joka lisätään samassa commitissa lataajan tuen kanssa.**
+
+Vaihe 1 (`transitions`-osioon olemassa olevien rinnalle; `_notes`-tekstin loppuun lisätään: "regroupForecheckersAllowed: in the own zone, a regroup faces one breakout check when more forecheckers (F1-F3) than this are in the zone after the defence's regroup move; failure is a takeaway by the nearest forechecker (D-078 K1)."):
+
+```json
+"transitions": {
+  "regroupForecheckersAllowed": 1
+}
+```
+
+Vaihe 2 (muokkaajat olemassa olevien rinnalle; `checks.breakout._notes`:n virke "Defensive system effect is a later modifier (Q-003)." korvataan: "perForechecker: logit per forechecker (F1-F3) in the attacking team's defensive zone, data-schema.md M-9 (D-078 K4)."; `checks.zoneEntryCarry._notes`:iin lisätään: "strengthDifferencePerPlayer: logit per player of N - M (M-8), data-schema.md M-9 (D-078 K4)."):
+
+```json
+"zoneEntryCarry": {
+  "modifiers": { "strengthDifferencePerPlayer": 0.25 }
+},
+"breakout": {
+  "modifiers": { "perForechecker": -0.25 }
+}
+```
+
+Vaihe 3 (`ai.rulebased`-osioon `playBonusBySystem`-avaimen jälkeen; järjestelmätunnukset ristiintarkistetaan `data/systems`-tiedostoja vasten kuten AI-3:ssa):
+
+```json
+"transitionBySystem": {
+  "forecheck212": "rush",
+  "trap122": "regroup"
+}
+```
+
+`modes.normal.transition` pysyy `rush`-arvossa. E-005 ei ehdota sen vaihtamista, koska se lukitsisi tasapainovirheen tekoälyyn.

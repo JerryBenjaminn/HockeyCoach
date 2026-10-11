@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-063 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys:** koskeeko alueelle tulon voimasuhdemuokkaaja (D-078 K4) myös syöttämällä tehtyä alueelle tuloa?
+**Konteksti:** `stats-and-checks.md`:n tarkistustaulukossa muokkaaja "puolustusjärjestelmä" on vain rivillä "Kuljetus alueelle" (`zoneEntryCarry`). Syöttämällä tehty alueelle tulo (M-8, tapa "syöttö") käyttää `pass`-tarkistusta, joten trap ei rankaisisi siniviivan yli syöttämistä. Oikeassa kiekossa tiivis 1-2-2 vaikeuttaa myös syöttöä siniviivan yli, mutta syöttöä haittaavat jo syöttölinjan puolustaja (M-1) ja paine (M-7). `data-schema.md` M-9.
+**Ehdotettu oletus:** vain `zoneEntryCarry`, kuten taulukossa. Alueelle tulon onnistuminen raportoidaan voimasuhteittain kuljetus ja syöttö erikseen. Jos syöttämällä tulo onnistuu K4:n jälkeen selvästi muita tasaisemmin kaikilla voimasuhteilla, designer tuo Jerrylle ehdotuksen `pass`-tarkistuksen vastaavasta muokkaajasta.
+**Vastaus:** (Jerry täyttää)
+
 ### Q-062 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** onko taktiikkamatriisin (D-078 K3) komentorivimuoto hyväksyttävä? E-005 sanoo "taktiikkamatriisi batch-raporttiin", mutta ei kerro, ajetaanko matriisi aina batchin mukana vai omana tilanaan, eikä mitä vastustaja pelaa matriisissa.
 **Konteksti:** toteutettu näin: `batch --tactic-matrix` ajaa AI-parien sijaan pelkän matriisin ja kirjoittaa `tactic-matrix.md`:n ja `tactic-matrix.csv`:n `--out`-kansioon. Joukkue A = `rotation`, oma järjestelmä `--rotation-system` (oletus forecheck212), rivin siirtymäohje (rush, regroup). Joukkue B = `rotation`, sarakkeen järjestelmä (kaikki ladatut järjestelmät latausjärjestyksessä), siirtymäohje `--rotation-transition` (oletus rush, kuten E-005:ssä). Kokoonpanot ovat aina peilattuja. `--matches` on otteluita per solu, oletus 2000 tässä tilassa. Ilman `--tactic-matrix`-lippua `--rotation-transition` asettaa `rotation`-valmentajan siirtymäohjeen tavallisessa batchissa. Täysi batch-raportti ei sisällä matriisia (4 × 2000 lisäottelua joka ajossa). `match`-komento ei vielä tunne `--rotation-transition`-optiota.
