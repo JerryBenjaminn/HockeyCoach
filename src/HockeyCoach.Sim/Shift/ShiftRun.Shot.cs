@@ -76,6 +76,7 @@ namespace HockeyCoach.Sim.Shift
                     new CheckParticipants().With("nearestDefender", blockerSkater),
                     m,
                     _random);
+                Observe(blockResult, team, new Skater[0], new[] { blockerSkater });
                 PayCost(blockerSkater);
                 through = blockResult.Probability;
                 blocked = !blockResult.Success;
@@ -122,6 +123,7 @@ namespace HockeyCoach.Sim.Shift
             }
 
             bool scored = _random.Chance(goalProbability);
+            Observe(ShotConfig.Id, team, scored, goalProbability, new[] { shooter.Id }, new[] { goalie.Id });
             if (scored)
             {
                 _goals[(int)team]++;
@@ -159,6 +161,7 @@ namespace HockeyCoach.Sim.Shift
                 new CheckParticipants().With(CheckRoles.Goalie, goalie),
                 m,
                 _random);
+            Observe(result.CheckId, team, result.Success, result.Probability, new int[0], new[] { goalie.Id });
             Spend("rebound");
             if (result.Success)
             {

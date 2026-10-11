@@ -25,6 +25,12 @@ namespace HockeyCoach.Sim.Match
         /// <param name="random">The simulation stream, e.g. <see cref="MatchStreams.Simulation"/>; coaches never draw from it.</param>
         public static MatchResult Run(MatchSetup setup, ICoach home, ICoach away, IRandom random)
         {
+            return Run(setup, home, away, random, null);
+        }
+
+        /// <summary>Runs the match and reports every resolved check to <paramref name="observer"/> (reports only; no effect on the match).</summary>
+        public static MatchResult Run(MatchSetup setup, ICoach home, ICoach away, IRandom random, ICheckObserver observer)
+        {
             if (setup == null)
             {
                 throw new ArgumentNullException(nameof(setup));
@@ -40,7 +46,7 @@ namespace HockeyCoach.Sim.Match
                 throw new ArgumentNullException(nameof(random));
             }
 
-            return new Game(setup, new[] { home, away }, random).Play();
+            return new Game(setup, new[] { home, away }, random, observer).Play();
         }
 
         private sealed class Game : IShiftHost
@@ -54,11 +60,13 @@ namespace HockeyCoach.Sim.Match
             private readonly ShiftPlan[] _plans = new ShiftPlan[2];
             private readonly int[] _goals = new int[2];
             private readonly int[] _timeoutsUsed = new int[2];
+            private readonly ICheckObserver _observer;
             private readonly List<PeriodSnapshot> _periods = new List<PeriodSnapshot>();
             private int _period;
 
-            internal Game(MatchSetup setup, ICoach[] coaches, IRandom random)
+            internal Game(MatchSetup setup, ICoach[] coaches, IRandom random, ICheckObserver observer)
             {
+                _observer = observer;
                 _setup = setup;
                 _tuning = setup.Tuning;
                 _coaches = coaches;
@@ -296,7 +304,7 @@ namespace HockeyCoach.Sim.Match
 
             private ShiftResult RunSegment(string spot, double time, LineChoice[] units)
             {
-                var context = new ShiftContext(_state, _log, this, units[(int)TeamSide.Home], units[(int)TeamSide.Away]);
+                var context = new ShiftContext(_state, _log, this, units[(int)TeamSide.Home], units[(int)TeamSide.Away], _observer);
                 var setup = new ShiftSetup(
                     _setup.Rink,
                     _tuning,

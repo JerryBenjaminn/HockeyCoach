@@ -32,6 +32,23 @@ namespace HockeyCoach.Sim.Shift
             return StateDynamics.EnergyModifier(_tuning.Energy.CheckModifierAtZero, MeanEnergy(attackerIds), MeanEnergy(defenderIds));
         }
 
+        /// <summary>Reports a resolved check to the observer (if any), before the participation cost.</summary>
+        private void Observe(string checkId, TeamSide attacking, bool success, double probability, IReadOnlyList<int> attackerIds, IReadOnlyList<int> defenderIds)
+        {
+            if (_observer != null)
+            {
+                _observer.OnCheck(new CheckObservation(_setup.Period, _time, checkId, attacking, success, probability, MeanEnergy(attackerIds), MeanEnergy(defenderIds)));
+            }
+        }
+
+        private void Observe(CheckResult result, TeamSide attacking, IEnumerable<Skater> attackerSide, IEnumerable<Skater> defenderSide)
+        {
+            if (_observer != null)
+            {
+                Observe(result.CheckId, attacking, result.Success, result.Probability, Ids(attackerSide), Ids(defenderSide));
+            }
+        }
+
         private double MeanEnergy(IReadOnlyList<int> ids)
         {
             if (ids == null || ids.Count == 0)

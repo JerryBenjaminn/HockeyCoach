@@ -112,6 +112,7 @@ namespace HockeyCoach.Sim.Shift
                     new CheckParticipants().With("participant", d),
                     m,
                     _random);
+                Observe(result, attacker, new[] { a }, new[] { d });
                 outcome = result.Success ? BattleOutcome.Win : BattleOutcome.Loss;
             }
 

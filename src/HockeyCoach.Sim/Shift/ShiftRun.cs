@@ -24,6 +24,7 @@ namespace HockeyCoach.Sim.Shift
         private readonly EventLog _log;
         private readonly GameState _game;
         private readonly IShiftHost _host;
+        private readonly ICheckObserver _observer;
         private readonly ShiftState _state;
         private readonly bool[,] _droveNet = new bool[2, 5];
         private readonly bool[,] _committed = new bool[2, 5];
@@ -84,6 +85,7 @@ namespace HockeyCoach.Sim.Shift
             _game = context.State;
             _log = context.Log;
             _host = context.Host;
+            _observer = context.Observer;
             _setupSteps = SetupSteps(_tuning.Time.SetupSeconds);
             ApplyStartUnits(context);
             FaceoffSpot spot = FindSpot(setup.FaceoffSpotId);

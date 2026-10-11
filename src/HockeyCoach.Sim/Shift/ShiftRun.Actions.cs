@@ -64,6 +64,7 @@ namespace HockeyCoach.Sim.Shift
                 + StateModifier(check.Modifiers, defending, attackerSide, defenderSide)
                 - PlayFamiliarity();
             CheckResult result = CheckResolver.Resolve(_tuning.CheckFormula, check, participants, m, _random);
+            Observe(result, team, attackerSide, defenderSide);
             PayCost(attackerSide);
             PayCost(defenderSide);
             Spend("skate");
@@ -133,6 +134,7 @@ namespace HockeyCoach.Sim.Shift
                     new CheckParticipants().With("carrier", passer).With("forecheckers", forecheckers),
                     m,
                     _random);
+                Observe(result, team, attackerSide, forecheckers);
                 PayCost(attackerSide);
                 PayCost(forecheckers);
             }
@@ -153,6 +155,7 @@ namespace HockeyCoach.Sim.Shift
                     new CheckParticipants().With("passer", passer).With("receiver", receiver).With("nearestDefender", laneSkater),
                     m,
                     _random);
+                Observe(result, team, attackerSide, defenderSide);
                 PayCost(attackerSide);
                 PayCost(defenderSide);
             }

@@ -49,6 +49,7 @@ namespace HockeyCoach.Sim.Shift
                 new CheckParticipants().With("centre", away),
                 m,
                 _random);
+            Observe(result, TeamSide.Home, new[] { home }, new[] { away });
             PayCost(home, away);
             TeamSide winner = result.Success ? TeamSide.Home : TeamSide.Away;
             GridPoint spot = _state.PuckNode;

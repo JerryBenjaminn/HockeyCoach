@@ -20,7 +20,20 @@ namespace HockeyCoach.Sim.Shift
         /// <param name="homeUnits">Home units at the faceoff.</param>
         /// <param name="awayUnits">Away units at the faceoff.</param>
         public ShiftContext(GameState state, EventLog log, IShiftHost host, LineChoice homeUnits, LineChoice awayUnits)
+            : this(state, log, host, homeUnits, awayUnits, null)
         {
+        }
+
+        /// <summary>Creates the context with a check observer.</summary>
+        /// <param name="state">The match state.</param>
+        /// <param name="log">The match event log.</param>
+        /// <param name="host">On-the-fly change host; null = no on-the-fly changes.</param>
+        /// <param name="homeUnits">Home units at the faceoff.</param>
+        /// <param name="awayUnits">Away units at the faceoff.</param>
+        /// <param name="observer">Receives every resolved check; null = none.</param>
+        public ShiftContext(GameState state, EventLog log, IShiftHost host, LineChoice homeUnits, LineChoice awayUnits, ICheckObserver observer)
+        {
+            Observer = observer;
             State = state ?? throw new ArgumentNullException(nameof(state));
             Log = log ?? throw new ArgumentNullException(nameof(log));
             Host = host;
@@ -36,6 +49,9 @@ namespace HockeyCoach.Sim.Shift
 
         /// <summary>On-the-fly change host, or null.</summary>
         public IShiftHost Host { get; }
+
+        /// <summary>Check observer, or null.</summary>
+        public ICheckObserver Observer { get; }
 
         /// <summary>The units <paramref name="team"/> puts on the ice at the faceoff.</summary>
         public LineChoice StartUnits(TeamSide team)
