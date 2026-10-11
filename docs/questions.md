@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-065 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** pitääkö M-8:n "N vs M" -määritelmää tarkentaa? Kirjaimellisesti toteutettuna se tuottaa lähes aina 5v5-, 3v5- tai 4v5-lukuja, ei Wisehockeyn tyypillisiä 2v2-, 1v3- ja 3v3-lukuja.
+**Konteksti:** koodi (`ShiftRun.Numbers`) noudattaa M-8:aa sanatarkasti: N = hyökkääjän kaikki kenttäpelaajat (myös puolustajat), joiden x ≥ 5, ja kiekollinen aina. M = puolustajan kaikki kenttäpelaajat, joiden x ≥ kiekon x, koko kaukalosta ilman alue- tai etäisyysrajaa. Kiekon x on lähtösolmu (kuljetus) tai syöttäjän solmu (syöttö), eli siniviivan yli tultaessa x = 4–6. Puolustava joukkue on silloin yleensä kokonaan kiekon tasalla tai sen ja oman maalinsa välissä (keskialue on vain 3 riviä), joten M = 5 lähes aina. Syötöllä tehty alueelle tulo tulee käytännössä vain kuviosta `middleDriveWidePass`: C (5,2) syöttää, LW ja RW ovat (7,·), LD ja RD (4,·) → N = 3, M = 5, siksi aina "3 vs 5". K4-matriisissa (`reports/tactic-counterplay/k4`) kuljetuksista 5v5 on 99 821, 3v5 115 212 ja 4v5 28 032, syötöistä 3v5 77 400/77 400. M-9:n muokkaaja `strengthDifferencePerPlayer` käyttää samoja lukuja, joten sen vaikutus on käytännössä vakio-offset eikä erottele tilanteita.
+**Ehdotettu oletus:** koodi pysyy sanatarkkana, kunnes Jerry päättää (Wisehockeyn yhden erän voimasuhteet vertailuun). Ohjelmoijan ehdotus tarkennukseksi: N = hyökkääjän kenttäpelaajat, joiden x ≥ kiekon x (kiekon tasalla tai edellä, kiekollinen aina mukaan); M = puolustajan kenttäpelaajat, joiden x > kiekon x (tiukasti kiekon ja oman maalin välissä). Puolustajat (LD, RD) lasketaan silloin vain, jos ne ovat kiekon tasalla. Vaihtoehto: rajata molemmat hyökkäysalueeseen ja sinisen viivan riviin (x ≥ 6). Kumpikin muutos vaatii M-9:n paikkamerkin 0,25 uudelleenkalibroinnin.
+**Vastaus:** (Jerry täyttää)
+
 ### Q-063 · 2026-10-11 · kirjaaja: game-designer
 **Kysymys:** koskeeko alueelle tulon voimasuhdemuokkaaja (D-078 K4) myös syöttämällä tehtyä alueelle tuloa?
 **Konteksti:** `stats-and-checks.md`:n tarkistustaulukossa muokkaaja "puolustusjärjestelmä" on vain rivillä "Kuljetus alueelle" (`zoneEntryCarry`). Syöttämällä tehty alueelle tulo (M-8, tapa "syöttö") käyttää `pass`-tarkistusta, joten trap ei rankaisisi siniviivan yli syöttämistä. Oikeassa kiekossa tiivis 1-2-2 vaikeuttaa myös syöttöä siniviivan yli, mutta syöttöä haittaavat jo syöttölinjan puolustaja (M-1) ja paine (M-7). `data-schema.md` M-9.
