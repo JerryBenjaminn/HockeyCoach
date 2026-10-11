@@ -43,7 +43,7 @@ public static class BatchRunner
         var all = new List<MatchupStats>();
         foreach (BatchEntry entry in entries)
         {
-            var stats = new MatchupStats(entry.Matchup, data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds);
+            var stats = new MatchupStats(entry.Matchup, data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds, data.Tuning.Ai.Rulebased.TransitionBySystem);
             for (int first = 0; first < pairs; first += chunk)
             {
                 int count = Math.Min(chunk, pairs - first);

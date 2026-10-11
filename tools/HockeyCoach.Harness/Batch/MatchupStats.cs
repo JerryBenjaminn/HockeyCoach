@@ -56,12 +56,20 @@ public sealed class MatchupStats
     private readonly double _periodSeconds;
 
     /// <summary>Creates the accumulator.</summary>
-    public MatchupStats(Matchup matchup, int periods, double periodSeconds)
+    /// <param name="matchup">The AI pair.</param>
+    /// <param name="periods">Periods per match.</param>
+    /// <param name="periodSeconds">Period length.</param>
+    /// <param name="counterTransition">The transition that counters each system (<c>ai.rulebased.transitionBySystem</c>) for the A-T2 section; none = never countered.</param>
+    public MatchupStats(Matchup matchup, int periods, double periodSeconds, IReadOnlyDictionary<string, string>? counterTransition = null)
     {
         Matchup = matchup;
         _periodSeconds = periodSeconds;
         Targets = new TargetCounts(periods, periodSeconds);
+        Adaptive = new AdaptiveChoice(counterTransition ?? new Dictionary<string, string>(), periods, periodSeconds);
     }
+
+    /// <summary>Adaptive system choice measurement (A-T2 item 8), both slots.</summary>
+    public AdaptiveChoice Adaptive { get; }
 
     /// <summary>The AI pair.</summary>
     public Matchup Matchup { get; }
@@ -161,6 +169,7 @@ public sealed class MatchupStats
         AddPlayXg(events, SlotOf);
         AddEntries(events, SlotOf);
         AddBreakouts(batchGame, SlotOfSide);
+        Adaptive.Add(batchGame);
     }
 
     private void AddEntries(IReadOnlyList<SimEvent> events, Func<int, int> slotOf)

@@ -54,6 +54,7 @@ public static class BatchReport
         WriteSkillVsLuck(md, stats, luck);
         WriteMatrix(md, stats, luck);
         WriteAblation(md, stats, luck);
+        AdaptiveChoice.Write(md, stats);
         WriteTargets(md, data, stats);
         foreach ((string a, string b) in DetailMatchups)
         {
@@ -345,7 +346,8 @@ public static class BatchReport
                 ("checks", s.Checks), ("energyAtChecks", s.EnergyAtChecks), ("participantEnergy", s.ParticipantEnergy), ("iceTime", s.IceTime), ("shifts", s.Shifts),
                 ("playSystem", s.PlaySystem), ("transitions", s.Transitions), ("transitionSeconds", s.TransitionSeconds), ("pressureByZone", s.PressureByZone),
                 ("pressureBySystem", s.PressureBySystem), ("chanceTypes", s.ChanceTypes), ("chanceClasses", s.ChanceClasses), ("playXg", s.PlayXg),
-                ("entries", s.Entries), ("breakouts", s.Breakouts),
+                ("entries", s.Entries), ("breakouts", s.Breakouts), ("adaptiveSwitches", s.Adaptive.Switches), ("adaptiveSystemSeconds", s.Adaptive.SystemSeconds),
+                ("adaptiveCountered", s.Adaptive.Countered), ("transitionClassification", s.Adaptive.Classification),
             })
             {
                 foreach (string key in tally.N.Keys)
