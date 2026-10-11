@@ -11,8 +11,8 @@ namespace HockeyCoach.Sim.Checks
         /// entry (the same ones logged in the controlled zone entry event). Not bounded; the check clamp applies.
         /// </summary>
         /// <param name="perPlayer"><c>checks.zoneEntryCarry.modifiers.strengthDifferencePerPlayer</c>.</param>
-        /// <param name="attackers">N: attacking skaters at or past the centre line.</param>
-        /// <param name="defenders">M: defending skaters at or beyond the puck.</param>
+        /// <param name="attackers">N: the carrier plus attacking skaters level with or ahead of the puck (M-8).</param>
+        /// <param name="defenders">M: defending skaters between the puck and their own goal (M-8).</param>
         public static double StrengthDifference(double perPlayer, int attackers, int defenders)
         {
             return perPlayer * (attackers - defenders);

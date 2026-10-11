@@ -42,7 +42,7 @@ namespace HockeyCoach.Sim.Shift
                 check = _tuning.GetCheck("zoneEntryCarry");
                 defenderSide = new[] { defenderSkater };
                 participants.With("nearestDefender", defenderSkater);
-                numbers = Numbers(team, from);
+                numbers = Numbers(team, carrier, from);
                 m = StrengthDifferenceModifier(check, numbers);
             }
             else if (breakout)
@@ -116,7 +116,7 @@ namespace HockeyCoach.Sim.Shift
             RinkZone passerZone = _rink.ZoneAtX(passerNode.X);
             RinkZone receiverZone = _rink.ZoneAtX(receiverNode.X);
             bool entry = passerZone != RinkZone.Offensive && receiverZone == RinkZone.Offensive;
-            EntryNumbers numbers = entry ? Numbers(team, passerNode) : default;
+            EntryNumbers numbers = entry ? Numbers(team, from, passerNode) : default;
 
             Skater passer = _state.SkaterAt(team, from);
             Skater receiver = _state.SkaterAt(team, to);

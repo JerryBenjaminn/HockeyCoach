@@ -201,7 +201,8 @@ public class DefensiveSystemModifierTests
             }
         }
 
-        Assert.True(seen[0] > 0 && seen[1] > 0 && seen[2] > 0, "breakouts by f: " + string.Join(" / ", seen));
+        // f = 0 and at least two different f > 0; which positive counts occur depends on the trajectory.
+        Assert.True(seen[0] > 0 && seen.Skip(1).Count(n => n > 0) >= 2, "breakouts by f: " + string.Join(" / ", seen));
     }
 
     [Fact]

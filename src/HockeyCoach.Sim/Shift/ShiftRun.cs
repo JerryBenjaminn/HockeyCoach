@@ -370,26 +370,10 @@ namespace HockeyCoach.Sim.Shift
             return false;
         }
 
-        /// <summary>M-8: attackers at or past the centre line vs defenders at or beyond the puck's x (attacker's view).</summary>
-        private EntryNumbers Numbers(TeamSide team, GridPoint puck)
+        /// <summary>M-8 (D-080): the entry strength "N vs M" in the attacking team's view.</summary>
+        private EntryNumbers Numbers(TeamSide team, Position carrier, GridPoint puck)
         {
-            int attackers = 0;
-            int defenders = 0;
-            Position carrier = _state.CarrierPosition.Value;
-            foreach (Position position in PositionOrder.All)
-            {
-                if (position == carrier || TeamView(team, team, position).X >= _rink.CentreLineX)
-                {
-                    attackers++;
-                }
-
-                if (TeamView(team, TeamSides.Opponent(team), position).X >= puck.X)
-                {
-                    defenders++;
-                }
-            }
-
-            return new EntryNumbers(attackers, defenders);
+            return EntryStrength.Count(puck, carrier, NodesInView(team, team), NodesInView(TeamSides.Opponent(team), team));
         }
 
         /// <summary>

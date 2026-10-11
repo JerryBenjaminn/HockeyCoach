@@ -97,7 +97,7 @@ public static class Counterplay
     {
         md.AppendLine("### Zone entries by strength (M-8, M-9)");
         md.AppendLine();
-        md.AppendLine("Controlled entries of both teams: success = possession kept; cell = success (attempts). N v M = attackers at or past the centre line vs defenders at or beyond the puck. Columns: defending system.");
+        md.AppendLine("Controlled entries of both teams: success = possession kept; cell = success (attempts). N v M = carrier plus attackers level with or ahead of the puck vs defenders between the puck and their goal (M-8, D-080). Columns: defending system.");
         md.AppendLine();
         WriteTable(md, "Entry", OrderEntryRows(Group(s.Entries, null, null).Keys), ColumnsBySystem(s.Entries));
 
