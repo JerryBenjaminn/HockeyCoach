@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using HockeyCoach.Sim.Checks;
+using HockeyCoach.Sim.Config;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Model;
 using HockeyCoach.Sim.Tactics;
@@ -228,17 +230,78 @@ namespace HockeyCoach.Sim.Shift
             return c < 0;
         }
 
-        /// <summary>O-7 regroup: regroupSeconds without checks or attacker movement, then a play with a longer defence setup.</summary>
+        /// <summary>
+        /// O-7 regroup: regroupSeconds without attacker movement, then a play with a longer defence setup. In the own zone the
+        /// defence moves its regroup steps first and enough forecheckers challenge the regroup with a breakout check
+        /// (D-078 K1); elsewhere the regroup has no check.
+        /// </summary>
         private void RegroupStep()
         {
-            if (!Begin(_tuning.Time.RegroupSeconds))
+            double regroupSeconds = _tuning.Time.RegroupSeconds;
+            if (!Begin(regroupSeconds))
             {
                 return;
             }
 
             _presserDelayPending = false;
-            Spend(_tuning.Time.RegroupSeconds);
-            SelectNext(_tuning.Time.RegroupSeconds + _tuning.Time.SetupSeconds);
+            TeamSide team = _attacker;
+            Position carrier = _state.CarrierPosition.Value;
+            if (_rink.ZoneAtX(TeamView(team, team, carrier).X) != RinkZone.Defensive)
+            {
+                Spend(regroupSeconds);
+                SelectNext(regroupSeconds + _tuning.Time.SetupSeconds);
+                return;
+            }
+
+            int totalSteps = SetupSteps(regroupSeconds + _tuning.Time.SetupSeconds);
+            int regroupSteps = SetupSteps(regroupSeconds);
+            ApplyDefence(TeamSides.Opponent(team), regroupSteps, DefenceMoveKind.Regroup);
+            Spend(regroupSeconds);
+            IReadOnlyList<Position> forecheckers = ForecheckersInZone(team, out IReadOnlyDictionary<SystemRole, Position> unused);
+            if (RegroupChallenge.IsChallenged(forecheckers.Count, _tuning.Transitions.RegroupForecheckersAllowed)
+                && !RegroupBreakout(team, carrier, forecheckers))
+            {
+                return;
+            }
+
+            _setupSteps = RegroupChallenge.SetupStepsAfterRegroup(totalSteps, regroupSteps, Unbounded);
+            _mode = Mode.SelectPlay;
+        }
+
+        /// <summary>
+        /// O-7 point 4-5 (D-078 K1): the carrier's breakout check against the forecheckers (M-1), with the usual breakout
+        /// modifiers and no familiarity penalty or action time. Failure: the nearest forechecker takes the puck as in a
+        /// failed skate. Returns true when the regroup goes on.
+        /// </summary>
+        private bool RegroupBreakout(TeamSide team, Position carrier, IReadOnlyList<Position> forecheckers)
+        {
+            TeamSide defending = TeamSides.Opponent(team);
+            CheckDefinition check = _tuning.GetCheck("breakout");
+            Skater carrierSkater = _state.SkaterAt(team, carrier);
+            Skater[] attackerSide = { carrierSkater };
+            Skater[] defenderSide = Forecheckers(team);
+            double m = OffSide(attackerSide, team, defenderSide, defending)
+                + StateModifier(check.Modifiers, defending, attackerSide, defenderSide);
+            CheckResult result = CheckResolver.Resolve(
+                _tuning.CheckFormula,
+                check,
+                new CheckParticipants().With("carrier", carrierSkater).With("forecheckers", defenderSide),
+                m,
+                _random);
+            Observe(result, team, attackerSide, defenderSide);
+            PayCost(attackerSide);
+            PayCost(defenderSide);
+            ClearActionHistory();
+            _lastAction[(int)team] = LastPuckAction.Other;
+            if (result.Success)
+            {
+                return true;
+            }
+
+            Position taker = RegroupChallenge.NearestForechecker(forecheckers, NodesInView(defending, team), TeamView(team, team, carrier));
+            _state.GivePuckTo(defending, taker);
+            Takeaway(team, carrier, defending, taker, GainKind.Takeaway);
+            return false;
         }
     }
 }

@@ -12,6 +12,9 @@ namespace HockeyCoach.Sim.Shift
 
         /// <summary>Any other system move: setup, regroup setup, system step, loose-puck battle.</summary>
         Other,
+
+        /// <summary>The own-zone regroup move before the regroup challenge (O-7, D-078 K1).</summary>
+        Regroup,
     }
 
     /// <summary>

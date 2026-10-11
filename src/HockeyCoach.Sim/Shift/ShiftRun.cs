@@ -225,8 +225,13 @@ namespace HockeyCoach.Sim.Shift
         /// </summary>
         private void ApplyDefence(TeamSide defending, int maxSteps)
         {
+            ApplyDefence(defending, maxSteps, DefenceMoveKind.Other);
+        }
+
+        private void ApplyDefence(TeamSide defending, int maxSteps, DefenceMoveKind kind)
+        {
             _presserDelayPending = false;
-            MoveDefence(DefenceMoveKind.Other, defending, maxSteps, false, null);
+            MoveDefence(kind, defending, maxSteps, false, null);
         }
 
         /// <summary>
@@ -394,16 +399,11 @@ namespace HockeyCoach.Sim.Shift
         private Skater[] Forecheckers(TeamSide attacking)
         {
             TeamSide defending = TeamSides.Opponent(attacking);
-            GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, defending, _rink);
-            IReadOnlyDictionary<SystemRole, Position> roles = RoleAssigner.Assign(_state.NodesInTeamView(defending), puck, _rink);
+            IReadOnlyList<Position> inZone = ForecheckersInZone(attacking, out IReadOnlyDictionary<SystemRole, Position> roles);
             var forecheckers = new List<Skater>();
-            foreach (SystemRole role in new[] { SystemRole.F1, SystemRole.F2, SystemRole.F3 })
+            foreach (Position position in inZone)
             {
-                Position position = roles[role];
-                if (_rink.ZoneAtX(TeamView(attacking, defending, position).X) == RinkZone.Defensive)
-                {
-                    forecheckers.Add(_state.SkaterAt(defending, position));
-                }
+                forecheckers.Add(_state.SkaterAt(defending, position));
             }
 
             if (forecheckers.Count == 0)
@@ -412,6 +412,18 @@ namespace HockeyCoach.Sim.Shift
             }
 
             return forecheckers.ToArray();
+        }
+
+        /// <summary>
+        /// The defending team's forwards in system roles F1-F3 (role order) who are in the attacking team's defensive zone,
+        /// without the M-1 fallback: the f of O-7 (D-078 K1) and M-9.
+        /// </summary>
+        private IReadOnlyList<Position> ForecheckersInZone(TeamSide attacking, out IReadOnlyDictionary<SystemRole, Position> roles)
+        {
+            TeamSide defending = TeamSides.Opponent(attacking);
+            GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, defending, _rink);
+            roles = RoleAssigner.Assign(_state.NodesInTeamView(defending), puck, _rink);
+            return RegroupChallenge.ForecheckersInZone(roles, NodesInView(defending, attacking), _rink);
         }
 
         /// <summary>Off-side modifier (D-024, once per side, Q-020).</summary>
