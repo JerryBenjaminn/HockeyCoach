@@ -85,6 +85,7 @@ Tilat: **lukittu** · **ehdotettu** · **hyväksytty** · **hylätty**
 | D-075 | 2026-10-11 | Syöttöjen painetulkinta (E-004 hylätty) | Wisehockeyn paineluvut ovat osuuksia (Jerry varmisti, Q-056): syötöistä 69 % / 68 % ja laukauksista 68 % / 76 % annetaan paineen alla. Syöttöjen paineosuuden tavoite 68–69 % (nykyinen 67,6 % on tavoitteessa), kokonaisonnistumisen tavoite 81–85 % säilyy. Paineen miinus (`checks.pass.modifiers.underPressure` −0,9) kalibroidaan niin, että kokonaisonnistuminen on 81–85 % nykyisellä paineosuudella (paineen alla n. 80 %, ilman painetta n. 88–90 %); yksi muutos, 200 ottelua. Riiston xG-osuus siirretään virstanpylvääseen 5 (raportoidaan silti). Designer lisää kuvion, jossa syöttö kulkee omalta alueelta keskialueelle, jotta `checks.breakout` on käytössä. Q-055:n oletukset hyväksytty, kunhan ne eivät muuta lukittuja päätöksiä | lukittu |
 | D-076 | 2026-10-11 | Kalibroinnin vaihe 3 | Hyväksytty (syötöt 81,8 %, paineen alla 81,6 %, uusi kuvio `breakoutWallToCenter`). Syöttöjen jatkokalibrointi (paine-ero paineen alla vs ilman) siirretään virstanpylvääseen 5. Q-055: D-074:n "seuraava toiminto" tarkoittaa kiekkotoimintoa (D-031) | lukittu |
 | D-077 | 2026-10-11 | Virstanpylväs 4 | (1) Valmentaja saa oman satunnaislukuvirran, joka johdetaan deterministisesti ottelun siemenestä; CLAUDE.md:n sääntö 1 tarkennettu. (2) `random` arpoo kaiken (ketjut, kuviot, järjestelmä, siirtymäohje, järjestelmätilan ohjeet, lennosta vaihto); diagnostiikkavariantit `randomTactics` ja `randomLines` hyväksytty. (3) Valmentaja näkee vain julkisen tiedon: jäällä olevat yksiköt, kello, oma jääaika, julkinen tapahtumaloki. (4) Ensisijainen mittaus `rulebased` vs `random`, `adaptive` raportoidaan rinnalla. (5) Päätökset samanaikaisia, viimeinen vaihto myöhemmin tarvittaessa. (6) Aikalisä nyt, uusi tapahtumatyyppi (stats-and-checks päivitetty ensin); maalivahdin vetäminen erikoistilanteiden kanssa (D-062 muutettu). (7) Pitkä kiekko (`clear` ja vaihtosäännön poikkeus) ensimmäisen batch-raportin jälkeen. (8) Taito vai tuuri: ei säätöä etukäteen; ensin batch ja raportti. Jos `rulebased` vs `random` jää alle 75 %:n, Jerrylle tuodaan hajonnan jako paikkojen luontiin ja viimeistelytuuriin | lukittu |
+| D-078 | 2026-10-11 | Taktiikan vastapeli (E-005) | K1, K2, K3 ja K4 hyväksytty. K4 toteutetaan nyt: alueelle tulon voimasuhdemuokkaaja on jo dokumentoitu ja hyväksytty `stats-and-checks.md`:ssä, joten kyse on hyväksytyn speksin toteuttamisesta; alueelle tulo, joka onnistuu 68–70 % voimasuhteista riippumatta, rikkoo siirtymäsuunnittelun (järjestäytyneisyys, N vs M). Järjestys, yksi muutos ja mittaus kerrallaan (taktiikkamatriisi, 2000 ottelua per solu): (1) K3 taktiikkamatriisi ja `--rotation-transition`; (2) K1, mittaus; (3) K4 `stats-and-checks.md`:n mukaiset muokkaajat, mittaus ja alueelle tulon onnistuminen voimasuhteittain (esim. 3v2, 2v2, 2v3, 2v5); (4) K2 ja uusi batch. Mittausrajat: karvausta vastaan rush − regroup ≥ +5 %-yks., trapia vastaan regroup − rush ≥ +5 %-yks., regroup karvausta vastaan ≥ 35 %, `rulebased` vs `randomTactics` ≥ 55 %, maalit per ottelu 4–7 | lukittu |
 
 ## Muutosehdotukset
 
@@ -97,6 +98,89 @@ Kirjaa uusin ylimmäksi.
 **Vaikutus:** mihin dokumentteihin, dataan ja koodiin muutos koskee.
 **Päätös:** (Jerry täyttää) hyväksytty / hylätty + lyhyt syy.
 -->
+
+### E-005 · 2026-10-11 · hyväksytty
+**Ehdotus:** taktiikan vastapeli (handoff, seuraava askel 1). Muutoksia on neljä:
+
+- **K1 (koodi + yksi tasapainoarvo).** Karvaus haastaa kokoamisen omassa päässä. Täydennys O-7:ään:
+  1. Kun joukkue kokoaa (`regroup`) ja kiekko on sen omalla alueella, puolustajat liikkuvat ensin kokoamisen askelmäärän kuten nyt.
+  2. Sen jälkeen lasketaan karvaajat f (M-1 `forecheckers`).
+  3. Jos f > `transitions.regroupForecheckersAllowed` (ehdotus 1), kiekollinen ratkaisee yhden olemassa olevan `breakout`-tarkistuksen nykyisin roolein ja muokkaajin.
+  4. Epäonnistuminen on riisto: lähin karvaaja saa kiekon kiekollisen solmussa (nykyinen Takeaway-polku, O-6:n pudotus `defensive`).
+  5. Onnistuminen jatkaa kokoamista nykyiseen tapaan (D-036 ja setup).
+  6. `regroupSeconds` kuluu kummassakin tapauksessa.
+  7. Keskialueen kokoaminen pysyy ennallaan.
+- **K2 (tekoäly, koodi + data).** Uusi avain `ai.rulebased.transitionBySystem` (esim. `forecheck212` → `rush`, `trap122` → `regroup`). Sitä käytetään tilassa `normal`, kun vastustajan järjestelmä tiedetään (S-T:n kohta 2). `adaptive` käyttää todennäköisintä järjestelmää. Muuten käytetään `modes.normal.transition`ia.
+- **K3 (harness).**
+  - Taktiikkamatriisi batch-raporttiin: siirtymäohje × vastustajan järjestelmä kiinteillä valmentajilla, peilatuilla kokoonpanoilla ja 2000 ottelulla per solu. Lisäksi optio `--rotation-transition`.
+  - "Rush vs regroup" -taulukko jaetaan vastustajan järjestelmän mukaan, ja siihen lisätään sarake "xG-ero / 60".
+- **K4 (varalla, ei nyt).** `zoneEntryCarry`-muokkaaja voimasuhteesta N − M (M-8). Se on stats-and-checks.md:n dokumentoitu mutta toteuttamaton muokkaaja "puolustusjärjestelmä". Otetaan käyttöön vain, jos trapia vastaan ero jää K1:n jälkeen tavoitteen alle.
+
+**Perustelu:** kontrolloitu 2 × 2 -koe, 2000 ottelua per solu.
+
+- Asetelma:
+  - Joukkue A: kiinteä siirtymäohje, oma järjestelmä forecheck212.
+  - Joukkue B: kiinteä järjestelmä, `rush`.
+  - Molemmilla RotationCoachin kierto, peilatut kokoonpanot ja siemenet 1…1000.
+  - Väliaikainen analyysityökalu, ei koodi- eikä datamuutoksia.
+- Batch-raportin luku 2,21 vs 1,12 xG / 60 on pelkkä luotu xG, eikä sitä ole eritelty järjestelmittäin. Nettona kokoaminen on dominoiva. Solut ovat A:n pisteet sekä xGF / xGA / ero per 60 min:
+
+| A:n siirtymäohje | B pelaa forecheck212 | B pelaa trap122 |
+| --- | --- | --- |
+| rush | 50,0 % · 2,91 / 2,91 / 0,00 | 48,0 % · 2,71 / 2,81 / −0,10 |
+| regroup | 61,0 % · 1,83 / 1,36 / +0,47 | 68,3 % · 2,03 / 1,19 / +0,84 |
+
+- Kun B kokoaa, tulos on sama. Suorahyökkäys saa forecheck212:ta vastaan 39,1 % ja trap122:ta vastaan 47,2 %. Kokoaminen saa trap122:ta vastaan 60,6 %.
+- **Trapia vastaan tavoite täyttyy jo:** kokoaminen saa 68 % ja suorahyökkäys 48 %.
+  - Trap pysäyttää suorahyökkäyksen hieman paremmin kuin karvaus.
+  - Kuviot tuottavat trapia vastaan 17 % enemmän: 1,69 vs 1,45 xG per ottelu.
+  - xG per hallinta (riisto tai irtokiekko omalla alueella tai keskialueella):
+
+| | forecheck212 | trap122 |
+| --- | --- | --- |
+| rush | 0,0162 | 0,0156 |
+| regroup | 0,0126 | 0,0151 |
+
+- **Karvausta vastaan järjestys on väärin päin.** Syyt:
+  1. Kokoaminen on omassa päässä 8 sekuntia ilman tarkistuksia, vaikka forecheck212:n karvaajia on kokoamisen aikana keskimäärin 2,88 ja 95 %:ssa tilanteista 3. trap122:n karvaajia on 1,18, ja 83 %:ssa tilanteista enintään 1.
+  2. Suorahyökkäys on harhautusvoittoinen: 114 harhautusta per ottelu, joista 51 % onnistuu. Kokoamisen kuviot syöttävät: 179 syöttöä, joista 78–82 % onnistuu.
+  3. Kiekonmenetyksiä on suorahyökkäyksessä 104 per ottelu ja kokoamisessa 62. B:n Rush- ja Turnover-xG putoaa 1,62:sta 0,50:een.
+- **Trap ei nyt rankaise suoraa sisääntuloa mekaanisesti.** Kuljetus alueelle onnistuu 68–70 %:sti kaikilla voimasuhteilla. Avaus onnistuu 72,0 % karvausta vastaan (2,6 karvaajaa) ja 72,1 % trapia vastaan (1,6 karvaajaa).
+- **K1:n arvioitu vaikutus** (laskettu kokeen luvuista, ei mitattu):
+  - Karvausta vastaan omassa päässä tapahtuvia kokoamisia on n. 49 per ottelu, ja niistä n. 38–40 % epäonnistuu.
+  - Kokoaminen karvausta vastaan: n. 44–47 % (xG-ero n. −0,2…−0,3). Suorahyökkäys karvausta vastaan pysyy 50 %:ssa.
+  - Kokoaminen trapia vastaan: n. 65–67 %.
+  - K2 tarvitaan, jotta `rulebased` hyödyntää eroa. Nyt se pelaa normaalitilassa aina suorahyökkäystä, mikä selittää tuloksen `rulebased` vs `randomTactics` 45,4 %.
+- Oikea kiekko: 2-1-2-karvaus on rakennettu estämään rauhallinen kokoaminen omassa päässä (vision.md: "Karvausjoukkue: nopeat avaukset"). Trapia vastaan kiekkoa kierrätetään ja kootaan keskialueella.
+
+**Mittaus ja ehdotetut haarukat** (Jerry päättää, `targets.json`):
+
+| Mittari | Nyt | Ehdotettu tavoite |
+| --- | --- | --- |
+| Karvausta vastaan: pisteet(rush) − pisteet(regroup) | −11,0 %-yks. | ≥ +5 %-yks. |
+| Trapia vastaan: pisteet(regroup) − pisteet(rush) | +20,3 %-yks. | ≥ +5 %-yks. |
+| Suojaraja: regroup vs forecheck212 | 61,0 % | ≥ 35 % |
+| `rulebased` vs `randomTactics` (K1 + K2) | 45,4 % | ≥ 55 % |
+| `rulebased` vs `random` | 64,9 % | nousee kohti 75 %:a |
+| Maalit per ottelu | 5,84 | 4,0–7,0 |
+
+**Säätönuppi:** jos q ≈ 0,4 ei riitä, `breakout`-tarkistukseen lisätään muokkaaja `transitions.regroupForecheckModifier` (logit per karvaaja yli rajan). Sitä ei lisätä ennen mittausta.
+
+**Ei ehdoteta:** `modes.normal.transition` = `regroup` -datamuutosta. Se lukitsisi nykyisen tasapainovirheen tekoälyyn.
+
+**Vaikutus:**
+
+- Dokumentit:
+  - `data-schema.md`: O-7, O-15/O-16 (uusi avain), AI-2 S-T ja A-T, AI-3.
+  - `stats-and-checks.md`: avauksen muokkaaja.
+- Data: `tuning.json`, eli `transitions.regroupForecheckersAllowed` ja `ai.rulebased.transitionBySystem`.
+- Koodi:
+  - Sim: `RegroupStep`.
+  - AI: `RuleTactics` ja `AdaptiveTactics`.
+  - Harness: taktiikkamatriisi ja `--rotation-transition`.
+- Järjestys: K1 + K3, savu ja matriisi; sitten K2 ja täysi batch.
+
+**Päätös:** hyväksytty muutoksella (Jerry, 2026-10-11): K1, K2 ja K3 hyväksytty, K4 otetaan mukaan nyt eikä varalle. Mittausrajat hyväksytty. Kirjattu: D-078.
 
 ### E-004 · 2026-10-11 · hylätty (Jerry 2026-10-11, D-075)
 **Ehdotus:** syöttöjen paineosuus (`passesUnderPressureShare`) sidotaan samaan Wisehockeyn määritelmään kuin laukausten (Q-049, D-074:n aikaraja), eikä syöttöjen kokonaisonnistumista (81–85 %) hiota tasapainoarvoilla ennen sitä. Tavoitehaarukaksi `passesUnderPressureShare` ehdotetaan aritmeettisesti johdettua n. 25–40 %:a, kunnes Wisehockeyn luku on tiedossa. Kun määritelmä on päätetty, designer tarkentaa M-7:n syötöille (vaihtoehdot alla) ja programmer toteuttaa.
