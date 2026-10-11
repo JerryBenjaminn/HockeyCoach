@@ -1066,9 +1066,90 @@ Jokainen AI toteuttaa `ICoach`-rajapinnan (AI-5). Ketjut ja taktiikka ovat erill
 **A-T Sopeutuva taktiikka.** Kuten S-T kahdella erolla. Ikkuna = julkiset tapahtumat, joiden ottelusekunti on > nykyhetki − `ai.adaptive.windowSeconds`.
 
 1. **Vastustajan järjestelmäjakauma** S-T:n kohdan 2 yhden havainnon sijaan. n_s = ikkunan tapahtumat, joissa vastustaja puolusti järjestelmällä s; N = Σ n_s; S = ladattujen järjestelmien määrä. P(s) = (n_s + `priorWeight` / S) / (N + `priorWeight`). Kuvion bonus = Σ_s P(s) × `playBonusBySystem[s][k]`; muuten S-T:n kohta 3 ennallaan.
-2. **Oma järjestelmä tilassa `normal`.** Tilat `protect` ja `chase` käyttävät `modes`-arvoja kuten S-T. Vastustajan hallittujen alueelle tulojen osuus ikkunassa: c = vastustajan Hallittu alueelletuonti -tapahtumat (tapa kuljetus tai syöttö), d = vastustajan Kiekko päätyyn -tapahtumat; q = (c + `priorWeight` × 0,5) / (c + d + `priorWeight`). Jos q ≥ `controlledEntryShareForPassive` → `passiveSystem`; jos q ≤ `controlledEntryShareForAggressive` → `aggressiveSystem`; muuten edellinen oma valinta (hystereesi; ensimmäisellä kerralla `modes.normal.system`). Peruste: trap pysäyttää keskialueen kuljetukset ja pakottaa kiekon päätyyn, ja kiekkoa päätyyn pelaavaa vastustajaa vastaan karvaus kannattaa.
+2. **Oma järjestelmä tilassa `normal`.** Tilat `protect` ja `chase` käyttävät `modes`-arvoja kuten S-T. Vastustajan hallittujen alueelle tulojen osuus ikkunassa: c = vastustajan Hallittu alueelletuonti -tapahtumat (tapa kuljetus tai syöttö), d = vastustajan Kiekko päätyyn -tapahtumat; q = (c + `priorWeight` × 0,5) / (c + d + `priorWeight`). Jos q ≥ `controlledEntryShareForPassive` → `passiveSystem`; jos q ≤ `controlledEntryShareForAggressive` → `aggressiveSystem`; muuten edellinen oma valinta (hystereesi; ensimmäisellä kerralla `modes.normal.system`). Peruste: trap pysäyttää keskialueen kuljetukset ja pakottaa kiekon päätyyn, ja kiekkoa päätyyn pelaavaa vastustajaa vastaan karvaus kannattaa. **D-080 kohta 3 korvaa tämän kohdan.** Korvaava speksi on alla (A-T2, Oma järjestelmä vastustajan siirtymätyylin mukaan), ja se **odottaa Jerryn hyväksyntää** (Q-067). Koodi noudattaa tätä kohtaa, kunnes Jerry hyväksyy A-T2:n.
 3. **Siirtymäohje tilassa `normal`** (D-078 K2): S-T:n kohdan 2 siirtymäsääntö, mutta s = todennäköisin järjestelmä, eli suurin P(s) kohdan 1 jakaumasta. Tasatilanteessa järjestelmä `id`:n ordinaalijärjestyksessä ensimmäinen (AI-1). Jos ikkunassa ei ole yhtään havaintoa (N = 0), s puuttuu ja käytetään `modes.normal.transition`ia, koska pelkkä priori antaa kaikille saman P(s):n.
 4. Järjestelmätilan ohjeet, ketjut ja aikalisä kuten `rulebased`.
+
+#### A-T2 Oma järjestelmä vastustajan siirtymätyylin mukaan (D-080 kohta 3) – ehdotettu, odottaa Jerryn hyväksyntää (Q-067)
+
+Korvaa A-T:n kohdan 2. Kohdat 1, 3 ja 4 pysyvät ennallaan. Sääntö: vastustaja hyökkää paljon suorahyökkäyksillä → `passiveSystem` (trap122); vastustaja kokoaa paljon → `aggressiveSystem` (forecheck212). Kiekkoperuste: 1-2-2-trap sulkee keskialueen ja kaistat, joita pitkin suorahyökkäys tulee, ja 2-1-2-karvaus haastaa rauhallisen kokoamisen omassa päässä (O-7, D-078 K1). Videovalmentaja tekee saman havainnon: hyökkääkö vastustaja siirtymästä vai asettuuko se kuvioon.
+
+**1. Signaali: julkinen merkki on jo olemassa, skeemamuutosta ei tarvita.** Tapahtumaskeemassa ei ole kenttää "siirtymäohje", mutta jokaisessa tapahtumassa on kiekollisen joukkueen kuvion id (D-045), ja se on julkinen (AI-1). O-7:n mukaan suorahyökkäys pelataan sisäänrakennetuilla säännöillä ilman kuviota, joten sen tapahtumissa kuvio-id on tyhjä. Kokoamisen jälkeen kuvio valitaan D-036:n mukaan, joten ensimmäisessä kiekollisen toiminnossa kuvio-id on asetettu. Siirtymä luokitellaan siis vastustajan **hallinnan ensimmäisestä toimintotapahtumasta**.
+
+**2. Luokittelusääntö (puhdas funktio julkisesta lokista, deterministinen).**
+
+- **Toimija** kuten nykyinen `PublicLog.Actor`: Syöttö → syöttäjä, Hallittu alueelletuonti → kiekon kuljettaja, Laukaus → laukoja, Kiekko päätyyn → ampuja, Kiekonmenetys → menettäjä. Toimijan joukkue = oma, jos id on oman kokoonpanon kenttäpelaaja, muuten vastustaja. Kamppailu, Vaihto ja Aikalisä eivät ole toimintotapahtumia, ja ne ohitetaan.
+- Loki käydään läpi alusta järjestyksessä. Tila: hallitseva joukkue h (oma, vastustaja tai ei kumpikaan), alkuperä (aloitus tai siirtymä) ja kummallekin joukkueelle lippu "ensimmäinen toiminto odottaa".
+  1. **Erän alku ja Pelikatko:** h = ei kumpikaan, alkuperä = aloitus, liput pois.
+  2. **Aloitus:** h = voittajan joukkue, alkuperä = aloitus, liput pois. Aloituksesta alkanut hallinta ei ole siirtymä (D-060), eikä sitä lasketa.
+  3. **Toimintotapahtuma, toimijan joukkue X ≠ h:** kiekko vaihtoi joukkuetta ilman julkista riistoa (syötönkatko, irtokiekon voitto). h = X, alkuperä = siirtymä, X:n lippu päälle. Käsitellään sitten kuten kohta 4.
+  4. **Toimintotapahtuma, X = h, X:n lippu päällä ja alkuperä = siirtymä:** lippu pois. Jos X on vastustaja, tapahtuma luokitellaan: Kiekonmenetys → **ei luokitella** (hallinta päättyi ennen kuin tapa näkyi; esim. epäonnistunut kokoaminen K1 tai rushin ensimmäinen kuljetus); kuvio-id tyhjä → **suorahyökkäys**; kuvio-id asetettu → **kokoaminen**.
+  5. **Kiekonmenetys** käsitellään ensin menettäjän toimintotapahtumana (kohdat 3–4) ja sen jälkeen: h = riistäjän joukkue, alkuperä = siirtymä, riistäjän joukkueen lippu päälle.
+- **Luokiteltu havainto** tallentaa luokan ja tapahtuman järjestelmä-id:n (D-045: puolustavan joukkueen eli `adaptive`n oma järjestelmä sillä hetkellä). Jos järjestelmä-id on tyhjä, havaintoa ei käytetä.
+- **Tunnetut virhelähteet:** (a) rush, joka päättyy heti ilman toimintoa, koska puolustus on järjestäytynyt (O-7, O ≥ 0,8), näkyy kokoamisena, koska joukkue siirtyy kuvioon; (b) joukkue, jonka kuviolista on tyhjä tai jolle mikään kuvio ei sovi, pelaa järjestelmätilassa ilman kuvio-id:tä ja näkyy suorahyökkäyksenä. Kumpikin on oikeassa kiekossakin sama asia kuin havaittu tyyli (hyökkääkö joukkue kuviosta vai ei), joten virhe hyväksytään ja mitataan (kohta 7). O-8:n toinen yritys ei aloita uutta hallintaa (hyökkääjäpuoli jatkaa), joten se ei vaikuta.
+- Yhden ottelun koeajossa (rulebased vs adaptive, siemenet 42 ja 7) luokiteltuja havaintoja oli n. 50–80 per joukkue per ottelu, eli n. yksi 45–70 sekunnin välein, ja katkoja 29–35 per ottelu (n. 2–3 havaintoa katkojen välissä). `rulebased`in havainnoista trapia vastaan 97 % oli kokoamisia ja `adaptive`n havainnoista karvausta vastaan 92 % suorahyökkäyksiä, eli luokittelu seuraa siirtymäohjetta.
+
+**3. Ikkuna ja osuus.** Valintahetkellä oma nykyinen järjestelmävalinta on c (tilan `normal` muisti; ottelun alussa `modes.normal.system`). Ikkuna = viimeiset `ai.adaptive.styleWindowEvents` luokiteltua havaintoa, **joiden järjestelmä-id = c**. n = ikkunan havaintojen määrä (≤ ikkuna), r = suorahyökkäysten määrä / n. Ikkuna on tapahtumamäärä eikä aikaa, koska Jerryn ehto on "selvä vähintään kynnyksen verran tapahtumia". Ikkuna ei rajaudu erään eikä `windowSeconds`-aikaan; `windowSeconds` ja `priorWeight` koskevat edelleen vain kohtia 1 ja 3.
+
+Rajaus järjestelmä-id:llä on heilunnan eston ydin: se mittaa vastustajan tyyliä **nykyistä omaa järjestelmää vastaan**. Vaihdon jälkeen ikkuna on tyhjä, ja uusi vaihto vaatii vähintään `styleMinEvents` uutta havaintoa uutta järjestelmää vastaan. Vanhat havainnot toista järjestelmää vastaan eivät voi laukaista vaihtoa takaisin.
+
+**4. Päätös tilassa `normal`, vain katkolla** (`AtStoppage`, myös erän alku ja aikalisän jälkeinen kierros; `OnTheFly` ei muuta suunnitelmaa, AI-5):
+
+1. Jos n < `ai.adaptive.styleMinEvents` → c pysyy (ei dataa tai liian vähän dataa).
+2. Muuten, jos r ≥ `ai.adaptive.rushShareForPassive` → c = `passiveSystem`.
+3. Muuten, jos r ≤ `ai.adaptive.rushShareForAggressive` → c = `aggressiveSystem`.
+4. Muuten c pysyy (hystereesi: kaista rajojen välissä).
+
+Oma järjestelmä = c. Vertailut ovat liukulukuvertailuja r:n ja rajan välillä; paikkamerkkirajat 0,65 ja 0,35 eivät osu yhteenkään osuuteen k / n, kun n < 20, joten tasatilanteita ei synny. Aikalisän jälkeinen uusi kutsu samalla katkolla antaa saman tuloksen: jos ensimmäinen kutsu vaihtoi c:n, uuden c:n ikkuna on tyhjä (n = 0 < `styleMinEvents`), joten c pysyy.
+
+**5. Tilat ja muut kohdat.**
+
+- **`protect` ja `chase`:** oma järjestelmä on `modes.<tila>.system` kuten S-T:ssä. c:tä ei muuteta näissä tiloissa, ja se on muistissa, kun tila palaa `normal`iksi. Havaintoja kerätään koko ajan, mutta ikkunaan lasketaan vain ne, joiden järjestelmä-id = c.
+- **Kohta 1 (vastustajan järjestelmäjakauma ja kuviobonus)** ja **kohta 3 (oma siirtymäohje todennäköisimmän vastustajan järjestelmän mukaan)** eivät muutu, eivätkä ne käytä tämän kohdan havaintoja.
+- Kuvio- ja järjestelmä-id:t luetaan vain julkisesta lokista (AI-1, D-077 kohta 3). Ei satunnaisuutta: sama julkinen loki ja sama c → sama päätös.
+
+**6. Tasapainoarvot (`ai.adaptive`, paikkamerkkejä).** Korvaavat avaimet `controlledEntryShareForPassive` ja `controlledEntryShareForAggressive`, jotka poistetaan samassa commitissa (tuntematon avain hylätään, AI-3). Kaikki uudet polut `_placeholders`-listaan.
+
+| Polku | Paikkamerkki | Yksikkö | Hylätään, jos | Peruste |
+| --- | --- | --- | --- | --- |
+| `ai.adaptive.styleWindowEvents` | 6 | luokiteltuja havaintoja | ei kokonaisluku tai < 1 | n. 2–3 katkoväliä |
+| `ai.adaptive.styleMinEvents` | 4 | luokiteltuja havaintoja | ei kokonaisluku, < 1 tai > `styleWindowEvents` | "selvä vähintään 4 tapahtuman ajan"; n. 1,5–2 katkoväliä |
+| `ai.adaptive.rushShareForPassive` | 0,65 | suorahyökkäysten osuus | ei välillä [0, 1] | n = 4: vähintään 3/4; n = 6: vähintään 4/6 |
+| `ai.adaptive.rushShareForAggressive` | 0,35 | suorahyökkäysten osuus | ei välillä [0, 1] tai ≥ `rushShareForPassive` | n = 4: enintään 1/4; n = 6: enintään 2/6 |
+
+```json
+"adaptive": {
+  "windowSeconds": 600,
+  "priorWeight": 10,
+  "passiveSystem": "trap122",
+  "aggressiveSystem": "forecheck212",
+  "styleWindowEvents": 6,
+  "styleMinEvents": 4,
+  "rushShareForPassive": 0.65,
+  "rushShareForAggressive": 0.35
+}
+```
+
+`ai._notes`-tekstiin lisätään: "adaptive system: opponent transition style from the public log (first action of a non-faceoff possession: empty play id = rush, play id = regroup), counted only against adaptive's current system; switch at a stoppage when at least styleMinEvents such observations show a clear share (data-schema.md A-T2, D-080)."
+
+**7. Vastapeli `rulebased`ia vastaan ja odotettu vaikutus.**
+
+- **`rulebased` (K2) reagoi yhden katkon viiveellä:** se lukee `adaptive`n viimeisimmän järjestelmän (S-T kohta 2) ja pelaa sitä vastaan seuraavasta katkosta alkaen (karvaus → rush, trap → regroup). Kierre säilyy: `adaptive` karvaus → `rulebased` rush → `adaptive` trap → `rulebased` regroup → `adaptive` karvaus …
+- **Miksi kierre jää:** `rulebased` vastaa aina `adaptive`n nykyiseen järjestelmään, ja `adaptive` vastaa `rulebased`in viimeisimpään siirtymätyyliin. Kumpikin on toisen paras vastaus viiveellä, eli kyse on kolikkopelistä (matching pennies). Jos viive on yhtä pitkä, kumpikin voittaa puolet katkoväleistä (laskettu esimerkki: vuorottelu, `adaptive` voittaa joka toisen katkovälin, n. 50 %). Jokainen heilunnan esto pidentää `adaptive`n viivettä ja antaa `rulebased`ille lisää vastapeliaikaa. Heilunnan esto ei siis voi nostaa `adaptive`a yli n. 50 %:n `rulebased`ia vastaan; se tekee `adaptive`sta vakaan ja kilpailukykyisen yksiulotteista vastustajaa vastaan.
+- **Miksi se on hyväksyttävää:** pilari "taito voittaa tuurin": nopeampi lukija voittaa. Pelaaja, joka pelaa aina samaa tyyliä, häviää `adaptive`lle, ja `adaptive` häviää valmentajalle, joka vaihtaa vastapeliin heti. Ennen D-080:aa `adaptive` lukittui trappiin, jota vastaan `rulebased` kokosi n. 77 % ajasta (30,2 %). Uudessa säännössä `adaptive`n vastapeliaika jää vaihdon jälkeen n. 1 katkoväliin ja vastapelattu aika n. 1,5–2 katkoväliin, eli vastapelattu osuus laskee n. 77 %:sta n. 55–65 %:iin.
+- **Odotettu tulos (arvio, ei tavoite):** `adaptive` vs `rulebased` 38–48 % (ennen 30,2 %; koe B ilman vaihtoa 50,2 %); vs `randomLines` 60–72 % (ennen 52,2 %, koe B 75,4 %); vs `random` 75–82 %; vs `randomTactics` 55–65 %. Jos vs `rulebased` jää alle 38 %:n, designer pienentää ensin `styleMinEvents`-arvoa (lyhyempi viive) yhtenä muutoksena.
+
+**8. Mittaus (designer, toteutuksen jälkeen).** Batch 5000 ottelua per pari, siemen 1: `adaptive` vs `rulebased`, `random`, `randomTactics`, `randomLines`, ja vertailuksi `rulebased` vs samat (ei saa muuttua, koska `rulebased` ei muutu). Raporttiin tarvitaan (programmer, raporttimerkintä, ei uutta tapahtumatyyppiä): (a) `adaptive`n järjestelmävaihtojen määrä per ottelu ja aika kummassakin järjestelmässä; (b) osuus ajasta, jolloin vastustajan siirtymäohje on oma järjestelmän vastapeli (karvaus + rush tai trap + regroup); (c) luokittelun osuma: luokiteltu siirtymä vs vastustajan todellinen siirtymäohje (harness tietää sen), tavoite ≥ 90 %. Lisäksi taktiikkamatriisi ei muutu, koska `rotation` ei käytä A-T:tä.
+
+**9. Testit (programmer).**
+
+1. Luokittelu: riisto → vastustajan Hallittu alueelletuonti ilman kuvio-id:tä → suorahyökkäys; riisto → vastustajan Syöttö kuvio-id:llä → kokoaminen; ensimmäinen toiminto Kiekonmenetys → ei luokitella; aloituksesta alkanut hallinta → ei luokitella; oma epäonnistunut syöttö ja sitten vastustajan toiminto (ei julkista riistoa) → uusi hallinta luokitellaan; Kamppailu, Vaihto ja Aikalisä eivät katkaise eivätkä aloita hallintaa; Pelikatko nollaa tilan; vain hallinnan ensimmäinen toiminto luokitellaan; omat siirtymät eivät koskaan näy havaintoina; tyhjä järjestelmä-id → ei havaintoa.
+2. Ikkuna: vain järjestelmä-id = c lasketaan; vain viimeiset `styleWindowEvents` havaintoa.
+3. Päätös: n = `styleMinEvents` − 1 → c pysyy; 3/4 rush → `passiveSystem`; 1/4 → `aggressiveSystem`; 2/4 → c pysyy; tyhjä loki → `modes.normal.system`.
+4. Vaihdon jälkeen ikkuna on tyhjä, joten seuraava vaihto vaatii `styleMinEvents` uutta havaintoa; aikalisän jälkeinen kierros samalla katkolla antaa saman c:n.
+5. `protect`/`chase` → `modes`-järjestelmä, c säilyy ja palautuu tilassa `normal`.
+6. Determinismi: sama loki → sama päätös, ei satunnaisvirtaa.
+7. Lataaja: avainten hylkäysehdot (taulukko yllä), vanhat `controlledEntryShare*`-avaimet hylätään tuntemattomina, uudet polut `_placeholders`-listassa.
 
 ### AI-3 `ai`-osio (`tuning.json`, uusi ylimmän tason osio)
 

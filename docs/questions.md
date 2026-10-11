@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-067 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys:** hyväksytkö `adaptive`n järjestelmävalinnan speksin A-T2 (D-080 kohta 3)?
+**Konteksti:** `data-schema.md`, AI-2, A-T2. Tiivistelmä: (1) Skeemamuutosta ei tarvita. Vastustajan siirtymä luokitellaan sen hallinnan ensimmäisestä toimintotapahtumasta: kuvio-id tyhjä = suorahyökkäys, kuvio-id asetettu = kokoaminen (D-045, O-7). Aloituksesta alkaneet hallinnat ja hallinnat, joiden ensimmäinen toiminto on kiekonmenetys, jätetään pois. (2) Vain havainnot nykyistä omaa järjestelmää vastaan lasketaan, joten vaihdon jälkeen ikkuna alkaa tyhjästä. (3) Vaihto vain katkolla, kun vähintään `styleMinEvents` (4) havaintoa viimeisestä `styleWindowEvents` (6) havainnosta antaa suorahyökkäysosuuden ≥ 0,65 (→ trap) tai ≤ 0,35 (→ karvaus). Avaimet `controlledEntryShareFor*` poistuvat. (4) Kierre `rulebased`ia vastaan jää, koska `rulebased` vastaa yhden katkon viiveellä ja kumpikin on toisen paras vastaus (kolikkopeli). Heilunnan esto ei voi nostaa `adaptive`a yli n. 50 %:n `rulebased`ia vastaan. Arvio: 38–48 % (nyt 30,2 %), vs `randomLines` 60–72 % (nyt 52,2 %).
+**Ehdotettu oletus:** ei toteutusta ennen hyväksyntää. Jos hyväksyt, mittaus 5000 ottelua per pari ja raporttiin vaihtojen määrä, vastapelattu aika ja luokittelun osuma (tavoite ≥ 90 %).
+**Vastaus:** (Jerry täyttää)
+
 ### Q-062 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** onko taktiikkamatriisin (D-078 K3) komentorivimuoto hyväksyttävä? E-005 sanoo "taktiikkamatriisi batch-raporttiin", mutta ei kerro, ajetaanko matriisi aina batchin mukana vai omana tilanaan, eikä mitä vastustaja pelaa matriisissa.
 **Konteksti:** toteutettu näin: `batch --tactic-matrix` ajaa AI-parien sijaan pelkän matriisin ja kirjoittaa `tactic-matrix.md`:n ja `tactic-matrix.csv`:n `--out`-kansioon. Joukkue A = `rotation`, oma järjestelmä `--rotation-system` (oletus forecheck212), rivin siirtymäohje (rush, regroup). Joukkue B = `rotation`, sarakkeen järjestelmä (kaikki ladatut järjestelmät latausjärjestyksessä), siirtymäohje `--rotation-transition` (oletus rush, kuten E-005:ssä). Kokoonpanot ovat aina peilattuja. `--matches` on otteluita per solu, oletus 2000 tässä tilassa. Ilman `--tactic-matrix`-lippua `--rotation-transition` asettaa `rotation`-valmentajan siirtymäohjeen tavallisessa batchissa. Täysi batch-raportti ei sisällä matriisia (4 × 2000 lisäottelua joka ajossa). `match`-komento ei vielä tunne `--rotation-transition`-optiota.
