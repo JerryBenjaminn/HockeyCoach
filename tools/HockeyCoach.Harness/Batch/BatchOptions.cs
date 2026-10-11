@@ -1,5 +1,6 @@
 using System.Globalization;
 using HockeyCoach.Harness.Simulation;
+using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Harness.Batch;
 
@@ -23,8 +24,32 @@ public sealed record Matchup(string A, string B)
 /// <param name="OutDirectory">Directory for the report files (reports/ is git-ignored).</param>
 /// <param name="RotationSystem">Defensive system of the rotation coach.</param>
 /// <param name="MirrorRosters">Both teams get the same roster stats in every pair (Q-057 c).</param>
-public sealed record BatchOptions(int Matches, IReadOnlyList<Matchup> Matchups, ulong Seed, int Threads, string OutDirectory, string RotationSystem, bool MirrorRosters)
+/// <param name="RotationTransition">
+/// Transition instruction of the rotation coach (D-078, <c>--rotation-transition</c>, default rush). In the tactic matrix it
+/// is the opponent's (team B's) transition.
+/// </param>
+/// <param name="TacticMatrix">
+/// Play the tactic matrix (D-078 K3) instead of the AI matchups: team A = rotation with <see cref="RotationSystem"/> and each
+/// transition instruction, team B = rotation with each defensive system and <see cref="RotationTransition"/>; mirrored
+/// rosters; <see cref="Matches"/> per cell.
+/// </param>
+public sealed record BatchOptions(
+    int Matches,
+    IReadOnlyList<Matchup> Matchups,
+    ulong Seed,
+    int Threads,
+    string OutDirectory,
+    string RotationSystem,
+    bool MirrorRosters,
+    TransitionInstruction RotationTransition = TransitionInstruction.Rush,
+    bool TacticMatrix = false)
 {
+    /// <summary>Default <c>--matches</c> per AI pair.</summary>
+    public const int DefaultMatches = 1000;
+
+    /// <summary>Default <c>--matches</c> per tactic-matrix cell (E-005, D-078).</summary>
+    public const int DefaultMatrixMatches = 2000;
+
     /// <summary>AIs of <c>--matchups all</c>, in report order: the primary pair first (D-077 item 4).</summary>
     public static readonly IReadOnlyList<string> AllCoaches = new[]
     {
@@ -50,13 +75,15 @@ public sealed record BatchOptions(int Matches, IReadOnlyList<Matchup> Matchups, 
     public static BatchOptions? Parse(string[] args, out string? error)
     {
         error = null;
-        int matches = 1000;
+        int? matches = null;
         string matchups = "all";
         ulong seed = 1;
         int threads = Environment.ProcessorCount;
         string output = "reports";
         string rotationSystem = "forecheck212";
         bool mirror = false;
+        TransitionInstruction transition = TransitionInstruction.Rush;
+        bool matrix = false;
         for (int i = 1; i < args.Length; i++)
         {
             switch (args[i])
@@ -85,6 +112,13 @@ public sealed record BatchOptions(int Matches, IReadOnlyList<Matchup> Matchups, 
                 case "--mirror":
                     mirror = true;
                     break;
+                case "--rotation-transition" when i + 1 < args.Length && CoachRegistry.TryParseTransition(args[i + 1], out TransitionInstruction tr):
+                    transition = tr;
+                    i++;
+                    break;
+                case "--tactic-matrix":
+                    matrix = true;
+                    break;
                 case "--data":
                     i++;
                     break;
@@ -94,14 +128,15 @@ public sealed record BatchOptions(int Matches, IReadOnlyList<Matchup> Matchups, 
             }
         }
 
-        if (matches % 2 != 0)
+        int count = matches ?? (matrix ? DefaultMatrixMatches : DefaultMatches);
+        if (count % 2 != 0)
         {
-            error = "--matches must be even: matches are played in pairs with the same seed and sides swapped (got " + matches + ")";
+            error = "--matches must be even: matches are played in pairs with the same seed and sides swapped (got " + count + ")";
             return null;
         }
 
         IReadOnlyList<Matchup>? list = ParseMatchups(matchups, out error);
-        return list == null ? null : new BatchOptions(matches, list, seed, threads, output, rotationSystem, mirror);
+        return list == null ? null : new BatchOptions(count, list, seed, threads, output, rotationSystem, mirror || matrix, transition, matrix);
     }
 
     /// <summary><c>all</c> or a comma-separated list of <c>a-b</c> pairs, e.g. <c>rulebased-random,rulebased-rulebased</c>.</summary>

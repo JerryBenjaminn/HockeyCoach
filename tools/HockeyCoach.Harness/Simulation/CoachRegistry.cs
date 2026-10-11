@@ -2,6 +2,7 @@ using HockeyCoach.AI;
 using HockeyCoach.Harness.Data;
 using HockeyCoach.Sim.Match;
 using HockeyCoach.Sim.Random;
+using HockeyCoach.Sim.Tactics;
 
 namespace HockeyCoach.Harness.Simulation;
 
@@ -50,13 +51,14 @@ public static class CoachRegistry
     /// <param name="name">Coach name.</param>
     /// <param name="data">Loaded data (plays, systems, tuning).</param>
     /// <param name="systemId">Defensive system for <c>rotation</c>; ignored by coaches that choose their own.</param>
-    public static Func<IRandom, ICoach> Factory(string name, GameData data, string systemId)
+    /// <param name="rotationTransition">Transition instruction for <c>rotation</c> (D-078); ignored by the others.</param>
+    public static Func<IRandom, ICoach> Factory(string name, GameData data, string systemId, TransitionInstruction rotationTransition = TransitionInstruction.Rush)
     {
         Require(name);
         if (name == Rotation)
         {
             var system = HarnessTeams.System(data, systemId);
-            return _ => new RotationCoach(data.Plays, system);
+            return _ => new RotationCoach(data.Plays, system, rotationTransition);
         }
 
         var plays = data.Plays;
@@ -70,6 +72,16 @@ public static class CoachRegistry
             RuleBased => _ => new ComposedCoach(new RuleLines(tuning), new RuleTactics(plays, systems, tuning)),
             _ => _ => new ComposedCoach(new RuleLines(tuning), new AdaptiveTactics(plays, systems, tuning)),
         };
+    }
+
+    /// <summary>Command-line name of a transition instruction: <c>rush</c> or <c>regroup</c>.</summary>
+    public static string TransitionName(TransitionInstruction transition) => transition == TransitionInstruction.Regroup ? "regroup" : "rush";
+
+    /// <summary>Parses <c>rush</c> or <c>regroup</c>; false otherwise.</summary>
+    public static bool TryParseTransition(string text, out TransitionInstruction transition)
+    {
+        transition = text == "regroup" ? TransitionInstruction.Regroup : TransitionInstruction.Rush;
+        return text == "rush" || text == "regroup";
     }
 
     /// <summary>Label for output, e.g. <c>rotation/trap122</c> or <c>random</c>.</summary>

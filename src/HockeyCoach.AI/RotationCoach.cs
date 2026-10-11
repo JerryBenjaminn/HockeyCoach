@@ -9,17 +9,20 @@ namespace HockeyCoach.AI
     /// <summary>
     /// The default coach (data-schema.md O-4, D-062): changes every eligible unit, trios 1 → 2 → 3 → 4 → 1 and pairs
     /// 1 → 2 → 3 → 1; orders the playbook least-used-this-match first (O-11 counter), ties in load order; transition
-    /// <c>rush</c>; system-mode instructions at their milestone 2 defaults. Deterministic, no random generator.
+    /// <c>rush</c> unless the harness fixes another (D-078, <c>--rotation-transition</c>); system-mode instructions at their
+    /// milestone 2 defaults. Deterministic, no random generator.
     /// </summary>
     public sealed class RotationCoach : ICoach
     {
         private readonly Play[] _library;
         private readonly DefensiveSystem _system;
+        private readonly TransitionInstruction _transition;
 
         /// <summary>Creates the coach.</summary>
         /// <param name="library">All plays the coach may use, in load order.</param>
         /// <param name="system">The defensive system (a harness parameter).</param>
-        public RotationCoach(IReadOnlyList<Play> library, DefensiveSystem system)
+        /// <param name="transition">The transition instruction (a harness parameter, default <c>rush</c>, D-062 and D-078).</param>
+        public RotationCoach(IReadOnlyList<Play> library, DefensiveSystem system, TransitionInstruction transition = TransitionInstruction.Rush)
         {
             if (library == null)
             {
@@ -33,7 +36,11 @@ namespace HockeyCoach.AI
             }
 
             _system = system ?? throw new ArgumentNullException(nameof(system));
+            _transition = transition;
         }
+
+        /// <summary>The fixed transition instruction of every plan.</summary>
+        public TransitionInstruction Transition => _transition;
 
         /// <inheritdoc />
         public CoachDecision AtStoppage(CoachView view)
@@ -43,7 +50,7 @@ namespace HockeyCoach.AI
                 throw new ArgumentNullException(nameof(view));
             }
 
-            return new CoachDecision(Rotate(view), new ShiftPlan(Playbook(view), _system, TransitionInstruction.Rush, SystemModeInstructions.Default));
+            return new CoachDecision(Rotate(view), new ShiftPlan(Playbook(view), _system, _transition, SystemModeInstructions.Default));
         }
 
         /// <inheritdoc />

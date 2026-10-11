@@ -64,8 +64,12 @@ public static class BatchMatch
     /// <summary>Plays pair <paramref name="pair"/> with seed <paramref name="seed"/>: team A at home first, then team B.</summary>
     public static BatchGame[] PlayPair(GameData data, Matchup matchup, string rotationSystem, bool mirror, int pair, ulong seed)
     {
-        Func<IRandom, ICoach> a = CoachRegistry.Factory(matchup.A, data, rotationSystem);
-        Func<IRandom, ICoach> b = CoachRegistry.Factory(matchup.B, data, rotationSystem);
+        return PlayPair(data, CoachRegistry.Factory(matchup.A, data, rotationSystem), CoachRegistry.Factory(matchup.B, data, rotationSystem), mirror, pair, seed);
+    }
+
+    /// <summary>Plays pair <paramref name="pair"/> with the given coach factories: team A at home first, then team B.</summary>
+    public static BatchGame[] PlayPair(GameData data, Func<IRandom, ICoach> a, Func<IRandom, ICoach> b, bool mirror, int pair, ulong seed)
+    {
         (Team rosterA, Team rosterB) = HarnessTeams.PairRosters(seed, mirror);
         return new[]
         {

@@ -36,8 +36,10 @@ internal static class Program
         Console.Error.WriteLine("       match [--seed 42] [--home <coach>] [--away <coach>] [--home-system forecheck212] [--away-system trap122] [--json] [--count N] [--data <dir>]");
         Console.Error.WriteLine("             coaches: " + string.Join(", ", Simulation.CoachRegistry.Names) + " (default rotation); --home-system / --away-system apply to rotation only.");
         Console.Error.WriteLine("             --count N (even) plays N/2 pairs: pair i uses seed+i twice, sides swapped; prints averages, venue and team split.");
-        Console.Error.WriteLine("       batch [--matches 1000] [--matchups all|a-b,c-d] [--seed 1] [--threads N] [--out reports] [--rotation-system forecheck212] [--mirror] [--data <dir>]");
+        Console.Error.WriteLine("       batch [--matches 1000] [--matchups all|a-b,c-d] [--seed 1] [--threads N] [--out reports] [--rotation-system forecheck212] [--rotation-transition rush|regroup] [--mirror] [--tactic-matrix] [--data <dir>]");
         Console.Error.WriteLine("             --matches per AI pair (even); all = every pair of the six AIs, mirrors included; writes batch-report.md and CSVs to --out.");
+        Console.Error.WriteLine("             --tactic-matrix: instead of the AI pairs, rotation (own --rotation-system) with each transition vs rotation with each system");
+        Console.Error.WriteLine("             playing --rotation-transition; mirrored rosters; --matches per cell (default 2000); writes tactic-matrix.md and .csv to --out.");
         Console.Error.WriteLine("compare is not implemented yet.");
         return 1;
     }

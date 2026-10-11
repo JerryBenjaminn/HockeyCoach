@@ -102,7 +102,7 @@ public class BatchTests
         {
             "## Skill vs luck", "**Primary (D-077 item 4): rulebased vs random:**", "## Points-share matrix", "## Ablation", "## Targets on rulebased vs rulebased",
             "### Fatigue", "### Play × system", "### Rush vs regroup", "### Checks", "### Pressure shares", "### xG by chance type and class", "### Goal variance",
-            "smartVsRandomWinRate",
+            "smartVsRandomWinRate", "xG diff / 60 min",
         })
         {
             Assert.Contains(section, files.Markdown, StringComparison.Ordinal);
@@ -121,7 +121,7 @@ public class BatchTests
                 Assert.Equal(trioIce, trioShifts, 6);
             }
 
-            Assert.All(s.Transitions.N.Keys, k => Assert.Contains(k, new[] { "rush", "regroup" }));
+            Assert.All(s.Transitions.N.Keys, k => Assert.Matches("^(rush|regroup) vs (forecheck212|trap122)$", k));
             Assert.Equal(s.Lines.Count * 3 * 1200.0 * 2, s.TransitionSeconds.Sum.Values.Sum(), 6);
         }
     }

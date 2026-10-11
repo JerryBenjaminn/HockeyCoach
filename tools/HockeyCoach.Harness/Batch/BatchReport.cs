@@ -243,13 +243,18 @@ public static class BatchReport
         md.AppendLine();
         md.AppendLine("### Rush vs regroup");
         md.AppendLine();
-        md.AppendLine("| Transition in force | Team segments | Minutes | xG for / 60 min | xG against / 60 min | Goals for |");
-        md.AppendLine("| --- | --- | --- | --- | --- | --- |");
+        md.AppendLine("Split by the opponent's defensive system at the decision (D-078 K3).");
+        md.AppendLine();
+        md.AppendLine("| Transition in force | vs system | Team segments | Minutes | xG for / 60 min | xG against / 60 min | xG diff / 60 min | Goals for |");
+        md.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
         foreach (string key in s.Transitions.N.Keys)
         {
             double minutes = s.TransitionSeconds.Sum[key] / 60.0;
-            md.AppendLine("| " + key + " | " + s.Transitions.N[key] + " | " + F0(minutes) + " | " + F2(minutes > 0 ? s.Transitions.Sum[key] / minutes * 60.0 : 0.0)
-                + " | " + F2(minutes > 0 ? s.Transitions.Sum2[key] / minutes * 60.0 : 0.0) + " | " + F0(s.TransitionSeconds.Sum2[key]) + " |");
+            double xgFor = minutes > 0 ? s.Transitions.Sum[key] / minutes * 60.0 : 0.0;
+            double xgAgainst = minutes > 0 ? s.Transitions.Sum2[key] / minutes * 60.0 : 0.0;
+            string[] parts = key.Split(" vs ");
+            md.AppendLine("| " + parts[0] + " | " + (parts.Length > 1 ? parts[1] : "-") + " | " + s.Transitions.N[key] + " | " + F0(minutes) + " | " + F2(xgFor)
+                + " | " + F2(xgAgainst) + " | " + Signed(xgFor - xgAgainst) + " | " + F0(s.TransitionSeconds.Sum2[key]) + " |");
         }
 
         md.AppendLine();
@@ -336,7 +341,7 @@ public static class BatchReport
             {
                 ("checks", s.Checks), ("energyAtChecks", s.EnergyAtChecks), ("participantEnergy", s.ParticipantEnergy), ("iceTime", s.IceTime), ("shifts", s.Shifts),
                 ("playSystem", s.PlaySystem), ("transitions", s.Transitions), ("transitionSeconds", s.TransitionSeconds), ("pressureByZone", s.PressureByZone),
-                ("pressureBySystem", s.PressureBySystem), ("chanceTypes", s.ChanceTypes), ("chanceClasses", s.ChanceClasses),
+                ("pressureBySystem", s.PressureBySystem), ("chanceTypes", s.ChanceTypes), ("chanceClasses", s.ChanceClasses), ("playXg", s.PlayXg),
             })
             {
                 foreach (string key in tally.N.Keys)
@@ -349,19 +354,26 @@ public static class BatchReport
         return sb.ToString();
     }
 
+    /// <summary>Two decimals with an explicit sign (+0.47, -0.10, 0.00).</summary>
+    public static string Signed(double v)
+    {
+        string text = Math.Abs(v).ToString("0.00", CultureInfo.InvariantCulture);
+        return text == "0.00" ? text : (v > 0 ? "+" : "-") + text;
+    }
+
     private static double Mean(Tally tally, string key) => tally.N.TryGetValue(key, out int n) && n > 0 ? tally.Sum[key] / n : 0.0;
 
     private static double HitShare(Tally tally, string key) => tally.N.TryGetValue(key, out int n) && n > 0 ? tally.Hits[key] / (double)n : 0.0;
 
-    private static string Pct(double v) => (100.0 * v).ToString("0.0", CultureInfo.InvariantCulture) + " %";
+    internal static string Pct(double v) => (100.0 * v).ToString("0.0", CultureInfo.InvariantCulture) + " %";
 
     private static string F0(double v) => v.ToString("0", CultureInfo.InvariantCulture);
 
     private static string F1(double v) => v.ToString("0.0", CultureInfo.InvariantCulture);
 
-    private static string F2(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
+    internal static string F2(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
 
     private static string F3(double v) => v.ToString("0.000", CultureInfo.InvariantCulture);
 
-    private static string R(double v) => v.ToString("R", CultureInfo.InvariantCulture);
+    internal static string R(double v) => v.ToString("R", CultureInfo.InvariantCulture);
 }

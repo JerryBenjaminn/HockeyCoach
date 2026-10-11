@@ -1,6 +1,15 @@
 using HockeyCoach.Harness.Data;
+using HockeyCoach.Harness.Simulation;
+using HockeyCoach.Sim.Match;
+using HockeyCoach.Sim.Random;
 
 namespace HockeyCoach.Harness.Batch;
+
+/// <summary>One matchup to play: its labels and the coach factories of team A and team B.</summary>
+/// <param name="Matchup">Labels of team A and team B.</param>
+/// <param name="A">Coach factory of team A.</param>
+/// <param name="B">Coach factory of team B.</param>
+public sealed record BatchEntry(Matchup Matchup, Func<IRandom, ICoach> A, Func<IRandom, ICoach> B);
 
 /// <summary>
 /// Plays every matchup of a batch: pairs run in parallel in chunks, then each chunk is added to the statistics in pair
@@ -17,12 +26,24 @@ public static class BatchRunner
     /// <param name="progress">Optional progress line callback (stderr in the CLI).</param>
     public static IReadOnlyList<MatchupStats> Run(GameData data, BatchOptions options, Action<string>? progress = null)
     {
+        var entries = options.Matchups
+            .Select(m => new BatchEntry(
+                m,
+                CoachRegistry.Factory(m.A, data, options.RotationSystem, options.RotationTransition),
+                CoachRegistry.Factory(m.B, data, options.RotationSystem, options.RotationTransition)))
+            .ToList();
+        return Run(data, options, entries, progress);
+    }
+
+    /// <summary>Runs the given matchups with the pair count, seeds, rosters and threads of <paramref name="options"/>.</summary>
+    public static IReadOnlyList<MatchupStats> Run(GameData data, BatchOptions options, IReadOnlyList<BatchEntry> entries, Action<string>? progress = null)
+    {
         int pairs = options.Matches / 2;
         int chunk = Math.Max(1, options.Threads * PairsPerThreadPerChunk);
         var all = new List<MatchupStats>();
-        foreach (Matchup matchup in options.Matchups)
+        foreach (BatchEntry entry in entries)
         {
-            var stats = new MatchupStats(matchup, data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds);
+            var stats = new MatchupStats(entry.Matchup, data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds);
             for (int first = 0; first < pairs; first += chunk)
             {
                 int count = Math.Min(chunk, pairs - first);
@@ -34,7 +55,7 @@ public static class BatchRunner
                     k =>
                     {
                         int pair = first + k;
-                        games[k] = BatchMatch.PlayPair(data, matchup, options.RotationSystem, options.MirrorRosters, pair, options.Seed + (ulong)pair);
+                        games[k] = BatchMatch.PlayPair(data, entry.A, entry.B, options.MirrorRosters, pair, options.Seed + (ulong)pair);
                     });
                 foreach (BatchGame[] pairGames in games)
                 {
@@ -45,7 +66,7 @@ public static class BatchRunner
                 }
             }
 
-            progress?.Invoke(matchup.Label + ": " + options.Matches + " matches done");
+            progress?.Invoke(entry.Matchup.Label + ": " + options.Matches + " matches done");
             all.Add(stats);
         }
 

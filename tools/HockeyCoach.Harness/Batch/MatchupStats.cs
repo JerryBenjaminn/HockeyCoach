@@ -93,7 +93,10 @@ public sealed class MatchupStats
     /// <summary>Play × system ("play vs system"): N = play instances, hit = with a shot attempt, sum = xG, sum2 = goals.</summary>
     public Tally PlaySystem { get; } = new();
 
-    /// <summary>Transition instruction in force ("rush" / "regroup"): sum = xG for, sum2 = xG against; N = team segments; hits = goals for.</summary>
+    /// <summary>
+    /// Transition instruction in force by the opponent's defensive system ("rush vs trap122"): sum = xG for, sum2 = xG
+    /// against; N = team segments.
+    /// </summary>
     public Tally Transitions { get; } = new();
 
     /// <summary>Transition seconds in force (same keys).</summary>
@@ -104,6 +107,9 @@ public sealed class MatchupStats
 
     /// <summary>Under-pressure share by action and defending system ("shot trap122").</summary>
     public Tally PressureBySystem { get; } = new();
+
+    /// <summary>xG of shots taken while the shooting team runs a play (event play id set), by slot ("A" / "B"): hit = goal, sum = xG.</summary>
+    public Tally PlayXg { get; } = new();
 
     /// <summary>Shots by chance type: hit = goal, sum = xG.</summary>
     public Tally ChanceTypes { get; } = new();
@@ -140,6 +146,37 @@ public sealed class MatchupStats
         AddTransitions(batchGame, events, SlotOf);
         AddPressure(events, teamOf, rink);
         AddChances(events);
+        AddPlayXg(events, SlotOf);
+    }
+
+    private void AddPlayXg(IReadOnlyList<SimEvent> events, Func<int, int> slotOf)
+    {
+        string[] slots = { "A", "B" };
+        foreach (ShotEvent s in events.OfType<ShotEvent>())
+        {
+            if (s.Context.PlayId != null)
+            {
+                PlayXg.Add(slots[slotOf(s.ShooterId)], s.Outcome == ShotOutcome.Goal, s.Xg);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The opponent's defensive system in force at (<paramref name="period"/>, <paramref name="time"/>): its last decision
+    /// in that period at or before the time; "-" when it has none.
+    /// </summary>
+    public static string OpponentSystemAt(IReadOnlyList<PlanRecord> opponentPlans, int period, double time)
+    {
+        string system = "-";
+        foreach (PlanRecord plan in opponentPlans)
+        {
+            if (plan.Period == period && plan.Time <= time)
+            {
+                system = plan.SystemId;
+            }
+        }
+
+        return system;
     }
 
     private static string EnergyBin(double energy)
@@ -350,8 +387,9 @@ public sealed class MatchupStats
     }
 
     /// <summary>
-    /// Rush vs regroup: each team's transition instruction in force from a decision to the next decision or period end;
-    /// xG and goals for and against while it is in force. Several decisions at the same moment (after a timeout): the last.
+    /// Rush vs regroup: each team's transition instruction in force from a decision to the next decision or period end, split
+    /// by the opponent's defensive system at the decision (D-078 K3); xG and goals for and against while it is in force.
+    /// Several decisions at the same moment (after a timeout): the last.
     /// </summary>
     private void AddTransitions(BatchGame batchGame, IReadOnlyList<SimEvent> events, Func<int, int> slotOf)
     {
@@ -359,6 +397,7 @@ public sealed class MatchupStats
         for (int side = 0; side < 2; side++)
         {
             IReadOnlyList<PlanRecord> plans = batchGame.Plans[side];
+            IReadOnlyList<PlanRecord> opponentPlans = batchGame.Plans[1 - side];
             int slot = (TeamSide)side == aSide ? 0 : 1;
             for (int i = 0; i < plans.Count; i++)
             {
@@ -369,7 +408,7 @@ public sealed class MatchupStats
                 }
 
                 double end = i + 1 < plans.Count && plans[i + 1].Period == plan.Period ? plans[i + 1].Time : _periodSeconds;
-                string key = plan.Transition == TransitionInstruction.Rush ? "rush" : "regroup";
+                string key = CoachRegistry.TransitionName(plan.Transition) + " vs " + OpponentSystemAt(opponentPlans, plan.Period, plan.Time);
                 double xgFor = 0.0;
                 double xgAgainst = 0.0;
                 int goalsFor = 0;

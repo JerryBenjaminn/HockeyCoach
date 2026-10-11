@@ -7,12 +7,23 @@ namespace HockeyCoach.Harness.Batch;
 /// <summary>
 /// <c>batch</c>: plays every matchup (default <c>all</c>, mirrors included) with <c>--matches</c> per AI pair in parallel,
 /// writes batch-report.md and the CSVs to <c>--out</c> (default reports/, git-ignored) and prints the Markdown report.
+/// With <c>--tactic-matrix</c> it plays the tactic matrix instead (D-078 K3) and writes tactic-matrix.md and tactic-matrix.csv.
 /// </summary>
 public static class BatchCommand
 {
     /// <summary>Runs the command; returns the Markdown report.</summary>
     public static string Run(GameData data, BatchOptions options, string dataDirectory, IReadOnlyList<string> args, Action<string>? progress = null)
     {
+        if (options.TacticMatrix)
+        {
+            IReadOnlyList<TacticCell> cells = TacticMatrix.Run(data, options, progress);
+            TacticMatrixFiles matrix = TacticMatrix.Write(data, options, cells, Header(dataDirectory, args));
+            Directory.CreateDirectory(options.OutDirectory);
+            File.WriteAllText(Path.Combine(options.OutDirectory, "tactic-matrix.md"), matrix.Markdown);
+            File.WriteAllText(Path.Combine(options.OutDirectory, "tactic-matrix.csv"), matrix.Csv);
+            return matrix.Markdown;
+        }
+
         IReadOnlyList<MatchupStats> stats = BatchRunner.Run(data, options, progress);
         BatchReportFiles files = BatchReport.Write(data, options, stats, Header(dataDirectory, args));
         Directory.CreateDirectory(options.OutDirectory);
