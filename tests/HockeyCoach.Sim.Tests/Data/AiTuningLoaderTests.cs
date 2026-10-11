@@ -51,7 +51,10 @@ public class AiTuningLoaderTests
         Assert.Equal("regroup", ai.Rulebased.TransitionBySystem["trap122"]);
         Assert.Equal(2, ai.Rulebased.Timeout.MaxDeficitGoals);
         Assert.Equal("trap122", ai.Adaptive.PassiveSystem);
-        Assert.Equal(0.4, ai.Adaptive.ControlledEntryShareForAggressive);
+        Assert.Equal(6, ai.Adaptive.StyleWindowEvents);
+        Assert.Equal(4, ai.Adaptive.StyleMinEvents);
+        Assert.Equal(0.65, ai.Adaptive.RushShareForPassive);
+        Assert.Equal(0.35, ai.Adaptive.RushShareForAggressive);
     }
 
     [Fact]
@@ -70,6 +73,16 @@ public class AiTuningLoaderTests
         Assert.Contains("ai.rulebased.playBonusBySystem", paths);
         Assert.Contains("ai.rulebased.transitionBySystem", paths);
         Assert.Contains("ai.random.onTheFlyChangeProbability", paths);
+        Assert.Contains("ai.adaptive.styleWindowEvents", paths);
+        Assert.Contains("ai.adaptive.styleMinEvents", paths);
+        Assert.Contains("ai.adaptive.rushShareForPassive", paths);
+        Assert.Contains("ai.adaptive.rushShareForAggressive", paths);
+        Assert.DoesNotContain("ai.adaptive.controlledEntryShareForPassive", paths);
+        Assert.DoesNotContain("ai.adaptive.controlledEntryShareForAggressive", paths);
+        Assert.Equal(6, tuning.Ai.Adaptive.StyleWindowEvents);
+        Assert.Equal(4, tuning.Ai.Adaptive.StyleMinEvents);
+        Assert.Equal(0.65, tuning.Ai.Adaptive.RushShareForPassive);
+        Assert.Equal(0.35, tuning.Ai.Adaptive.RushShareForAggressive);
         Assert.DoesNotContain("ai.adaptive.passiveSystem", paths);
         Assert.DoesNotContain("ai.adaptive.aggressiveSystem", paths);
         Assert.DoesNotContain("time.timeoutsPerTeamPerMatch", paths);
@@ -162,8 +175,30 @@ public class AiTuningLoaderTests
         AssertError(root => Ai(root)["adaptive"]!["windowSeconds"] = 0, "ai.adaptive.windowSeconds:");
         AssertError(root => Ai(root)["adaptive"]!["priorWeight"] = -1, "ai.adaptive.priorWeight:");
         AssertError(root => Ai(root)["adaptive"]!["aggressiveSystem"] = "trap122", "ai.adaptive.aggressiveSystem: must differ");
-        AssertError(root => Ai(root)["adaptive"]!["controlledEntryShareForAggressive"] = 0.6, "ai.adaptive.controlledEntryShareForAggressive: must be below");
-        AssertError(root => Ai(root)["adaptive"]!["controlledEntryShareForPassive"] = 1.2, "ai.adaptive.controlledEntryShareForPassive:");
+    }
+
+    [Fact]
+    public void AdaptiveStyleKeys_AreCheckedPerTheA_T2Table()
+    {
+        AssertError(root => Ai(root)["adaptive"]!["styleWindowEvents"] = 0, "ai.adaptive.styleWindowEvents: must be an integer >= 1");
+        AssertError(root => Ai(root)["adaptive"]!["styleWindowEvents"] = 6.5, "ai.adaptive.styleWindowEvents: expected an integer");
+        AssertError(root => Ai(root)["adaptive"]!["styleMinEvents"] = 0, "ai.adaptive.styleMinEvents: must be an integer >= 1");
+        AssertError(root => Ai(root)["adaptive"]!["styleMinEvents"] = 2.5, "ai.adaptive.styleMinEvents: expected an integer");
+        AssertError(root => Ai(root)["adaptive"]!["styleMinEvents"] = 7, "ai.adaptive.styleMinEvents: must be at most styleWindowEvents");
+        AssertError(root => Ai(root)["adaptive"]!["rushShareForPassive"] = 1.2, "ai.adaptive.rushShareForPassive: must be in [0, 1]");
+        AssertError(root => Ai(root)["adaptive"]!["rushShareForAggressive"] = -0.1, "ai.adaptive.rushShareForAggressive: must be in [0, 1]");
+        AssertError(root => Ai(root)["adaptive"]!["rushShareForAggressive"] = 0.65, "ai.adaptive.rushShareForAggressive: must be below");
+        AssertError(root => Ai(root)["adaptive"]!.AsObject().Remove("styleMinEvents"), "ai.adaptive.styleMinEvents: missing");
+
+        LoadResult<TuningConfig> equal = Load(root => Ai(root)["adaptive"]!["styleMinEvents"] = 6);
+        Assert.True(equal.Success, string.Join("; ", equal.Errors));
+    }
+
+    [Fact]
+    public void OldControlledEntryShareKeys_AreRejectedAsUnknown()
+    {
+        AssertError(root => Ai(root)["adaptive"]!["controlledEntryShareForPassive"] = 0.6, "ai.adaptive.controlledEntryShareForPassive: unknown key");
+        AssertError(root => Ai(root)["adaptive"]!["controlledEntryShareForAggressive"] = 0.4, "ai.adaptive.controlledEntryShareForAggressive: unknown key");
     }
 
     [Fact]

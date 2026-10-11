@@ -107,12 +107,20 @@ namespace HockeyCoach.Sim.Config
                 errors.Add("ai.adaptive.aggressiveSystem: must differ from passiveSystem (" + adaptive.PassiveSystem + ")");
             }
 
-            RequireUnit("ai.adaptive.controlledEntryShareForPassive", adaptive.ControlledEntryShareForPassive, errors);
-            RequireUnit("ai.adaptive.controlledEntryShareForAggressive", adaptive.ControlledEntryShareForAggressive, errors);
-            if (adaptive.ControlledEntryShareForAggressive >= adaptive.ControlledEntryShareForPassive)
+            RequireAtLeastOne("ai.adaptive.styleWindowEvents", adaptive.StyleWindowEvents, errors);
+            RequireAtLeastOne("ai.adaptive.styleMinEvents", adaptive.StyleMinEvents, errors);
+            if (adaptive.StyleMinEvents > adaptive.StyleWindowEvents)
             {
-                errors.Add("ai.adaptive.controlledEntryShareForAggressive: must be below controlledEntryShareForPassive ("
-                    + Format(adaptive.ControlledEntryShareForPassive) + "), got " + Format(adaptive.ControlledEntryShareForAggressive));
+                errors.Add("ai.adaptive.styleMinEvents: must be at most styleWindowEvents ("
+                    + adaptive.StyleWindowEvents.ToString(CultureInfo.InvariantCulture) + "), got " + adaptive.StyleMinEvents.ToString(CultureInfo.InvariantCulture));
+            }
+
+            RequireUnit("ai.adaptive.rushShareForPassive", adaptive.RushShareForPassive, errors);
+            RequireUnit("ai.adaptive.rushShareForAggressive", adaptive.RushShareForAggressive, errors);
+            if (adaptive.RushShareForAggressive >= adaptive.RushShareForPassive)
+            {
+                errors.Add("ai.adaptive.rushShareForAggressive: must be below rushShareForPassive ("
+                    + Format(adaptive.RushShareForPassive) + "), got " + Format(adaptive.RushShareForAggressive));
             }
 
             return errors;

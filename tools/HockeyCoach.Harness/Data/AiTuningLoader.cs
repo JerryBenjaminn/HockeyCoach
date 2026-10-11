@@ -135,18 +135,20 @@ internal static class AiTuningLoader
     {
         if (reader == null)
         {
-            return new AiAdaptiveConfig(double.NaN, double.NaN, string.Empty, string.Empty, double.NaN, double.NaN);
+            return new AiAdaptiveConfig(double.NaN, double.NaN, string.Empty, string.Empty, 0, 0, double.NaN, double.NaN);
         }
 
         reader.RejectUnknown(
-            "windowSeconds", "priorWeight", "passiveSystem", "aggressiveSystem", "controlledEntryShareForPassive", "controlledEntryShareForAggressive");
+            "windowSeconds", "priorWeight", "passiveSystem", "aggressiveSystem", "styleWindowEvents", "styleMinEvents", "rushShareForPassive", "rushShareForAggressive");
         return new AiAdaptiveConfig(
             reader.Double("windowSeconds"),
             reader.Double("priorWeight"),
             reader.String("passiveSystem") ?? string.Empty,
             reader.String("aggressiveSystem") ?? string.Empty,
-            reader.Double("controlledEntryShareForPassive"),
-            reader.Double("controlledEntryShareForAggressive"));
+            reader.Int("styleWindowEvents") ?? 0,
+            reader.Int("styleMinEvents") ?? 0,
+            reader.Double("rushShareForPassive"),
+            reader.Double("rushShareForAggressive"));
     }
 
     private static bool Bool(JsonReader reader, string name) => reader.Required(name)?.AsBool() ?? false;

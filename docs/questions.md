@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-069 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** lasketaanko A-T2:n ikkunaan (kohta 3) myös vanhat havainnot järjestelmää c vastaan ajalta ennen kuin `adaptive` viimeksi vaihtoi c:hen?
+**Konteksti:** kohdan 3 sääntö on kirjaimellisesti "viimeiset `styleWindowEvents` luokiteltua havaintoa, joiden järjestelmä-id = c". Saman kohdan perustelu, kohta 4 ("aikalisän jälkeinen uusi kutsu: uuden c:n ikkuna on tyhjä, n = 0") ja testilistan kohta 4 ("vaihdon jälkeen ikkuna on tyhjä") edellyttävät kuitenkin, että ikkuna on vaihdon jälkeen tyhjä. Kirjaimellinen sääntö ei takaa sitä, kun `adaptive` palaa järjestelmään, jota se on jo pelannut: esim. trap → karvaus → trap, jolloin ensimmäisen trap-jakson havainnot (joiden perusteella vaihdettiin karvaukseen) olisivat heti ikkunassa ja voisivat vaihtaa takaisin karvaukseen jo seuraavalla katkolla tai aikalisän jälkeisellä kierroksella.
+**Ehdotettu oletus (toteutettu):** ikkunaan lasketaan vain havainnot, jotka on tehty sen jälkeen, kun c viimeksi valittiin (tapahtumaindeksi ≥ lokin pituus valintahetkellä; ottelun alussa 0). Näin vaihdon jälkeen ikkuna on aina tyhjä, kuten kohdat 3 ja 4 ja testit sanovat. Tilat `protect`/`chase` eivät muuta c:tä eivätkä nollaa ikkunaa.
+**Vastaus:** (Jerry täyttää)
+
 ### Q-068 · 2026-10-11 · kirjaaja: Jerry (designerille, myöhemmin)
 **Kysymys:** pitäisikö kuljetus vai päätyyn lyönti alivoimalla (N < M) olla oma taitopäätös?
 **Konteksti:** Wisehockeyn data (Jokerit–HIFK, 31 hallittua alueelletuontia, D-081): kaikki hallitut alueelletuonnit säilyttivät kiekon, eli epäonnistuneet yritykset eivät ole datassa. Oikeat pelaajat kuljettavat kiekon sisään vain, kun se todennäköisesti onnistuu, ja muuten lyövät sen päätyyn. Simulaatiossa kuljetus yritetään voimasuhteesta riippumatta (M-9:n porras 51–76 %). Päätös voisi olla pelaajan tai valmentajan ohje (esim. kynnys N − M), jolloin hyvä päätös on taitoa.

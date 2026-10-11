@@ -10,15 +10,14 @@ namespace HockeyCoach.AI
     /// <summary>
     /// Adaptive tactics (data-schema.md AI-2, A-T): like S-T, but over a window of the last <c>ai.adaptive.windowSeconds</c>
     /// match seconds (1) the play bonus is the expectation over the opponent's system distribution with a uniform prior
-    /// of weight <c>priorWeight</c>, and (2) in mode <c>normal</c> the own system follows the opponent's controlled-entry
-    /// share with hysteresis. One instance per match (it remembers its previous system).
+    /// of weight <c>priorWeight</c>, and (2) in mode <c>normal</c> the own system follows the opponent's transition style
+    /// against the current own system (A-T2, D-080 item 3, D-082), switching only at a stoppage. One instance per match
+    /// (it remembers its current system).
     /// </summary>
     public sealed class AdaptiveTactics : RuleTactics
     {
-        /// <summary>The prior mean of the controlled-entry share in A-T step 2 (data-schema.md: priorWeight × 0.5).</summary>
-        public const double PriorEntryShare = 0.5;
-
-        private string _previousSystem;
+        private string _current;
+        private int _currentSince;
 
         /// <summary>Creates the policy.</summary>
         public AdaptiveTactics(IReadOnlyList<Play> library, IReadOnlyList<DefensiveSystem> systems, TuningConfig tuning)
@@ -132,48 +131,101 @@ namespace HockeyCoach.AI
             return bonus;
         }
 
-        /// <summary>A-T step 2: q = (c + prior × 0.5) / (c + d + prior) from the opponent's entries and dump-ins.</summary>
-        public double ControlledEntryShare(CoachView view)
+        /// <summary>
+        /// The own system choice c of mode <c>normal</c> (A-T2 item 3); null before the first decision, when it starts as
+        /// <c>modes.normal.system</c>.
+        /// </summary>
+        public string CurrentSystem
         {
-            SortedSet<int> own = PublicLog.OwnSkaters(view);
-            int controlled = 0;
-            int dumps = 0;
-            foreach (SimEvent e in Window(view))
+            get { return _current; }
+        }
+
+        /// <summary>
+        /// A-T2 item 3: the window of classified observations against <paramref name="current"/>: the last
+        /// <paramref name="windowEvents"/> observations whose system id is <paramref name="current"/> and whose event index
+        /// is at least <paramref name="sinceEventIndex"/> (the log length when <paramref name="current"/> was chosen, so
+        /// the window is empty right after a switch; Q-069 default).
+        /// </summary>
+        public static IReadOnlyList<TransitionObservation> StyleWindow(
+            IReadOnlyList<TransitionObservation> observations, string current, int sinceEventIndex, int windowEvents)
+        {
+            if (observations == null)
             {
-                if (e is ControlledZoneEntryEvent entry && !own.Contains(entry.CarrierId))
+                throw new ArgumentNullException(nameof(observations));
+            }
+
+            var window = new List<TransitionObservation>();
+            for (int i = observations.Count - 1; i >= 0 && window.Count < windowEvents; i--)
+            {
+                TransitionObservation o = observations[i];
+                if (o.EventIndex < sinceEventIndex)
                 {
-                    controlled++;
+                    break;
                 }
-                else if (e is DumpInEvent dump && !own.Contains(dump.ShooterId))
+
+                if (string.Equals(o.SystemId, current, StringComparison.Ordinal))
                 {
-                    dumps++;
+                    window.Add(o);
                 }
             }
 
-            double prior = Tuning.Ai.Adaptive.PriorWeight;
-            double denominator = controlled + dumps + prior;
-            return denominator > 0.0 ? (controlled + (prior * PriorEntryShare)) / denominator : PriorEntryShare;
+            window.Reverse();
+            return window;
+        }
+
+        /// <summary>
+        /// A-T2 item 4: the own system after a stoppage decision in mode <c>normal</c>. Fewer than <c>styleMinEvents</c>
+        /// observations keep <paramref name="current"/>; otherwise rush share r ≥ <c>rushShareForPassive</c> → passive
+        /// system, r ≤ <c>rushShareForAggressive</c> → aggressive system, else <paramref name="current"/> (hysteresis).
+        /// </summary>
+        public static string DecideSystem(IReadOnlyList<TransitionObservation> window, string current, AiAdaptiveConfig adaptive)
+        {
+            if (window == null || adaptive == null)
+            {
+                throw new ArgumentNullException(window == null ? nameof(window) : nameof(adaptive));
+            }
+
+            int n = window.Count;
+            if (n < adaptive.StyleMinEvents)
+            {
+                return current;
+            }
+
+            int rushes = 0;
+            foreach (TransitionObservation o in window)
+            {
+                rushes += o.Style == TransitionStyleClass.Rush ? 1 : 0;
+            }
+
+            double r = rushes / (double)n;
+            if (r >= adaptive.RushShareForPassive)
+            {
+                return adaptive.PassiveSystem;
+            }
+
+            return r <= adaptive.RushShareForAggressive ? adaptive.AggressiveSystem : current;
         }
 
         /// <inheritdoc />
         protected override string NormalSystem(CoachView view, string configured)
         {
             AiAdaptiveConfig adaptive = Tuning.Ai.Adaptive;
-            double q = ControlledEntryShare(view);
-            if (q >= adaptive.ControlledEntryShareForPassive)
+            if (_current == null)
             {
-                _previousSystem = adaptive.PassiveSystem;
-            }
-            else if (q <= adaptive.ControlledEntryShareForAggressive)
-            {
-                _previousSystem = adaptive.AggressiveSystem;
-            }
-            else if (_previousSystem == null)
-            {
-                _previousSystem = configured;
+                _current = configured;
+                _currentSince = 0;
             }
 
-            return _previousSystem;
+            IReadOnlyList<TransitionObservation> observations = TransitionStyle.Classify(view.Events, PublicLog.OwnSkaters(view));
+            IReadOnlyList<TransitionObservation> window = StyleWindow(observations, _current, _currentSince, adaptive.StyleWindowEvents);
+            string next = DecideSystem(window, _current, adaptive);
+            if (!string.Equals(next, _current, StringComparison.Ordinal))
+            {
+                _current = next;
+                _currentSince = view.Events.Count;
+            }
+
+            return _current;
         }
     }
 }

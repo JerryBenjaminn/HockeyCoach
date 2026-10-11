@@ -174,7 +174,7 @@ public class RuleCoachTests
     }
 
     [Fact]
-    public void Adaptive_DistributionHasThePrior_AndSystemFollowsEntryShareWithHysteresis()
+    public void Adaptive_DistributionHasThePrior()
     {
         var tactics = new AdaptiveTactics(Library, Systems, Tuning);
         AiAdaptiveConfig a = Tuning.Ai.Adaptive;
@@ -187,22 +187,6 @@ public class RuleCoachTests
         var seen = Enumerable.Range(0, 10).Select(i => (SimEvent)new PassEvent(TestCoachViews.Context(i, own, systemId: s0), own[0], own[1], false, true)).ToList();
         IReadOnlyDictionary<string, double> p = tactics.OpponentSystemDistribution(ViewAt(20.0, 0, 0, seen));
         Assert.Equal((10 + (a.PriorWeight / Systems.Count)) / (10 + a.PriorWeight), p[s0], 12);
-
-        // Many opponent carries → passive; many dumps → aggressive; in between → previous choice.
-        List<SimEvent> Entries(int carries, int dumps) =>
-            Enumerable.Range(0, carries).Select(i => (SimEvent)new ControlledZoneEntryEvent(TestCoachViews.Context(i, own), 901, new EntryNumbers(2, 2), ZoneEntryMethod.Carry, ZoneEntryOutcome.Kept))
-                .Concat(Enumerable.Range(0, dumps).Select(i => (SimEvent)new DumpInEvent(TestCoachViews.Context(100 + i, own), 902, BattleOutcome.NoWinner)))
-                .ToList();
-
-        Assert.Equal(a.PassiveSystem, tactics.Plan(ViewAt(300.0, 0, 0, Entries(40, 0))).System.Id);
-        Assert.Equal(a.PassiveSystem, tactics.Plan(ViewAt(300.0, 0, 0, Entries(5, 5))).System.Id);
-        Assert.Equal(a.AggressiveSystem, tactics.Plan(ViewAt(300.0, 0, 0, Entries(0, 40))).System.Id);
-        Assert.Equal(a.AggressiveSystem, tactics.Plan(ViewAt(300.0, 0, 0, Entries(5, 5))).System.Id);
-        Assert.Equal(Tuning.Ai.Rulebased.Modes["normal"].System, new AdaptiveTactics(Library, Systems, Tuning).Plan(ViewAt(300.0, 0, 0, Entries(5, 5))).System.Id);
-
-        // Events outside the window are ignored: q falls back to the prior.
-        double q = tactics.ControlledEntryShare(ViewAt(a.WindowSeconds + 500.0, 0, 0, Entries(40, 0), period: 1));
-        Assert.Equal(AdaptiveTactics.PriorEntryShare, q, 12);
     }
 
     private static List<SimEvent> OpponentDefends(params (double Time, string System)[] seen)

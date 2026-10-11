@@ -137,8 +137,10 @@
     "ai.rulebased.timeout.maxDeficitGoals",
     "ai.adaptive.windowSeconds",
     "ai.adaptive.priorWeight",
-    "ai.adaptive.controlledEntryShareForPassive",
-    "ai.adaptive.controlledEntryShareForAggressive"
+    "ai.adaptive.styleWindowEvents",
+    "ai.adaptive.styleMinEvents",
+    "ai.adaptive.rushShareForPassive",
+    "ai.adaptive.rushShareForAggressive"
   ],
   "stats": {
     "min": 1,
@@ -561,7 +563,7 @@
     "regroupForecheckersAllowed": 1
   },
   "ai": {
-    "_notes": "Coach AI thresholds (data-schema.md AI-1..AI-6, D-077). Not tuned for win rate before the first batch report (D-077 item 8). Coaches see public info only; energy is estimated from ice and bench time.",
+    "_notes": "Coach AI thresholds (data-schema.md AI-1..AI-6, D-077). Not tuned for win rate before the first batch report (D-077 item 8). Coaches see public info only; energy is estimated from ice and bench time. adaptive system: opponent transition style from the public log (first action of a non-faceoff possession: empty play id = rush, play id = regroup), counted only against adaptive's current system; switch at a stoppage when at least styleMinEvents such observations show a clear share (data-schema.md A-T2, D-080).",
     "random": {
       "onTheFlyChangeProbability": 0.5,
       "timeoutProbabilityPerStoppage": 0.02
@@ -600,8 +602,10 @@
       "priorWeight": 10,
       "passiveSystem": "trap122",
       "aggressiveSystem": "forecheck212",
-      "controlledEntryShareForPassive": 0.6,
-      "controlledEntryShareForAggressive": 0.4
+      "styleWindowEvents": 6,
+      "styleMinEvents": 4,
+      "rushShareForPassive": 0.65,
+      "rushShareForAggressive": 0.35
     }
   },
   "chanceTypes": {

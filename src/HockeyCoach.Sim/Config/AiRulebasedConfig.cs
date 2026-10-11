@@ -173,7 +173,7 @@ namespace HockeyCoach.Sim.Config
         public int MaxDeficitGoals { get; }
     }
 
-    /// <summary><c>ai.adaptive</c> (AI-2 A-T).</summary>
+    /// <summary><c>ai.adaptive</c> (AI-2 A-T and A-T2).</summary>
     public sealed class AiAdaptiveConfig
     {
         /// <summary>Creates the config.</summary>
@@ -182,15 +182,19 @@ namespace HockeyCoach.Sim.Config
             double priorWeight,
             string passiveSystem,
             string aggressiveSystem,
-            double controlledEntryShareForPassive,
-            double controlledEntryShareForAggressive)
+            int styleWindowEvents,
+            int styleMinEvents,
+            double rushShareForPassive,
+            double rushShareForAggressive)
         {
             WindowSeconds = windowSeconds;
             PriorWeight = priorWeight;
             PassiveSystem = passiveSystem ?? throw new ArgumentNullException(nameof(passiveSystem));
             AggressiveSystem = aggressiveSystem ?? throw new ArgumentNullException(nameof(aggressiveSystem));
-            ControlledEntryShareForPassive = controlledEntryShareForPassive;
-            ControlledEntryShareForAggressive = controlledEntryShareForAggressive;
+            StyleWindowEvents = styleWindowEvents;
+            StyleMinEvents = styleMinEvents;
+            RushShareForPassive = rushShareForPassive;
+            RushShareForAggressive = rushShareForAggressive;
         }
 
         /// <summary>Observation window in match seconds.</summary>
@@ -205,10 +209,16 @@ namespace HockeyCoach.Sim.Config
         /// <summary>System against a dumping opponent.</summary>
         public string AggressiveSystem { get; }
 
-        /// <summary>Controlled-entry share at or above which the passive system is used.</summary>
-        public double ControlledEntryShareForPassive { get; }
+        /// <summary>A-T2: the window is the last this many classified observations against the current own system.</summary>
+        public int StyleWindowEvents { get; }
 
-        /// <summary>Controlled-entry share at or below which the aggressive system is used.</summary>
-        public double ControlledEntryShareForAggressive { get; }
+        /// <summary>A-T2: fewer observations in the window than this keep the current own system.</summary>
+        public int StyleMinEvents { get; }
+
+        /// <summary>A-T2: rush share at or above which the passive system is used.</summary>
+        public double RushShareForPassive { get; }
+
+        /// <summary>A-T2: rush share at or below which the aggressive system is used.</summary>
+        public double RushShareForAggressive { get; }
     }
 }
