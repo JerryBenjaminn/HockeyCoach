@@ -643,8 +643,8 @@ Hallittu alueelletuonti on joko `skate`, jonka kohde on hyökkäysalueella ja l�
 
 Lasketaan toiminnon hetkellä ennen tarkistusta:
 
-- **N** = hyökkäävän joukkueen kenttäpelaajat, joiden x ≥ keskiviiva (x ≥ 5). Kiekollinen tai syöttäjä lasketaan aina mukaan.
-- **M** = puolustavan joukkueen kenttäpelaajat, joiden x ≥ kiekon x (kiekollisen tai syöttäjän solmu), eli kiekon tasalla tai kiekon ja oman maalinsa välissä.
+- **N** = hyökkäävän joukkueen kenttäpelaajat, joiden x ≥ kiekon x (kiekollisen tai syöttäjän solmu), eli kiekon tasalla tai sen edellä. Kiekollinen tai syöttäjä lasketaan aina mukaan (D-080, Q-065).
+- **M** = puolustavan joukkueen kenttäpelaajat, joiden x > kiekon x, eli vain kiekon ja oman maalinsa välissä olevat. Kiekon tasalla olevaa puolustajaa ei lasketa (D-080, Q-065).
 - Kirjataan muodossa "N vs M", esim. "3 vs 2". Kiekon kuljettaja = kiekollinen (kuljetus) tai vastaanottaja (syöttö). Lopputulos: hallinta säilytetty (tarkistus onnistui) tai menetetty.
 
 ### M-9 Puolustusjärjestelmän muokkaajat: voimasuhde ja karvaajat (D-078 K4)
