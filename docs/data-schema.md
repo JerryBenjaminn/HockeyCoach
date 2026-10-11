@@ -848,7 +848,7 @@ Siirtymäohje (valmentajan päätös, oletus `rush`) koskee kiekon saamista muut
 
 Raja `transitions.regroupForecheckersAllowed` = 1: 1-2-2-trapin F1 yksin ei estä kokoamista, mutta kaksi tai kolme syvällä karvaavaa (2-1-2) haastaa sen. Kiekkoperuste: 2-1-2-karvaus on rakennettu estämään rauhallinen kokoaminen omassa päässä, ja trapia vastaan kiekkoa kierrätetään ja kootaan (E-005). Testit: f = raja → ei tarkistusta, f = raja + 1 → tarkistus; epäonnistuminen tuottaa riiston ja oikean riistäjän; askelmäärä n_reg + n_set = n_tot; keskialueen kokoaminen ei koskaan tarkista; determinismi (sama siemen → sama loki).
 
-#### Paluukarvaus suorahyökkäyksessä (D-084 kohta 2) – odottaa Jerryn hyväksyntää
+#### Paluukarvaus suorahyökkäyksessä (D-084 kohta 2, hyväksytty D-085)
 
 **Valittu tapa: (b) väärällä puolella kiekkoa oleva puolustaja luistelee kohti omaa maaliaan.** Perustelut:
 

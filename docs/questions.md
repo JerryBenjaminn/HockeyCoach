@@ -14,15 +14,16 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-072 · 2026-10-11 · kirjaaja: game-designer (kirjannut koordinaattori)
-**Kysymys:** paluukarvauksen speksin (`data-schema.md`, Paluukarvaus suorahyökkäyksessä, D-084 kohta 2) avoimet kohdat: (1) riittääkö `transitions.backcheckNodesPerBeat` = 2 (vain suunta muuttuu), vai pitäisikö kiekottoman pelaajan olla kiekollista nopeampi (arvio: 3 ylikorjaa, alivoimaisia yli 80 %)? (2) Rakennetaanko paluukarvaus, kun E-006 yksin toi jakauman haarukoihin (66,4 / 33,6 / 0,0 %)? Hyöty olisi realismi, ei jakauma. (3) **Kysymys veljelle:** palaavatko karvaajat omaa kaistaansa vai keskikautta?
-**Konteksti:** D-084, E-006:n batch (`reports/m5-strength/e006`). Designerin käsin laskettu arvio: väärällä puolella olevia puolustajia oman alueen riistojen jälkeen n. 1,64 → 0,6–0,9, jakauma muuttuu enintään muutaman prosenttiyksikön.
-**Ehdotettu oletus:** (1) 2, (2) Jerry päättää, (3) oma kaista.
+### Q-073 · 2026-10-11 · kirjaaja: Jerry
+**Kysymys veljelle:** palaavatko paluukarvauksessa hyökkääjät keskikaistaa ja pakit omia kaistojaan?
+**Konteksti:** paluukarvaus (`data-schema.md`, D-085). Nyt kaikki väärällä puolella kiekkoa olevat palaavat omaa kaistaansa.
+**Ehdotettu oletus:** oma kaista kaikille.
 
 ### Q-071 · 2026-10-11 · kirjaaja: Jerry (myöhemmin)
 **Kysymys:** pitäisikö laitureiden sijoittua suorahyökkäyksessä kiekollisen edelle?
 **Konteksti:** E-006:n analyysi (D-084): O-7:n suorahyökkäyssäännössä tukipelaajien kohde on kiekollisen x-rivi, joten alueelle tulossa hyökkääjiä on kolme 63 %:ssa tuonneista, kun Wisehockeyssa yleensä 1–2. Esim. laiturit riviä kiekollisen edellä muuttaisivat voimasuhteita ja paikkojen syntyä.
 **Ehdotettu oletus:** ei muutosta nyt. Palataan, kun paluukarvaus on mitattu.
+**Seuraavan kierroksen ehdotus (Jerry, 2026-10-11):** E-006:n jälkeen ylivoimaisia alueelletuonteja on 0 %, eli 2v1-hyökkäyksiä ei synny lainkaan, ja paluukarvaus vähentää niitä edelleen. Ehdotus: laiturit luistelevat suorahyökkäyksessä kaistaansa kiekollisen edelle, jolloin ylivoima syntyy, kun hyökkäävä joukkue on nopeampi (Nopeus vs puolustajan Nopeus) tai siirtymä on nopea. Tavoite: ylivoimat ovat ansaittuja, eivät ilmaisia. Ei toteuteta paluukarvauksen kierroksella.
 
 ### Q-070 · 2026-10-11 · kirjaaja: Jerry (idea myöhemmäksi, ei virstanpylväisiin)
 **Kysymys:** lisätäänkö peliin ottelun jälkeinen kertomusraportti pelaajalle Wisehockeyn AI-analyysin tyyliin?
@@ -148,6 +149,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-072 · 2026-10-11 · kirjaaja: game-designer (kirjannut koordinaattori)
+**Kysymys:** paluukarvauksen speksin (`data-schema.md`, Paluukarvaus suorahyökkäyksessä, D-084 kohta 2) avoimet kohdat: (1) riittääkö `transitions.backcheckNodesPerBeat` = 2 (vain suunta muuttuu), vai pitäisikö kiekottoman pelaajan olla kiekollista nopeampi (arvio: 3 ylikorjaa, alivoimaisia yli 80 %)? (2) Rakennetaanko paluukarvaus, kun E-006 yksin toi jakauman haarukoihin (66,4 / 33,6 / 0,0 %)? Hyöty olisi realismi, ei jakauma. (3) **Kysymys veljelle:** palaavatko karvaajat omaa kaistaansa vai keskikautta?
+**Konteksti:** D-084, E-006:n batch (`reports/m5-strength/e006`). Designerin käsin laskettu arvio: väärällä puolella olevia puolustajia oman alueen riistojen jälkeen n. 1,64 → 0,6–0,9, jakauma muuttuu enintään muutaman prosenttiyksikön.
+**Ehdotettu oletus:** (1) 2, (2) Jerry päättää, (3) oma kaista.
+**Vastaus (Jerry, 2026-10-11):** (1) `backcheckNodesPerBeat` = 2. (2) Paluukarvaus toteutetaan (tapa b), koska se korjaa sijainnit, vaikka E-006 jo toi jakauman haarukoihin. (3) Oletuksena oma kaista; kysymys veljelle siirretty Q-073:een. Kirjattu: D-085.
 
 ### Q-069 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** lasketaanko A-T2:n ikkunaan (kohta 3) myös vanhat havainnot järjestelmää c vastaan ajalta ennen kuin `adaptive` viimeksi vaihtoi c:hen?
