@@ -121,15 +121,14 @@ namespace HockeyCoach.Sim.Shift
             }
 
             RinkZone zone = _rink.ZoneAtX(TeamView(team, team, holder).X);
-            Play play = PlaySelector.Select(Team(team).Plan, zone, holder, out bool needsPass);
-            if (play == null)
+            GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, team, _rink);
+            Play used = PlaySelector.Select(Team(team).Plan, zone, holder, puck, _rink, out bool needsPass);
+            if (used == null)
             {
                 _mode = Mode.SystemPossession;
                 return;
             }
 
-            GridPoint puck = TeamFrame.ToTeamView(_state.PuckNode, team, _rink);
-            Play used = PlayMirror.ShouldMirror(play, puck, _rink) ? PlayMirror.Mirror(play, _rink) : play;
             double duration = _tuning.Time.SetupSeconds + (needsPass ? Seconds("pass") : 0.0) + ActionDuration(used.Beats[0].Action);
             if (!Begin(duration))
             {

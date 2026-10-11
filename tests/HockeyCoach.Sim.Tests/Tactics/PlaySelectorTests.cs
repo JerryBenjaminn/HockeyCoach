@@ -23,6 +23,12 @@ public class PlaySelectorTests
             id);
     }
 
+    /// <summary>A puck in the middle lane: no play is mirrored (D-037).</summary>
+    private static readonly GridPoint MiddlePuck = new(8, 2);
+
+    /// <summary>A puck in the lane of y = 4, the other side than a play written from y = 0.</summary>
+    private static readonly GridPoint FarPuck = new(8, 4);
+
     private static ShiftPlan Plan(params Play[] plays) => new(plays, TestPlays.Trap122());
 
     [Theory]
@@ -39,7 +45,7 @@ public class PlaySelectorTests
     {
         ShiftPlan plan = Plan(Typed("a", PlayType.OffensiveZone, Position.LeftWing), Typed("b", PlayType.OffensiveZone, Position.Center));
 
-        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, out bool needsPass);
+        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, MiddlePuck, Rink, out bool needsPass);
 
         Assert.Equal("b", play.Id);
         Assert.False(needsPass);
@@ -50,10 +56,48 @@ public class PlaySelectorTests
     {
         ShiftPlan plan = Plan(Typed("x", PlayType.Breakout, Position.Center), Typed("a", PlayType.OffensiveZone, Position.LeftWing), Typed("b", PlayType.OffensiveZone, Position.RightWing));
 
-        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, out bool needsPass);
+        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, MiddlePuck, Rink, out bool needsPass);
 
         Assert.Equal("a", play.Id);
         Assert.True(needsPass);
+    }
+
+    [Fact]
+    public void Select_ComparesTheHolderToTheMirroredPuckCarrier_Q075()
+    {
+        // Written for LW (start (8, 0)); with the puck on the far side it runs mirrored and RW carries the puck.
+        ShiftPlan plan = Plan(Typed("a", PlayType.OffensiveZone, Position.LeftWing));
+
+        Play forRw = PlaySelector.Select(plan, RinkZone.Offensive, Position.RightWing, FarPuck, Rink, out bool rwNeedsPass);
+        Assert.Equal(Position.RightWing, forRw.PuckCarrier);
+        Assert.False(rwNeedsPass);
+
+        Play forLw = PlaySelector.Select(plan, RinkZone.Offensive, Position.LeftWing, FarPuck, Rink, out bool lwNeedsPass);
+        Assert.Equal(Position.RightWing, forLw.PuckCarrier);
+        Assert.True(lwNeedsPass);
+    }
+
+    [Fact]
+    public void Select_PrefersALaterPlayWhoseMirroredCarrierIsTheHolder()
+    {
+        // "c" is carried by C either way; "a" (written for LW) runs mirrored as RW's play, so the RW holder gets "a".
+        ShiftPlan plan = Plan(Typed("c", PlayType.OffensiveZone, Position.Center), Typed("a", PlayType.OffensiveZone, Position.LeftWing));
+
+        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.RightWing, FarPuck, Rink, out bool needsPass);
+
+        Assert.Equal("a", play.Id);
+        Assert.False(needsPass);
+    }
+
+    [Fact]
+    public void Select_RunsTheWrittenPlay_WhenThePuckIsOnItsSide()
+    {
+        ShiftPlan plan = Plan(Typed("a", PlayType.OffensiveZone, Position.LeftWing));
+
+        Play play = PlaySelector.Select(plan, RinkZone.Offensive, Position.LeftWing, new GridPoint(8, 0), Rink, out bool needsPass);
+
+        Assert.Equal(Position.LeftWing, play.PuckCarrier);
+        Assert.False(needsPass);
     }
 
     [Fact]
@@ -61,7 +105,7 @@ public class PlaySelectorTests
     {
         ShiftPlan plan = Plan(Typed("x", PlayType.Breakout, Position.Center), Typed("f", PlayType.Faceoff, Position.Center, "offensiveLeft"));
 
-        Assert.Null(PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, out bool needsPass));
+        Assert.Null(PlaySelector.Select(plan, RinkZone.Offensive, Position.Center, MiddlePuck, Rink, out bool needsPass));
         Assert.False(needsPass);
     }
 

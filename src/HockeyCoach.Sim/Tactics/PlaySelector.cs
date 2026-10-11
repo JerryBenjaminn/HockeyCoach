@@ -22,19 +22,33 @@ namespace HockeyCoach.Sim.Tactics
         }
 
         /// <summary>
-        /// The first play in priority order that fits <paramref name="zone"/> and starts with <paramref name="holder"/>;
-        /// otherwise the first that fits the zone, which then starts with a checked pass to its puck carrier
-        /// (<paramref name="needsPass"/>). Null when no play fits the zone (the team keeps the puck in system mode).
+        /// The play to run, as run (mirrored per D-037 when the puck is on the other side than the play's writing side). The
+        /// first play in priority order that fits <paramref name="zone"/> and whose puck carrier as run is
+        /// <paramref name="holder"/>; otherwise the first that fits the zone, which then starts with a checked pass to its
+        /// puck carrier as run (<paramref name="needsPass"/>). The holder is compared after mirroring (Q-075, D-086). Null
+        /// when no play fits the zone (the team keeps the puck in system mode).
         /// </summary>
-        public static Play Select(ShiftPlan plan, RinkZone zone, Position holder, out bool needsPass)
+        /// <param name="plan">The team's shift plan.</param>
+        /// <param name="zone">The puck's zone (team's own view).</param>
+        /// <param name="holder">The puck holder.</param>
+        /// <param name="puck">The puck node (team's own view), deciding the mirroring.</param>
+        /// <param name="rink">The rink.</param>
+        /// <param name="needsPass">Whether the play starts with a pass to its puck carrier.</param>
+        public static Play Select(ShiftPlan plan, RinkZone zone, Position holder, GridPoint puck, Rink rink, out bool needsPass)
         {
             if (plan == null)
             {
                 throw new ArgumentNullException(nameof(plan));
             }
 
+            if (rink == null)
+            {
+                throw new ArgumentNullException(nameof(rink));
+            }
+
             PlayType type = TypeFor(zone);
             Play firstFit = null;
+            bool firstFitMirrored = false;
             foreach (Play play in plan.Plays)
             {
                 if (play.Type != type)
@@ -42,20 +56,23 @@ namespace HockeyCoach.Sim.Tactics
                     continue;
                 }
 
-                if (play.PuckCarrier == holder)
+                bool mirrored = PlayMirror.ShouldMirror(play, puck, rink);
+                Position carrier = mirrored ? PlayMirror.MirrorPosition(play.PuckCarrier) : play.PuckCarrier;
+                if (carrier == holder)
                 {
                     needsPass = false;
-                    return play;
+                    return mirrored ? PlayMirror.Mirror(play, rink) : play;
                 }
 
                 if (firstFit == null)
                 {
                     firstFit = play;
+                    firstFitMirrored = mirrored;
                 }
             }
 
             needsPass = firstFit != null;
-            return firstFit;
+            return firstFit != null && firstFitMirrored ? PlayMirror.Mirror(firstFit, rink) : firstFit;
         }
 
         /// <summary>
