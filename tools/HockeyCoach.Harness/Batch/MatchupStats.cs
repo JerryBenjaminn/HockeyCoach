@@ -137,6 +137,9 @@ public sealed class MatchupStats
     /// </summary>
     public Tally Breakouts { get; } = new();
 
+    /// <summary>Kept controlled entries by possession origin and rush vs play (D-085 report section).</summary>
+    public EntryOrigins EntryOrigins { get; } = new();
+
     /// <summary>Adds one match.</summary>
     public void Add(BatchGame batchGame, Rink rink)
     {
@@ -169,6 +172,7 @@ public sealed class MatchupStats
         AddPlayXg(events, SlotOf);
         AddEntries(events, SlotOf);
         AddBreakouts(batchGame, SlotOfSide);
+        EntryOrigins.Add(events, teamOf, rink);
         Adaptive.Add(batchGame);
     }
 

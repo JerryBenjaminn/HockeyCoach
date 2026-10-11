@@ -262,6 +262,7 @@ public static class BatchReport
 
         md.AppendLine();
         Counterplay.WriteMatchup(md, s);
+        s.EntryOrigins.Write(md);
         md.AppendLine("### Checks");
         md.AppendLine();
         md.AppendLine("| Check | N per match | Attacker success | Mean probability |");
@@ -348,6 +349,7 @@ public static class BatchReport
                 ("pressureBySystem", s.PressureBySystem), ("chanceTypes", s.ChanceTypes), ("chanceClasses", s.ChanceClasses), ("playXg", s.PlayXg),
                 ("entries", s.Entries), ("breakouts", s.Breakouts), ("adaptiveSwitches", s.Adaptive.Switches), ("adaptiveSystemSeconds", s.Adaptive.SystemSeconds),
                 ("adaptiveCountered", s.Adaptive.Countered), ("transitionClassification", s.Adaptive.Classification),
+                ("entryOriginStrength", s.EntryOrigins.Strength), ("entryOriginDefenders", s.EntryOrigins.Defenders),
             })
             {
                 foreach (string key in tally.N.Keys)
