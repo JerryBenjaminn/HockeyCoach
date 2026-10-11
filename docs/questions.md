@@ -14,6 +14,14 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-061 · 2026-10-11 · kirjaaja: Jerry
+**Kysymys (myöhemmin, virstanpylvään 5 jälkeen):** riittääkö tapahtumaloki Unity-toiston animointiin?
+**Konteksti:** Unity-toisto. Tarkistetaan, että jokaisessa tapahtumassa on kiekon lähtö- ja tulosolmu. Reitin muotoa (suora, laidan kautta, kiertää laitaa) ei tallenneta simulaatioon, vaan Unity päättelee sen geometriasta.
+
+### Q-060 · 2026-10-11 · kirjaaja: Jerry
+**Kysymys veljelle:** minne ohilaukaukset tyypillisesti päätyvät: samaan kulmaan, laitaa kiertäen vastakkaiselle puolelle vai pisteelle?
+**Konteksti:** `tuning.json` `loosePuckSpots.missedShot`. Vastauksen jälkeen osioon lisätään vaihtoehto "kiertää laitaa" omalla todennäköisyydellään. Ei fysiikkaa.
+
 ### Q-059 · 2026-10-11 · kirjaaja: game-designer
 **Kysymys veljelle:** (1) Voivatko molemmat joukkueet ottaa aikalisän saman katkon aikana, ja jos voivat, onko käytäntö peräkkäiset 30 sekunnin aikalisät? (2) Katkaiseeko aikalisä käytännössä vastustajan painostusvaiheen ("momentum") enemmän kuin tavallinen katko?
 **Konteksti:** `data-schema.md`, AI-4 (D-077 kohta 6). Kohta (2) olisi uusi vaikutus (esim. vastustajan painetilan lisäkerroin aikalisässä), joten se vaatii Jerryn päätöksen; nyt aikalisä vaikuttaa vain energiaan.

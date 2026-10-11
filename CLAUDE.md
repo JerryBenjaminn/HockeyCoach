@@ -72,6 +72,8 @@ Delegoi tehtävät näin:
 - Koodin toteutus, bugit, testit, refaktorointi → `programmer`.
 - Kuvioiden ja järjestelmien JSON, tasapainotus, raporttien tulkinta, dokumenttien ylläpito → `game-designer`.
 - Kun tehtävä vaatii molempia (esim. uusi mekaniikka), designer tarkentaa speksin ensin ja programmer toteuttaa sen jälkeen.
+- Agentit palauttavat enintään 25 rivin yhteenvedon. Pitkät raportit ja taulukot kirjoitetaan tiedostoihin (`reports/` tai `docs/`), ja yhteenvedossa on vain polku ja tärkeimmät luvut.
+- Agentteja ajetaan rinnakkain vain, kun niiden tehtävät ovat oikeasti riippumattomia.
 
 ## Kun jokin on epäselvää
 
