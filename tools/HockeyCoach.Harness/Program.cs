@@ -28,8 +28,8 @@ internal static class Program
 
         Console.Error.WriteLine("Usage: validate [--data <dir>]   Load and validate rink, tuning, targets, plays and systems.");
         Console.Error.WriteLine("       shift [--seed 42] [--home-system forecheck212] [--away-system trap122] [--no-board] [--json] [--max-steps 5000] [--data <dir>]");
-        Console.Error.WriteLine("       match [--seed 42] [--home rotation|random] [--away rotation|random] [--home-system forecheck212] [--away-system trap122] [--json] [--count N] [--data <dir>]");
-        Console.Error.WriteLine("             --home-system / --away-system apply to the rotation coach; random draws its own system.");
+        Console.Error.WriteLine("       match [--seed 42] [--home <coach>] [--away <coach>] [--home-system forecheck212] [--away-system trap122] [--json] [--count N] [--data <dir>]");
+        Console.Error.WriteLine("             coaches: " + string.Join(", ", Simulation.CoachRegistry.Names) + " (default rotation); --home-system / --away-system apply to rotation only.");
         Console.Error.WriteLine("             --count N (even) plays N/2 pairs: pair i uses seed+i twice, sides swapped; prints averages, venue and team split.");
         Console.Error.WriteLine("batch and compare are not implemented yet.");
         return 1;

@@ -12,7 +12,7 @@ namespace HockeyCoach.AI
     /// <c>ai.random.onTheFlyChangeProbability</c> to a uniformly drawn bench unit. Trio first, then pair. A unit that may
     /// not change stays without a draw.
     /// </summary>
-    public sealed class RandomLines
+    public sealed class RandomLines : ILinePolicy
     {
         private readonly AiRandomConfig _config;
         private readonly IRandom _random;

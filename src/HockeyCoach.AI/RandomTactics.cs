@@ -12,8 +12,8 @@ namespace HockeyCoach.AI
     /// a uniform system (systems in ordinal id order), a uniform transition (<c>rush</c>, <c>regroup</c>) and uniform
     /// system-mode instructions (<c>netFrontAfterShot</c>, <c>looseChasers</c>, <c>pinch</c>), drawn in that order.
     /// </summary>
-    /// <remarks>Step 1, the timeout draw, is <see cref="DrawTimeout"/>; the caller draws it before the lines (step 2).</remarks>
-    public sealed class RandomTactics
+    /// <remarks>Step 1, the timeout draw, is <see cref="Timeout"/>; the caller draws it before the lines (step 2).</remarks>
+    public sealed class RandomTactics : ITacticsPolicy
     {
         private static readonly TransitionInstruction[] Transitions = { TransitionInstruction.Rush, TransitionInstruction.Regroup };
 
@@ -61,7 +61,7 @@ namespace HockeyCoach.AI
         /// R-T step 1: only when a timeout may be called now (<see cref="CoachTimeouts.CanCall"/>), one
         /// <c>Chance(ai.random.timeoutProbabilityPerStoppage)</c>; otherwise no draw and false.
         /// </summary>
-        public bool DrawTimeout(CoachView view)
+        public bool Timeout(CoachView view)
         {
             if (view == null)
             {
@@ -72,7 +72,7 @@ namespace HockeyCoach.AI
         }
 
         /// <summary>Draws a plan: plays, system, transition, netFrontAfterShot, looseChasers, pinch.</summary>
-        public ShiftPlan Draw()
+        public ShiftPlan Plan(CoachView view)
         {
             var plays = (Play[])_library.Clone();
             for (int i = plays.Length - 1; i >= 1; i--)

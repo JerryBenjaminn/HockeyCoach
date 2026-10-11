@@ -172,7 +172,7 @@ public class RandomCoachTests
         Assert.Equal("random", options!.HomeCoach);
         Assert.Equal("rotation", options.AwayCoach);
 
-        Assert.Null(MatchCommand.Parse(new[] { "match", "--home", "rulebased" }, out error));
-        Assert.Contains("Unknown coach rulebased", error);
+        Assert.Null(MatchCommand.Parse(new[] { "match", "--home", "genius" }, out error));
+        Assert.Contains("Unknown coach genius", error);
     }
 }
