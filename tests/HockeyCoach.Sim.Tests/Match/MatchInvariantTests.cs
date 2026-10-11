@@ -176,7 +176,7 @@ public class MatchInvariantTests
     {
         var options = new MatchCommand.Options(1, "forecheck212", "trap122", false, 1);
         string text = MatchCommand.Run(ShiftTestData.Data, options);
-        MatchResult result = MatchTestData.Play(1);
+        MatchResult result = MatchCommand.Play(ShiftTestData.Data, MatchCommand.Setup(ShiftTestData.Data, 1UL, false), "forecheck212", "trap122", 1UL);
 
         Assert.Equal(result.HomeGoals + result.AwayGoals, text.Split("    GOAL: ").Length - 1);
         Assert.Equal(3, text.Split("summary ---").Length - 1);

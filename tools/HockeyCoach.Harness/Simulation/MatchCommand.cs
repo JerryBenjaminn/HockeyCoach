@@ -38,14 +38,29 @@ public static class MatchCommand
     /// <param name="Count">Number of matches: 1 plays a single match, an even number above 1 plays paired matches and prints averages only.</param>
     /// <param name="HomeCoach">Home coach name (team A's coach with --count).</param>
     /// <param name="AwayCoach">Away coach name (team B's coach with --count).</param>
-    public sealed record Options(ulong Seed, string HomeSystem, string AwaySystem, bool Json, int Count, string HomeCoach = CoachRegistry.Rotation, string AwayCoach = CoachRegistry.Rotation);
+    /// <param name="Mirror">Both teams get the same roster stats (Q-057 c).</param>
+    public sealed record Options(
+        ulong Seed, string HomeSystem, string AwaySystem, bool Json, int Count, string HomeCoach = CoachRegistry.Rotation, string AwayCoach = CoachRegistry.Rotation, bool Mirror = false);
 
-    /// <summary>The match setup used by the command: harness teams (home ids from 1, away from 101) with the given caps.</summary>
+    /// <summary>
+    /// A fixed match setup for tests: harness teams built from team seeds 1 and 2 (home ids from 1, away from 101) with
+    /// the given caps. The command itself derives rosters from the seed (<see cref="Setup(GameData, ulong, bool)"/>).
+    /// </summary>
     public static MatchSetup Setup(GameData data, int maxStepsPerSegment = DefaultMaxStepsPerSegment, int maxSegments = DefaultMaxSegments)
     {
         Team home = HarnessTeams.BuildMatchTeam("Home", 1, 1UL);
         Team away = HarnessTeams.BuildMatchTeam("Away", 101, 2UL);
         return new MatchSetup(data.Rink, data.Tuning, home, away, maxStepsPerSegment, maxSegments);
+    }
+
+    /// <summary>
+    /// The setup of a single match: rosters derived from <paramref name="seed"/> as for a pair (Q-057 c), home = team A
+    /// (ids from 1), away = team B (ids from 101); <paramref name="mirror"/> gives both the same stats.
+    /// </summary>
+    public static MatchSetup Setup(GameData data, ulong seed, bool mirror)
+    {
+        (Team home, Team away) = HarnessTeams.PairRosters(seed, mirror, "Home", "Away");
+        return new MatchSetup(data.Rink, data.Tuning, home, away, DefaultMaxStepsPerSegment, DefaultMaxSegments);
     }
 
     /// <summary>
@@ -59,8 +74,8 @@ public static class MatchCommand
         Func<IRandom, ICoach> a = CoachRegistry.Factory(coachA, data, systemA);
         Func<IRandom, ICoach> b = CoachRegistry.Factory(coachB, data, systemB);
         return (
-            new PairedTeam("A (" + CoachRegistry.Label(coachA, systemA) + ")", HarnessTeams.BuildMatchTeam("A", 1, 1UL), a),
-            new PairedTeam("B (" + CoachRegistry.Label(coachB, systemB) + ")", HarnessTeams.BuildMatchTeam("B", 101, 2UL), b));
+            new PairedTeam("A (" + CoachRegistry.Label(coachA, systemA) + ")", "A", a),
+            new PairedTeam("B (" + CoachRegistry.Label(coachB, systemB) + ")", "B", b));
     }
 
     /// <summary>Plays one match with rotation coaches.</summary>
@@ -87,7 +102,7 @@ public static class MatchCommand
             return Averages(data, options);
         }
 
-        MatchSetup setup = Setup(data);
+        MatchSetup setup = Setup(data, options.Seed, options.Mirror);
         MatchResult result = Play(data, setup, options.HomeCoach, options.HomeSystem, options.AwayCoach, options.AwaySystem, options.Seed);
         return options.Json ? MatchJson.Write(result, setup, options.Seed) : MatchText.Write(result, setup, data, options);
     }
@@ -103,6 +118,7 @@ public static class MatchCommand
         int count = 1;
         string homeCoach = CoachRegistry.Rotation;
         string awayCoach = CoachRegistry.Rotation;
+        bool mirror = false;
         for (int i = 1; i < args.Length; i++)
         {
             switch (args[i])
@@ -130,6 +146,9 @@ public static class MatchCommand
                 case "--json":
                     json = true;
                     break;
+                case "--mirror":
+                    mirror = true;
+                    break;
                 case "--data":
                     i++;
                     break;
@@ -155,7 +174,7 @@ public static class MatchCommand
             }
         }
 
-        return new Options(seed, home, away, json, count, homeCoach, awayCoach);
+        return new Options(seed, home, away, json, count, homeCoach, awayCoach, mirror);
     }
 
     /// <summary>Player id → team side for a setup.</summary>
@@ -193,7 +212,7 @@ public static class MatchCommand
         int gaps = 0;
         int events = 0;
         var targets = new TargetCounts(data.Tuning.Time.Periods, data.Tuning.Time.PeriodSeconds);
-        foreach (PairedGame game in PairedMatches.Play(data, teamA, teamB, options.Seed, pairs))
+        foreach (PairedGame game in PairedMatches.Play(data, teamA, teamB, options.Seed, pairs, options.Mirror))
         {
             MatchResult result = game.Result;
             record.Add(game);
@@ -219,7 +238,7 @@ public static class MatchCommand
         sb.AppendLine("Match averages: " + n + " matches in " + pairs + " pairs, seeds " + options.Seed + "–" + (options.Seed + (ulong)pairs - 1)
             + " (one seed per pair), team " + teamA.Label + " vs team " + teamB.Label + ".");
         sb.AppendLine("Pairing: each pair plays its seed twice, first A at home, then B at home (rosters, systems and coaches travel with the team;"
-            + " coach random streams follow the venue).");
+            + " coach random streams follow the venue). Rosters are derived from each pair's seed" + (options.Mirror ? " and mirrored (both teams the same stats)." : "."));
         sb.AppendLine("Stalled matches: " + stalled + ". Events per match " + F1(events / (double)n) + ".");
         sb.AppendLine();
         sb.AppendLine("By venue: home wins " + record.HomeWins + ", ties " + record.Ties + ", away wins " + record.AwayWins

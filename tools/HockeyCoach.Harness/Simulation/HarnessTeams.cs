@@ -74,6 +74,25 @@ public static class HarnessTeams
         return new Team(name, skaters, new[] { goalie }, lines, pairs);
     }
 
+    /// <summary>Stream id (for <see cref="MatchStreams.DerivedSeed"/>) of team A's roster seed (Q-057 c).</summary>
+    public const ulong RosterAStreamId = 3UL;
+
+    /// <summary>Stream id of team B's roster seed (Q-057 c).</summary>
+    public const ulong RosterBStreamId = 4UL;
+
+    /// <summary>
+    /// The two rosters of a pair (Q-057 c): team A (ids from 1) and team B (ids from 101), built from seeds derived from
+    /// <paramref name="pairSeed"/>, so both matches of a pair use the same rosters and every pair new ones. With
+    /// <paramref name="mirror"/> both teams get team A's stats (system and coach comparisons without roster luck).
+    /// </summary>
+    public static (Team A, Team B) PairRosters(ulong pairSeed, bool mirror, string nameA = "A", string nameB = "B")
+    {
+        var streams = new MatchStreams(pairSeed);
+        ulong a = streams.DerivedSeed(RosterAStreamId);
+        ulong b = mirror ? a : streams.DerivedSeed(RosterBStreamId);
+        return (BuildMatchTeam(nameA, 1, a), BuildMatchTeam(nameB, 101, b));
+    }
+
     /// <summary>The system with <paramref name="systemId"/>; throws with the known ids otherwise.</summary>
     public static DefensiveSystem System(GameData data, string systemId)
     {

@@ -7,13 +7,14 @@ using HockeyCoach.Sim.Random;
 namespace HockeyCoach.Harness.Simulation;
 
 /// <summary>
-/// One side of a paired series: the roster, a factory for its coach (a fresh coach per match) and a label for output.
-/// The roster, the coach and its system travel with the team when it changes venue.
+/// One side of a paired series: a factory for its coach (a fresh coach per match) and a label for output. The roster
+/// (derived per pair, <see cref="HarnessTeams.PairRosters"/>), the coach and its system travel with the team when it
+/// changes venue.
 /// </summary>
-/// <param name="Label">Name in output, e.g. "A (forecheck212)".</param>
-/// <param name="Team">The roster.</param>
+/// <param name="Label">Name in output, e.g. "A (rotation/forecheck212)".</param>
+/// <param name="Name">Roster name, "A" or "B".</param>
 /// <param name="NewCoach">Creates the team's coach for one match from the coach's own random stream (D-077).</param>
-public sealed record PairedTeam(string Label, Team Team, Func<IRandom, ICoach> NewCoach);
+public sealed record PairedTeam(string Label, string Name, Func<IRandom, ICoach> NewCoach);
 
 /// <summary>One played match of a paired series.</summary>
 /// <param name="Pair">Zero-based pair index.</param>
@@ -57,7 +58,8 @@ public static class PairedMatches
     }
 
     /// <summary>
-    /// Plays <paramref name="pairs"/> pairs. Pair i uses seed <paramref name="firstSeed"/> + i for both matches: first
+    /// Plays <paramref name="pairs"/> pairs. Pair i uses seed <paramref name="firstSeed"/> + i for both matches and for its
+    /// rosters (Q-057 c; <paramref name="mirror"/>: both teams the same stats): first
     /// <paramref name="teamA"/> at home, then <paramref name="teamB"/> at home. Matches are yielded in play order.
     /// </summary>
     public static IEnumerable<PairedGame> Play(
@@ -66,6 +68,7 @@ public static class PairedMatches
         PairedTeam teamB,
         ulong firstSeed,
         int pairs,
+        bool mirror = false,
         int maxStepsPerSegment = MatchCommand.DefaultMaxStepsPerSegment,
         int maxSegments = MatchCommand.DefaultMaxSegments)
     {
@@ -74,11 +77,12 @@ public static class PairedMatches
             throw new ArgumentOutOfRangeException(nameof(pairs), "At least one pair is needed.");
         }
 
-        var aHome = new MatchSetup(data.Rink, data.Tuning, teamA.Team, teamB.Team, maxStepsPerSegment, maxSegments);
-        var bHome = new MatchSetup(data.Rink, data.Tuning, teamB.Team, teamA.Team, maxStepsPerSegment, maxSegments);
         for (int i = 0; i < pairs; i++)
         {
             ulong seed = firstSeed + (ulong)i;
+            (Team rosterA, Team rosterB) = HarnessTeams.PairRosters(seed, mirror, teamA.Name, teamB.Name);
+            var aHome = new MatchSetup(data.Rink, data.Tuning, rosterA, rosterB, maxStepsPerSegment, maxSegments);
+            var bHome = new MatchSetup(data.Rink, data.Tuning, rosterB, rosterA, maxStepsPerSegment, maxSegments);
             var streams = new MatchStreams(seed);
             yield return new PairedGame(i, seed, true, aHome, MatchSimulator.Run(aHome, teamA.NewCoach(streams.HomeCoach()), teamB.NewCoach(streams.AwayCoach()), streams.Simulation()));
             yield return new PairedGame(i, seed, false, bHome, MatchSimulator.Run(bHome, teamB.NewCoach(streams.HomeCoach()), teamA.NewCoach(streams.AwayCoach()), streams.Simulation()));

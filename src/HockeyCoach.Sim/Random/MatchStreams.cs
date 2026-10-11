@@ -57,7 +57,16 @@ namespace HockeyCoach.Sim.Random
 
         private IRandom Derived(ulong streamId)
         {
-            return new Pcg32(SplitMix64(unchecked(Seed + (streamId * GoldenGamma))), streamId);
+            return new Pcg32(DerivedSeed(streamId), streamId);
+        }
+
+        /// <summary>
+        /// A seed derived from the match seed for <paramref name="streamId"/> (SplitMix64 of seed + id × golden gamma). Coach
+        /// streams use it with their own stream ids; callers may derive other inputs (e.g. harness rosters) with other ids.
+        /// </summary>
+        public ulong DerivedSeed(ulong streamId)
+        {
+            return SplitMix64(unchecked(Seed + (streamId * GoldenGamma)));
         }
 
         /// <summary>The SplitMix64 output function for one state value.</summary>
