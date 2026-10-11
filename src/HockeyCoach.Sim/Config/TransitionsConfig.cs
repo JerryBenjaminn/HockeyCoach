@@ -39,7 +39,7 @@ namespace HockeyCoach.Sim.Config
         /// <summary>
         /// Back-check (D-085, data-schema.md "Paluukarvaus suorahyökkäyksessä"): during the opponent's rush, a defender behind
         /// the puck (x &lt; puck x, attacking view) ignores his system target and skates straight toward his own goal, at
-        /// most this many steps per defence move, to the row one past the puck. 0 = off. 0..2 x <c>plays.maxNodesPerBeat</c>.
+        /// most this many steps per defence move, to the puck's row (D-086). 0 = off. 0..2 x <c>plays.maxNodesPerBeat</c>.
         /// </summary>
         public int BackcheckNodesPerBeat { get; }
     }

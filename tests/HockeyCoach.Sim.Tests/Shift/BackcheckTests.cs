@@ -82,7 +82,7 @@ public class BackcheckTests
     }
 
     [Fact]
-    public void RushMoves_BackCheckersMoveStraightTowardTheOwnGoal_AndNeverPastTheRowBeyondThePuck()
+    public void RushMoves_BackCheckersMoveStraightTowardTheOwnGoal_AndNeverPastThePuckRow()
     {
         int k = ShiftTestData.Data.Tuning.Transitions.BackcheckNodesPerBeat;
         Assert.Equal(2, k);
@@ -92,8 +92,8 @@ public class BackcheckTests
             foreach (KeyValuePair<Position, GridPoint> before in s.Before.Where(e => Backcheck.IsBehindPuck(e.Value, s.Puck)))
             {
                 GridPoint after = s.After[before.Key];
-                GridPoint target = Backcheck.Target(before.Value, s.Puck, setup.Rink);
-                IReadOnlyList<GridPoint> path = SystemMovement.Path(before.Value, target, s.Puck, k, setup.Rink);
+                GridPoint target = Backcheck.Target(before.Value, s.Puck);
+                IReadOnlyList<GridPoint> path = Backcheck.Path(before.Value, s.Puck, k, setup.Rink);
                 if (!path.Contains(after))
                 {
                     // D-058: only a teammate on every node of his own path pushes him to the nearest free node.

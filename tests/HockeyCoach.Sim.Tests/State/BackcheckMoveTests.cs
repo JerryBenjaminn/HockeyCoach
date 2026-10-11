@@ -8,7 +8,7 @@ namespace HockeyCoach.Sim.Tests.State;
 
 /// <summary>
 /// D-085 back-check at the movement level (data-schema.md, Paluukarvaus suorahyökkäyksessä): a defender behind the puck
-/// ignores his system target and skates in his own lane toward his own goal, at most k steps, to the row one past the puck.
+/// ignores his system target and skates in his own lane toward his own goal, at most k steps, to the puck's row (D-086).
 /// Nodes in these tests are in the defending team's own view unless noted (own goal (1, 2), so "toward the own goal" is x − 1).
 /// </summary>
 public class BackcheckMoveTests
@@ -109,24 +109,24 @@ public class BackcheckMoveTests
     private static readonly GridPoint GapPuck = new(5, 2);
 
     [Fact]
-    public void BehindThePuck_SkatesStraightTowardTheOwnGoal_AtMostKSteps_ToTheRowPastThePuck()
+    public void BehindThePuck_SkatesStraightTowardTheOwnGoal_AtMostKSteps_ToThePuckRow()
     {
         IReadOnlyDictionary<Position, GridPoint> after = Apply(Build(TeamSide.Away, GapFormation(), GapPuck), TeamSide.Away, Away(), 2);
 
-        // Attacking view x = 10 − x here; puck at attacking x = 5.
-        Assert.Equal(new GridPoint(4, 0), after[Position.LeftWing]);  // gap 1 → one row past the puck (attacking x 6)
+        // D-086: x_t = x_k. Puck at x = 5.
+        Assert.Equal(new GridPoint(5, 0), after[Position.LeftWing]);  // gap 1 → one step, level with the puck
         Assert.Equal(new GridPoint(5, 1), after[Position.Center]);    // gap 2 → level with the puck
         Assert.Equal(new GridPoint(7, 4), after[Position.RightWing]); // gap 4 → still two rows behind it
     }
 
     [Fact]
-    public void BackChecker_NeverOvershootsTheRowPastThePuck()
+    public void BackChecker_NeverPassesThePuckRow()
     {
-        // k = 4: gap 1 would reach x = 2 in four straight steps, but stops on x_t = 4.
+        // k = 4: gap 1 would reach x = 2 in four straight steps, but stops on x_t = x_k = 5 (D-086).
         IReadOnlyDictionary<Position, GridPoint> after = Apply(Build(TeamSide.Away, GapFormation(), GapPuck), TeamSide.Away, Away(), 4);
 
-        Assert.Equal(new GridPoint(4, 0), after[Position.LeftWing]);
-        Assert.Equal(new GridPoint(4, 1), after[Position.Center]);
+        Assert.Equal(new GridPoint(5, 0), after[Position.LeftWing]);
+        Assert.Equal(new GridPoint(5, 1), after[Position.Center]);
         Assert.Equal(new GridPoint(5, 4), after[Position.RightWing]);
     }
 
@@ -156,12 +156,17 @@ public class BackcheckMoveTests
     }
 
     [Fact]
-    public void Target_IsCappedAtTheNetFrontRow_AndNeverAGoalNode()
+    public void Target_IsThePuckRow_InTheOwnLane()
     {
-        // Puck behind the defending team's goal (x = 0): the target row is the net-front row x = 2 (attacking view 8).
-        Assert.Equal(new GridPoint(2, 3), Backcheck.Target(new GridPoint(6, 3), new GridPoint(0, 2), Rink));
-        Assert.Equal(new GridPoint(2, 0), Backcheck.Target(new GridPoint(6, 0), new GridPoint(1, 0), Rink));
+        // D-086: x_t = x_k, no net-front cap (previously min(x_k + 1, opponentGoal.x − 1)).
+        Assert.Equal(new GridPoint(5, 3), Backcheck.Target(new GridPoint(8, 3), new GridPoint(5, 1)));
+        Assert.Equal(new GridPoint(0, 3), Backcheck.Target(new GridPoint(6, 3), new GridPoint(0, 2)));
+        Assert.Equal(new GridPoint(1, 0), Backcheck.Target(new GridPoint(6, 0), new GridPoint(1, 0)));
+    }
 
+    [Fact]
+    public void PuckBehindTheOwnGoal_BackCheckersNeverStandOnAGoalNode_NorPassThePuckRow()
+    {
         var defence = new Dictionary<Position, GridPoint>
         {
             [Position.LeftWing] = new GridPoint(4, 0),
@@ -170,21 +175,32 @@ public class BackcheckMoveTests
             [Position.LeftDefence] = new GridPoint(3, 1),
             [Position.RightDefence] = new GridPoint(3, 3),
         };
-        IReadOnlyDictionary<Position, GridPoint> after = Apply(Build(TeamSide.Away, defence, new GridPoint(0, 1)), TeamSide.Away, Away(), 4);
+        var puck = new GridPoint(0, 1);
+        IReadOnlyDictionary<Position, GridPoint> after = Apply(Build(TeamSide.Away, defence, puck), TeamSide.Away, Away(), 4);
         foreach (GridPoint node in after.Values)
         {
             Assert.False(Rink.IsGoalNode(node));
-            Assert.True(node.X >= Rink.OwnGoal.X + 1, node + " passed the net-front row");
+            Assert.True(node.X >= puck.X);
         }
 
-        Assert.Equal(new GridPoint(2, 2), after[Position.Center]);
+        Assert.Equal(after.Count, after.Values.Distinct().Count());
+    }
+
+    [Fact]
+    public void TargetOnTheGoalNode_SkatesStraight_ThenTheLastStepCirclesTheGoal_D053()
+    {
+        // Puck (1, 0) beside the own goal (1, 2): the middle-lane target (1, 2) is the goal node. Straight to (2, 2), then
+        // the step onto the goal circles to the puck's side (1, 1), which is on row x_t, so the path ends there.
+        var puck = new GridPoint(1, 0);
+        Assert.Equal(new[] { new GridPoint(3, 2), new GridPoint(2, 2), new GridPoint(1, 1) }, Backcheck.Path(new GridPoint(3, 2), puck, 4, Rink));
+        Assert.Equal(new[] { new GridPoint(3, 2), new GridPoint(2, 2) }, Backcheck.Path(new GridPoint(3, 2), puck, 1, Rink));
     }
 
     [Fact]
     public void Target_KeepsTheRow_WhenTheDefenderIsAlreadyPastIt()
     {
-        // Q-074 default: puck behind the goal (0, 1), defender beside the goal (1, 3) is behind the puck but already past x_t.
-        Assert.Equal(new GridPoint(1, 3), Backcheck.Target(new GridPoint(1, 3), new GridPoint(0, 1), Rink));
+        // Q-074: the step is never away from the own goal. With x_t = x_k only a defender not behind the puck is past it.
+        Assert.Equal(new GridPoint(1, 3), Backcheck.Target(new GridPoint(1, 3), new GridPoint(2, 1)));
         Assert.True(Backcheck.IsBehindPuck(new GridPoint(1, 3), new GridPoint(0, 1)));
         Assert.False(Backcheck.IsBehindPuck(new GridPoint(5, 3), new GridPoint(5, 1)));
     }
@@ -197,7 +213,7 @@ public class BackcheckMoveTests
         defence[Position.RightWing] = new GridPoint(10, 2);
         IReadOnlyDictionary<Position, GridPoint> after = Apply(Build(TeamSide.Away, defence, GapPuck), TeamSide.Away, Away(), 2);
 
-        IReadOnlyList<GridPoint> path = SystemMovement.Path(new GridPoint(10, 2), new GridPoint(4, 2), GapPuck, 2, Rink);
+        IReadOnlyList<GridPoint> path = SystemMovement.Path(new GridPoint(10, 2), new GridPoint(5, 2), GapPuck, 2, Rink);
         Assert.Equal(new GridPoint(9, 1), path[1]);
         Assert.All(path, p => Assert.False(Rink.IsGoalNode(p)));
         Assert.Equal(path[path.Count - 1], after[Position.RightWing]);
@@ -214,13 +230,13 @@ public class BackcheckMoveTests
             Apply(Build(TeamSide.Away, GapFormation(), GapPuck), TeamSide.Away, Away(), 2, Position.RightWing, reactionNodes);
 
         Assert.Equal(new GridPoint(9 - expectedSteps, 4), after[Position.RightWing]);
-        Assert.Equal(new GridPoint(4, 0), after[Position.LeftWing]);
+        Assert.Equal(new GridPoint(5, 0), after[Position.LeftWing]);
     }
 
     [Fact]
     public void TwoBackCheckersInOneLane_NeverShareANode_D058()
     {
-        // k = 4: C (6, 1) and LW (8, 1) both aim at (4, 1); the later one in role order backs up along its own path.
+        // k = 4: C (6, 1) and LW (8, 1) both aim at (5, 1); the later one in role order backs up along its own path.
         var defence = new Dictionary<Position, GridPoint>
         {
             [Position.LeftWing] = new GridPoint(8, 1),
@@ -233,7 +249,7 @@ public class BackcheckMoveTests
 
         Assert.Equal(after.Count, after.Values.Distinct().Count());
         var ends = new[] { after[Position.LeftWing], after[Position.Center] }.OrderBy(p => p.X).ToArray();
-        Assert.Equal(new[] { new GridPoint(4, 1), new GridPoint(5, 1) }, ends);
+        Assert.Equal(new[] { new GridPoint(5, 1), new GridPoint(6, 1) }, ends);
     }
 
     [Fact]
@@ -262,7 +278,7 @@ public class BackcheckMoveTests
             Assert.Equal(new GridPoint(away[position].X, Rink.Width - 1 - away[position].Y), awayMirror[position]);
         }
 
-        Assert.Equal(new GridPoint(3, 0), away[Position.LeftWing]);
+        Assert.Equal(new GridPoint(4, 0), away[Position.LeftWing]);
         Assert.Equal(new GridPoint(8, 4), away[Position.RightDefence]);
     }
 }

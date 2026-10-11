@@ -169,8 +169,9 @@ public class PresserReactionDelayTests
             if (s.Rush && backcheck > 0 && Backcheck.IsBehindPuck(s.Before[position], s.Puck))
             {
                 // D-085: a defender behind the puck back-checks in the opponent's rush.
-                target = Backcheck.Target(s.Before[position], s.Puck, rink);
                 steps = position == limited ? Math.Min(backcheck, limitedSteps) : backcheck;
+                moves.Add(new OccupancyMove(position, Backcheck.Path(s.Before[position], s.Puck, steps, rink)));
+                continue;
             }
 
             moves.Add(new OccupancyMove(position, SystemMovement.Path(s.Before[position], target, s.Puck, steps, rink)));

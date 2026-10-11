@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HockeyCoach.Sim.Model;
 
 namespace HockeyCoach.Sim.Tactics
@@ -22,23 +23,51 @@ namespace HockeyCoach.Sim.Tactics
         }
 
         /// <summary>
-        /// The back-check target (x_t, y_p): the row one past the puck toward the defender's own goal, at most the net-front
-        /// row (attacking view x_t = min(x_k + 1, opponentGoal.x − 1)), in the defender's own lane. A defender already at or
-        /// past that row (only possible with the puck behind his goal) keeps his row: the step is always toward the own goal
-        /// (Q-074 default).
+        /// The back-check target (x_t, y_p): the puck's row (x_t = x_k, D-086), in the defender's own lane. The back-checker
+        /// catches the carrier but does not pass him. The step is always toward the own goal, so a defender already at or
+        /// past that row keeps his row (Q-074). A target on a goal node is never reached: the movement circles the goal
+        /// (D-053).
         /// </summary>
         /// <param name="defender">The defender's node (defending team's view).</param>
         /// <param name="puck">The puck node (defending team's view).</param>
+        public static GridPoint Target(GridPoint defender, GridPoint puck)
+        {
+            return new GridPoint(Math.Min(puck.X, defender.X), defender.Y);
+        }
+
+        /// <summary>
+        /// The back-checker's path (data-schema.md "Paluukarvaus suorahyökkäyksessä", Liike 3): straight steps toward the own
+        /// goal, at most <paramref name="maxSteps"/>, until x = x_t. A step onto a goal node circles it per D-053 (one of the
+        /// steps); the circling step reaches row x_t when the target itself is a goal node, so the path never ends on one.
+        /// </summary>
+        /// <param name="defender">The defender's node (defending team's view).</param>
+        /// <param name="puck">The puck node (defending team's view).</param>
+        /// <param name="maxSteps">Most steps (<c>transitions.backcheckNodesPerBeat</c>, or less for the delayed presser).</param>
         /// <param name="rink">The rink.</param>
-        public static GridPoint Target(GridPoint defender, GridPoint puck, Rink rink)
+        /// <returns>The visited nodes, <paramref name="defender"/> first.</returns>
+        public static IReadOnlyList<GridPoint> Path(GridPoint defender, GridPoint puck, int maxSteps, Rink rink)
         {
             if (rink == null)
             {
                 throw new ArgumentNullException(nameof(rink));
             }
 
-            int row = Math.Max(puck.X - 1, rink.OwnGoal.X + 1);
-            return new GridPoint(Math.Min(row, defender.X), defender.Y);
+            GridPoint target = Target(defender, puck);
+            var path = new List<GridPoint> { defender };
+            GridPoint current = defender;
+            for (int i = 0; i < maxSteps && current.X > target.X; i++)
+            {
+                GridPoint next = SystemMovement.Step(current, target, puck, rink);
+                if (next.Equals(current))
+                {
+                    break;
+                }
+
+                current = next;
+                path.Add(current);
+            }
+
+            return path;
         }
     }
 }

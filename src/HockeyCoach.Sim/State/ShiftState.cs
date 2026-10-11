@@ -278,7 +278,7 @@ namespace HockeyCoach.Sim.State
         /// Like <see cref="ApplySystem(TeamSide, DefensiveSystem, int, bool, Position?, int, out bool)"/>, with the back-check
         /// of the opponent's rush (D-085): with <paramref name="backcheckSteps"/> &gt; 0, a defender on the wrong side of the
         /// puck (x &gt; puck x in the defending team's view) ignores his system target (also a pinch or trap target) and skates
-        /// in his own lane toward his own goal, to the row one past the puck (at most the net-front row), at most
+        /// in his own lane toward his own goal, to the puck's row (D-086), at most
         /// <paramref name="backcheckSteps"/> steps (the delayed presser at most min(backcheckSteps, limitedSteps)). Roles and
         /// the D-058 order are unchanged. 0 = off.
         /// </summary>
@@ -304,18 +304,16 @@ namespace HockeyCoach.Sim.State
             IReadOnlyDictionary<Position, GridPoint> skaters = NodesInTeamView(defending);
             SystemTargets targets = SystemTargetResolver.Resolve(system, _rink, puck, PuckState, skaters);
             pinched = pinch && IsPinchSpot(puck);
-            var ordered = new List<KeyValuePair<Position, GridPoint>>();
-            var steps = new Dictionary<Position, int>();
+            var moves = new List<OccupancyMove>();
             foreach (SystemRole role in OccupancyResolver.SystemOrder)
             {
                 Position position = targets.Roles[role];
+                GridPoint from = skaters[position];
                 bool delayed = limited.HasValue && limited.Value == position;
-                GridPoint target;
-                int mySteps;
-                if (backcheckSteps > 0 && Backcheck.IsBehindPuck(skaters[position], puck))
+                if (backcheckSteps > 0 && Backcheck.IsBehindPuck(from, puck))
                 {
-                    target = Backcheck.Target(skaters[position], puck, _rink);
-                    mySteps = delayed ? Math.Max(0, Math.Min(backcheckSteps, limitedSteps)) : backcheckSteps;
+                    int mySteps = delayed ? Math.Max(0, Math.Min(backcheckSteps, limitedSteps)) : backcheckSteps;
+                    moves.Add(new OccupancyMove(position, Backcheck.Path(from, puck, mySteps, _rink)));
                     if (role == SystemRole.D1)
                     {
                         pinched = false;
@@ -323,15 +321,14 @@ namespace HockeyCoach.Sim.State
                 }
                 else
                 {
-                    target = pinched && role == SystemRole.D1 ? puck : targets.Targets[position];
-                    mySteps = delayed ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
+                    GridPoint target = pinched && role == SystemRole.D1 ? puck : targets.Targets[position];
+                    int mySteps = delayed ? Math.Max(0, Math.Min(maxSteps, limitedSteps)) : maxSteps;
+                    RequireSkaterNode(target, nameof(system));
+                    moves.Add(new OccupancyMove(position, SystemMovement.Path(from, target, puck, mySteps, _rink)));
                 }
-
-                ordered.Add(new KeyValuePair<Position, GridPoint>(position, target));
-                steps.Add(position, mySteps);
             }
 
-            Move(defending, ordered, steps);
+            SetTeam(defending, OccupancyResolver.Resolve(skaters, moves, _rink));
             return targets;
         }
 
