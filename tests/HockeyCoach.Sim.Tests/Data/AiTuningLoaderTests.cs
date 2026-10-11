@@ -46,6 +46,9 @@ public class AiTuningLoaderTests
         Assert.Equal(2, chase.LooseChasers);
         Assert.True(chase.Pinch);
         Assert.Equal(0.2, ai.Rulebased.PlayBonusBySystem["trap122"]["dumpAndChase"]);
+        Assert.Equal(new[] { "forecheck212", "trap122" }, ai.Rulebased.TransitionBySystem.Keys);
+        Assert.Equal("rush", ai.Rulebased.TransitionBySystem["forecheck212"]);
+        Assert.Equal("regroup", ai.Rulebased.TransitionBySystem["trap122"]);
         Assert.Equal(2, ai.Rulebased.Timeout.MaxDeficitGoals);
         Assert.Equal("trap122", ai.Adaptive.PassiveSystem);
         Assert.Equal(0.4, ai.Adaptive.ControlledEntryShareForAggressive);
@@ -58,11 +61,14 @@ public class AiTuningLoaderTests
         TuningConfig tuning = GameData.Load(dataDir).Tuning;
         Assert.Equal(0.5, tuning.Ai.Random.OnTheFlyChangeProbability);
         Assert.Equal(-0.1, tuning.Ai.Rulebased.PlayBonusBySystem["forecheck212"]["breakoutUpWall"]);
+        Assert.Equal("rush", tuning.Ai.Rulebased.TransitionBySystem["forecheck212"]);
+        Assert.Equal("regroup", tuning.Ai.Rulebased.TransitionBySystem["trap122"]);
 
         JsonArray placeholders = JsonNode.Parse(File.ReadAllText(Path.Combine(dataDir, "tuning.json")))!["_placeholders"]!.AsArray();
         string[] paths = placeholders.Select(p => p!.GetValue<string>()).ToArray();
         Assert.Contains("ai.rulebased.modes", paths);
         Assert.Contains("ai.rulebased.playBonusBySystem", paths);
+        Assert.Contains("ai.rulebased.transitionBySystem", paths);
         Assert.Contains("ai.random.onTheFlyChangeProbability", paths);
         Assert.DoesNotContain("ai.adaptive.passiveSystem", paths);
         Assert.DoesNotContain("ai.adaptive.aggressiveSystem", paths);
@@ -130,6 +136,27 @@ public class AiTuningLoaderTests
     }
 
     [Fact]
+    public void TransitionBySystem_IsRequired_AndValuesMustBeRushOrRegroup()
+    {
+        AssertError(root => Rule(root).Remove("transitionBySystem"), "ai.rulebased.transitionBySystem: missing");
+        AssertError(root => Rule(root)["transitionBySystem"]!["trap122"] = "dump", "ai.rulebased.transitionBySystem.trap122: must be rush or regroup");
+        AssertError(root => Rule(root)["transitionBySystem"]!["trap122"] = 1, "ai.rulebased.transitionBySystem.trap122: expected a string");
+        AssertError(root => Rule(root)["transitionBySystem"] = 1, "ai.rulebased.transitionBySystem:");
+    }
+
+    [Fact]
+    public void TransitionBySystem_MayBePartialOrEmpty()
+    {
+        LoadResult<TuningConfig> empty = Load(root => Rule(root)["transitionBySystem"] = new JsonObject());
+        Assert.True(empty.Success, string.Join("; ", empty.Errors));
+        Assert.Empty(empty.Value!.Ai.Rulebased.TransitionBySystem);
+
+        LoadResult<TuningConfig> partial = Load(root => Rule(root)["transitionBySystem"]!.AsObject().Remove("forecheck212"));
+        Assert.True(partial.Success, string.Join("; ", partial.Errors));
+        Assert.Equal(new[] { "trap122" }, partial.Value!.Ai.Rulebased.TransitionBySystem.Keys);
+    }
+
+    [Fact]
     public void AdaptiveValueRanges_AreChecked()
     {
         AssertError(root => Ai(root)["adaptive"]!["windowSeconds"] = 0, "ai.adaptive.windowSeconds:");
@@ -147,6 +174,7 @@ public class AiTuningLoaderTests
             Rule(root)["modes"]!["protect"]!["system"] = "nope";
             Rule(root)["playBonusBySystem"]!["trap122"]!["ghostPlay"] = 0.1;
             Rule(root)["playBonusBySystem"]!["zone"] = new JsonObject();
+            Rule(root)["transitionBySystem"]!["box"] = "rush";
             Ai(root)["adaptive"]!["passiveSystem"] = "box";
         }).Value!.Ai;
 
@@ -155,6 +183,7 @@ public class AiTuningLoaderTests
         Assert.Contains(errors, e => e.StartsWith("ai.rulebased.modes.protect.system: unknown system nope", StringComparison.Ordinal));
         Assert.Contains("ai.rulebased.playBonusBySystem.trap122.ghostPlay: unknown play ghostPlay", errors);
         Assert.Contains("ai.rulebased.playBonusBySystem.zone: unknown system zone", errors);
+        Assert.Contains("ai.rulebased.transitionBySystem.box: unknown system box", errors);
         Assert.Contains(errors, e => e.StartsWith("ai.adaptive.passiveSystem: unknown system box", StringComparison.Ordinal));
         Assert.Empty(AiConfigValidator.ValidateReferences(Load().Value!.Ai, new[] { "forecheck212", "trap122" }, new[] { "breakoutReverse", "dumpAndChase" }));
     }

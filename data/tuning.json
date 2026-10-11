@@ -130,6 +130,7 @@
     "ai.rulebased.chaseDeficitGoals",
     "ai.rulebased.modes",
     "ai.rulebased.playBonusBySystem",
+    "ai.rulebased.transitionBySystem",
     "ai.rulebased.timeout.tiredEnergy",
     "ai.rulebased.timeout.lateGameSeconds",
     "ai.rulebased.timeout.minDeficitGoals",
@@ -582,6 +583,10 @@
       "playBonusBySystem": {
         "forecheck212": { "breakoutReverse": 0.2, "breakoutUpWall": -0.1 },
         "trap122": { "dumpAndChase": 0.2, "wideCarryDrive": -0.1 }
+      },
+      "transitionBySystem": {
+        "forecheck212": "rush",
+        "trap122": "regroup"
       },
       "timeout": {
         "tiredEnergy": 0.5,

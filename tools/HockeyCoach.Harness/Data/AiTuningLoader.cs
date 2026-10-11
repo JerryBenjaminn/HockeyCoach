@@ -51,13 +51,15 @@ internal static class AiTuningLoader
     {
         var modes = new List<KeyValuePair<string, AiModeConfig>>();
         var bonuses = new List<KeyValuePair<string, IReadOnlyDictionary<string, double>>>();
+        var transitions = new List<KeyValuePair<string, string>>();
         if (reader == null)
         {
-            return new AiRulebasedConfig(double.NaN, double.NaN, double.NaN, 0, 0, modes, bonuses, MapTimeout(null));
+            return new AiRulebasedConfig(double.NaN, double.NaN, double.NaN, 0, 0, modes, bonuses, transitions, MapTimeout(null));
         }
 
         reader.RejectUnknown(
-            "changeEnergyThreshold", "freshnessMargin", "lateGameSeconds", "protectLeadGoals", "chaseDeficitGoals", "modes", "playBonusBySystem", "timeout");
+            "changeEnergyThreshold", "freshnessMargin", "lateGameSeconds", "protectLeadGoals", "chaseDeficitGoals", "modes", "playBonusBySystem",
+            "transitionBySystem", "timeout");
         JsonReader? modesReader = reader.Required("modes");
         if (modesReader != null)
         {
@@ -82,6 +84,15 @@ internal static class AiTuningLoader
             }
         }
 
+        JsonReader? transitionReader = reader.Required("transitionBySystem");
+        if (transitionReader != null)
+        {
+            foreach (KeyValuePair<string, JsonReader> system in transitionReader.Properties())
+            {
+                transitions.Add(new KeyValuePair<string, string>(system.Key, system.Value.AsString() ?? string.Empty));
+            }
+        }
+
         return new AiRulebasedConfig(
             reader.Double("changeEnergyThreshold"),
             reader.Double("freshnessMargin"),
@@ -90,6 +101,7 @@ internal static class AiTuningLoader
             reader.Int("chaseDeficitGoals") ?? 0,
             modes,
             bonuses,
+            transitions,
             MapTimeout(reader.Required("timeout")));
     }
 

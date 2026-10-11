@@ -11,6 +11,7 @@ namespace HockeyCoach.Sim.Config
 
         private readonly SortedDictionary<string, AiModeConfig> _modes;
         private readonly SortedDictionary<string, IReadOnlyDictionary<string, double>> _playBonusBySystem;
+        private readonly SortedDictionary<string, string> _transitionBySystem;
 
         /// <summary>Creates the config; the dictionaries are copied in ordinal order.</summary>
         public AiRulebasedConfig(
@@ -21,6 +22,7 @@ namespace HockeyCoach.Sim.Config
             int chaseDeficitGoals,
             IEnumerable<KeyValuePair<string, AiModeConfig>> modes,
             IEnumerable<KeyValuePair<string, IReadOnlyDictionary<string, double>>> playBonusBySystem,
+            IEnumerable<KeyValuePair<string, string>> transitionBySystem,
             AiTimeoutConfig timeout)
         {
             ChangeEnergyThreshold = changeEnergyThreshold;
@@ -61,6 +63,17 @@ namespace HockeyCoach.Sim.Config
 
                 _playBonusBySystem[system.Key] = bonuses;
             }
+
+            if (transitionBySystem == null)
+            {
+                throw new ArgumentNullException(nameof(transitionBySystem));
+            }
+
+            _transitionBySystem = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, string> entry in transitionBySystem)
+            {
+                _transitionBySystem[entry.Key] = entry.Value ?? throw new ArgumentException("Null transition.", nameof(transitionBySystem));
+            }
         }
 
         /// <summary>Change a unit whose estimated energy is below this.</summary>
@@ -88,6 +101,15 @@ namespace HockeyCoach.Sim.Config
         public IReadOnlyDictionary<string, IReadOnlyDictionary<string, double>> PlayBonusBySystem
         {
             get { return _playBonusBySystem; }
+        }
+
+        /// <summary>
+        /// Opponent system id → transition (<c>rush</c> or <c>regroup</c>) in mode <c>normal</c> (D-078 K2), in ordinal
+        /// key order. A missing system falls back to <c>modes.normal.transition</c>.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> TransitionBySystem
+        {
+            get { return _transitionBySystem; }
         }
 
         /// <summary><c>ai.rulebased.timeout</c>.</summary>

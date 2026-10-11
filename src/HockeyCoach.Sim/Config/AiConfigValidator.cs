@@ -73,6 +73,14 @@ namespace HockeyCoach.Sim.Config
                 }
             }
 
+            foreach (KeyValuePair<string, string> entry in rule.TransitionBySystem)
+            {
+                if (!Contains(AiModeConfig.TransitionNames, entry.Value))
+                {
+                    errors.Add("ai.rulebased.transitionBySystem." + entry.Key + ": must be rush or regroup, got " + entry.Value);
+                }
+            }
+
             AiTimeoutConfig timeout = rule.Timeout;
             RequireUnit("ai.rulebased.timeout.tiredEnergy", timeout.TiredEnergy, errors);
             RequirePeriodWindow("ai.rulebased.timeout.lateGameSeconds", timeout.LateGameSeconds, periodSeconds, errors);
@@ -140,6 +148,14 @@ namespace HockeyCoach.Sim.Config
                     {
                         errors.Add(path + "." + bonus.Key + ": unknown play " + bonus.Key);
                     }
+                }
+            }
+
+            foreach (KeyValuePair<string, string> entry in ai.Rulebased.TransitionBySystem)
+            {
+                if (!systems.Contains(entry.Key))
+                {
+                    errors.Add("ai.rulebased.transitionBySystem." + entry.Key + ": unknown system " + entry.Key);
                 }
             }
 
