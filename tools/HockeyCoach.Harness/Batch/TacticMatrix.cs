@@ -83,6 +83,44 @@ public static class TacticMatrix
         return n > 0 && cell.Stats.PlayXg.Sum.TryGetValue(slot, out double xg) ? xg / n : 0.0;
     }
 
+    /// <summary>
+    /// Team A's controlled zone entries by strength (carries and passes apart) and breakouts by forechecker count, one
+    /// column per cell (B's system is the cell's column), plus team A over all cells (M-9, D-078 K4).
+    /// </summary>
+    private static void WriteCounterplay(StringBuilder md, IReadOnlyList<TacticCell> cells)
+    {
+        string Header(TacticCell c) => CoachRegistry.TransitionName(c.Transition) + " vs " + c.OpponentSystem;
+        List<RateColumn> Columns(Func<MatchupStats, Tally> tally)
+        {
+            var columns = cells.Select(c => new RateColumn(Header(c), Counterplay.Group(tally(c.Stats), "A", null))).ToList();
+            var all = new Dictionary<string, Rate>(StringComparer.Ordinal);
+            foreach (RateColumn column in columns)
+            {
+                foreach (KeyValuePair<string, Rate> rate in column.Rates)
+                {
+                    all[rate.Key] = all.TryGetValue(rate.Key, out Rate? sum) ? sum + rate.Value : rate.Value;
+                }
+            }
+
+            columns.Add(new RateColumn(Counterplay.AllHeader, all));
+            return columns;
+        }
+
+        md.AppendLine("## Team A zone entries by strength (M-8, M-9)");
+        md.AppendLine();
+        md.AppendLine("Controlled entries of team A: success = possession kept; cell = success (attempts). N v M = attackers at or past the centre line vs defenders at or beyond the puck. Columns: A transition vs B system.");
+        md.AppendLine();
+        List<RateColumn> entries = Columns(s => s.Entries);
+        Counterplay.WriteTable(md, "Entry", Counterplay.OrderEntryRows(entries.SelectMany(c => c.Rates.Keys)), entries);
+
+        md.AppendLine("## Team A breakouts by forecheckers (M-9)");
+        md.AppendLine();
+        md.AppendLine("Every breakout check of team A (own-zone carry, pass out of the zone, own-zone regroup check); f = B's forwards (F1–F3) in A's defensive zone.");
+        md.AppendLine();
+        List<RateColumn> breakouts = Columns(s => s.Breakouts);
+        Counterplay.WriteTable(md, "f", Counterplay.OrderBreakoutRows(breakouts.SelectMany(c => c.Rates.Keys)), breakouts);
+    }
+
     /// <summary>Builds tactic-matrix.md and tactic-matrix.csv.</summary>
     public static TacticMatrixFiles Write(GameData data, BatchOptions options, IReadOnlyList<TacticCell> cells, IReadOnlyList<string> header)
     {
@@ -162,6 +200,7 @@ public static class TacticMatrix
         }
 
         md.AppendLine();
+        WriteCounterplay(md, cells);
 
         var csv = new StringBuilder();
         csv.AppendLine("transition,opponentSystem,matches,winsA,ties,lossesA,pointsShareA,ciLow,ciHigh,xgForPer60,xgAgainstPer60,xgDiffPer60,goalsPerMatch,playXgA,playXgB,stalled");

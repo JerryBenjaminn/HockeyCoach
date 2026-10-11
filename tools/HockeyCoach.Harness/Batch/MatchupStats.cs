@@ -117,6 +117,18 @@ public sealed class MatchupStats
     /// <summary>Shots by chance class ("none" when unclassed): hit = goal, sum = xG.</summary>
     public Tally ChanceClasses { get; } = new();
 
+    /// <summary>
+    /// Controlled zone entries by entering slot, method, strength and defending system ("A carry 2v3 vs trap122", M-8,
+    /// M-9): hit = possession kept.
+    /// </summary>
+    public Tally Entries { get; } = new();
+
+    /// <summary>
+    /// Breakout checks by attacking slot, forechecker count f and the defending team's system in force ("A f2 vs
+    /// forecheck212", M-9): hit = success.
+    /// </summary>
+    public Tally Breakouts { get; } = new();
+
     /// <summary>Adds one match.</summary>
     public void Add(BatchGame batchGame, Rink rink)
     {
@@ -147,6 +159,30 @@ public sealed class MatchupStats
         AddPressure(events, teamOf, rink);
         AddChances(events);
         AddPlayXg(events, SlotOf);
+        AddEntries(events, SlotOf);
+        AddBreakouts(batchGame, SlotOfSide);
+    }
+
+    private void AddEntries(IReadOnlyList<SimEvent> events, Func<int, int> slotOf)
+    {
+        string[] slots = { "A", "B" };
+        foreach (ControlledZoneEntryEvent e in events.OfType<ControlledZoneEntryEvent>())
+        {
+            Entries.Add(Counterplay.EntryKey(slots[slotOf(e.CarrierId)], e.Method, e.Numbers, e.Context.SystemId ?? "-"), e.Outcome == ZoneEntryOutcome.Kept);
+        }
+    }
+
+    private void AddBreakouts(BatchGame batchGame, Func<TeamSide, int> slotOfSide)
+    {
+        string[] slots = { "A", "B" };
+        foreach (CheckObservation c in batchGame.Checks)
+        {
+            if (c.CheckId == "breakout" && c.Forecheckers.HasValue)
+            {
+                string system = OpponentSystemAt(batchGame.Plans[1 - (int)c.AttackingTeam], c.Period, c.Time);
+                Breakouts.Add(Counterplay.BreakoutKey(slots[slotOfSide(c.AttackingTeam)], c.Forecheckers.Value, system), c.Success, c.Probability);
+            }
+        }
     }
 
     private void AddPlayXg(IReadOnlyList<SimEvent> events, Func<int, int> slotOf)

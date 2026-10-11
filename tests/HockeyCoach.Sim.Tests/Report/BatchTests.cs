@@ -101,7 +101,7 @@ public class BatchTests
         foreach (string section in new[]
         {
             "## Skill vs luck", "**Primary (D-077 item 4): rulebased vs random:**", "## Points-share matrix", "## Ablation", "## Targets on rulebased vs rulebased",
-            "### Fatigue", "### Play × system", "### Rush vs regroup", "### Checks", "### Pressure shares", "### xG by chance type and class", "### Goal variance",
+            "### Fatigue", "### Play × system", "### Rush vs regroup", "### Zone entries by strength", "### Breakouts by forecheckers", "### Checks", "### Pressure shares", "### xG by chance type and class", "### Goal variance",
             "smartVsRandomWinRate", "xG diff / 60 min",
         })
         {

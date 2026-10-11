@@ -16,7 +16,8 @@ public sealed record BatchReportFiles(string Markdown, string SummaryCsv, string
 /// <summary>
 /// Writes the batch report (tech-spec.md, Raportin sisältö; D-073, D-077 items 4 and 8): skill vs luck, the points-share
 /// matrix and ablation rows, the target comparison on rulebased vs rulebased, and the designer's sections (fatigue,
-/// play × system, rush vs regroup, checks, pressure, chances, goal variance).
+/// play × system, rush vs regroup, zone entries by strength, breakouts by forecheckers, checks, pressure, chances, goal
+/// variance).
 /// </summary>
 public static class BatchReport
 {
@@ -258,6 +259,7 @@ public static class BatchReport
         }
 
         md.AppendLine();
+        Counterplay.WriteMatchup(md, s);
         md.AppendLine("### Checks");
         md.AppendLine();
         md.AppendLine("| Check | N per match | Attacker success | Mean probability |");
@@ -342,6 +344,7 @@ public static class BatchReport
                 ("checks", s.Checks), ("energyAtChecks", s.EnergyAtChecks), ("participantEnergy", s.ParticipantEnergy), ("iceTime", s.IceTime), ("shifts", s.Shifts),
                 ("playSystem", s.PlaySystem), ("transitions", s.Transitions), ("transitionSeconds", s.TransitionSeconds), ("pressureByZone", s.PressureByZone),
                 ("pressureBySystem", s.PressureBySystem), ("chanceTypes", s.ChanceTypes), ("chanceClasses", s.ChanceClasses), ("playXg", s.PlayXg),
+                ("entries", s.Entries), ("breakouts", s.Breakouts),
             })
             {
                 foreach (string key in tally.N.Keys)
