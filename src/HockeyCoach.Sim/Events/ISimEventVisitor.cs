@@ -30,5 +30,8 @@ namespace HockeyCoach.Sim.Events
 
         /// <summary>Line change (vaihto).</summary>
         T Visit(LineChangeEvent e);
+
+        /// <summary>Timeout (aikalisä, D-077).</summary>
+        T Visit(TimeoutEvent e);
     }
 }

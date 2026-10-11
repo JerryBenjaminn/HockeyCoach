@@ -53,6 +53,7 @@ namespace HockeyCoach.Sim.Match
             private readonly EventLog _log = new EventLog();
             private readonly ShiftPlan[] _plans = new ShiftPlan[2];
             private readonly int[] _goals = new int[2];
+            private readonly int[] _timeoutsUsed = new int[2];
             private readonly List<PeriodSnapshot> _periods = new List<PeriodSnapshot>();
             private int _period;
 
@@ -167,27 +168,49 @@ namespace HockeyCoach.Sim.Match
                 var units = new LineChoice[2];
                 var forwardsEligible = new bool[2];
                 var defenceEligible = new bool[2];
-                var views = new CoachView[2];
                 foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
                 {
                     LineupState lineup = _state.Lineup(team);
                     double minimum = _tuning.Time.StoppageChangeMinSeconds;
                     forwardsEligible[(int)team] = periodStart || time - lineup.ForwardSince >= minimum - 1e-9;
                     defenceEligible[(int)team] = periodStart || time - lineup.PairSince >= minimum - 1e-9;
-                    views[(int)team] = View(
-                        team,
-                        time,
-                        forwardsEligible[(int)team],
-                        defenceEligible[(int)team],
-                        periodStart ? CoachCall.PeriodStart : CoachCall.Stoppage,
-                        periodStart ? null : reason);
                 }
 
-                var decisions = new CoachDecision[2];
+                CoachCall call = periodStart ? CoachCall.PeriodStart : CoachCall.Stoppage;
+                StoppageReason? stoppage = periodStart ? null : reason;
+                CoachView[] views = Views(time, forwardsEligible, defenceEligible, call, stoppage, false);
+                CoachDecision[] decisions = Ask(views);
+                bool[] called = new bool[2];
                 foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
                 {
-                    decisions[(int)team] = _coaches[(int)team].AtStoppage(views[(int)team])
-                        ?? throw new InvalidOperationException("The coach returned no decision.");
+                    if (decisions[(int)team].CallTimeout && !views[(int)team].Timeouts.CanCall)
+                    {
+                        throw new InvalidOperationException("The coach called a timeout that is not allowed now (AI-4, AI-5).");
+                    }
+
+                    called[(int)team] = decisions[(int)team].CallTimeout;
+                }
+
+                if (called[(int)TeamSide.Home] || called[(int)TeamSide.Away])
+                {
+                    // AI-4: log and apply every timeout (home first), then ask both coaches again; that round replaces the first.
+                    foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                    {
+                        if (called[(int)team])
+                        {
+                            CallTimeout(team, time);
+                        }
+                    }
+
+                    views = Views(time, forwardsEligible, defenceEligible, call, stoppage, true);
+                    decisions = Ask(views);
+                    foreach (CoachDecision decision in decisions)
+                    {
+                        if (decision.CallTimeout)
+                        {
+                            throw new InvalidOperationException("The coach called a timeout in the round after a timeout (AI-4).");
+                        }
+                    }
                 }
 
                 foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
@@ -226,6 +249,51 @@ namespace HockeyCoach.Sim.Match
                 return units;
             }
 
+            /// <summary>Both coaches' views, made before either coach is asked (simultaneous decisions, D-077).</summary>
+            private CoachView[] Views(double time, bool[] forwards, bool[] defence, CoachCall call, StoppageReason? reason, bool afterTimeout)
+            {
+                var views = new CoachView[2];
+                foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    views[(int)team] = View(team, time, forwards[(int)team], defence[(int)team], call, reason, afterTimeout);
+                }
+
+                return views;
+            }
+
+            private CoachDecision[] Ask(CoachView[] views)
+            {
+                var decisions = new CoachDecision[2];
+                foreach (TeamSide team in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    decisions[(int)team] = _coaches[(int)team].AtStoppage(views[(int)team])
+                        ?? throw new InvalidOperationException("The coach returned no decision.");
+                }
+
+                return decisions;
+            }
+
+            /// <summary>
+            /// AI-4: logs the timeout at the stoppage and rests every skater of both teams for <c>time.timeoutRestSeconds</c>
+            /// (bench recovery is realized first). The clock, ice time, eligibility, goalies, pressure, organization and
+            /// familiarity do not change.
+            /// </summary>
+            private void CallTimeout(TeamSide team, double time)
+            {
+                SimEvent last = _log.Count > 0 ? _log.Events[_log.Count - 1] : null;
+                if (!(last is StoppageEvent) && !(last is TimeoutEvent))
+                {
+                    throw new InvalidOperationException("A timeout must follow a stoppage.");
+                }
+
+                _log.Append(new TimeoutEvent(last.Context, team));
+                _timeoutsUsed[(int)team]++;
+                foreach (TeamSide side in new[] { TeamSide.Home, TeamSide.Away })
+                {
+                    TimeoutRest.Apply(_state.Energy, _state.Lineup(side).Team.Skaters, time, _tuning.Energy.BenchRecoveryRate, _tuning.Time.TimeoutRestSeconds);
+                }
+            }
+
             private ShiftResult RunSegment(string spot, double time, LineChoice[] units)
             {
                 var context = new ShiftContext(_state, _log, this, units[(int)TeamSide.Home], units[(int)TeamSide.Away]);
@@ -251,6 +319,19 @@ namespace HockeyCoach.Sim.Match
 
             private CoachView View(TeamSide team, double time, bool forwards, bool defence, CoachCall call, StoppageReason? reason)
             {
+                return View(team, time, forwards, defence, call, reason, false);
+            }
+
+            private int TimeoutsLeft(TeamSide team)
+            {
+                return Math.Max(0, _tuning.Time.TimeoutsPerTeamPerMatch - _timeoutsUsed[(int)team]);
+            }
+
+            private CoachView View(TeamSide team, double time, bool forwards, bool defence, CoachCall call, StoppageReason? reason, bool afterTimeout)
+            {
+                int ownLeft = TimeoutsLeft(team);
+                bool canCall = call == CoachCall.Stoppage && reason.HasValue && CoachTimeouts.ReasonAllows(reason.Value) && !afterTimeout && ownLeft > 0;
+                var timeouts = new CoachTimeouts(ownLeft, TimeoutsLeft(TeamSides.Opponent(team)), afterTimeout, canCall);
                 LineupState lineup = _state.Lineup(team);
                 LineupState opponent = _state.Lineup(TeamSides.Opponent(team));
                 return new CoachView(
@@ -266,6 +347,7 @@ namespace HockeyCoach.Sim.Match
                     forwards,
                     defence,
                     IceTime(lineup, time),
+                    timeouts,
                     _state.Familiarity.UsesOf(team),
                     _log.Snapshot());
             }

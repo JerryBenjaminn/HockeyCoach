@@ -16,7 +16,8 @@ internal static class TestCoachViews
         bool canChangeDefence,
         IReadOnlyDictionary<string, double>? playUses = null,
         TeamSide side = TeamSide.Home,
-        CoachCall call = CoachCall.PeriodStart)
+        CoachCall call = CoachCall.PeriodStart,
+        CoachTimeouts? timeouts = null)
     {
         UnitIceTime[] Units(int count, int onIce) =>
             Enumerable.Range(0, count).Select(i => new UnitIceTime(0.0, 0, i == onIce, 0.0, 0.0)).ToArray();
@@ -34,6 +35,7 @@ internal static class TestCoachViews
             canChangeForwards,
             canChangeDefence,
             new IceTimeView(Units(team.ForwardLines.Count, forwardIndex), Units(team.DefencePairs.Count, pairIndex)),
+            timeouts ?? CoachTimeouts.None(1, 1),
             playUses ?? new Dictionary<string, double>(),
             Array.Empty<SimEvent>());
     }

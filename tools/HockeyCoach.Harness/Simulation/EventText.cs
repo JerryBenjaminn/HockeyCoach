@@ -50,6 +50,9 @@ public sealed class EventText : ISimEventVisitor<string>
     public string Visit(StoppageEvent e) => "STOPPAGE: " + e.Reason;
 
     /// <inheritdoc />
+    public string Visit(TimeoutEvent e) => "TIMEOUT: " + e.Team;
+
+    /// <inheritdoc />
     public string Visit(LineChangeEvent e) => "Line change: " + string.Join(",", e.OutgoingIds.Select(_name)) + " → " + string.Join(",", e.IncomingIds.Select(_name));
 
     private static string Clock(double seconds)

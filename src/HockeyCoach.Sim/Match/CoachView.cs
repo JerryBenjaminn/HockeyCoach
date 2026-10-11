@@ -27,6 +27,7 @@ namespace HockeyCoach.Sim.Match
         /// <param name="canChangeForwards">The own trio may change now (O-2).</param>
         /// <param name="canChangeDefence">The own pair may change now (O-2).</param>
         /// <param name="iceTime">Own ice time per unit.</param>
+        /// <param name="timeouts">Timeouts left for both teams and whether one may be called now (AI-4).</param>
         /// <param name="playUses">Own play uses this match (O-11 counter), by play id; copied.</param>
         /// <param name="events">The public event log so far; must not change afterwards (e.g. <see cref="EventLog.Snapshot"/>).</param>
         public CoachView(
@@ -42,6 +43,7 @@ namespace HockeyCoach.Sim.Match
             bool canChangeForwards,
             bool canChangeDefence,
             IceTimeView iceTime,
+            CoachTimeouts timeouts,
             IReadOnlyDictionary<string, double> playUses,
             IReadOnlyList<SimEvent> events)
         {
@@ -62,6 +64,7 @@ namespace HockeyCoach.Sim.Match
             CanChangeForwards = canChangeForwards;
             CanChangeDefence = canChangeDefence;
             IceTime = iceTime ?? throw new ArgumentNullException(nameof(iceTime));
+            Timeouts = timeouts ?? throw new ArgumentNullException(nameof(timeouts));
             if (playUses == null)
             {
                 throw new ArgumentNullException(nameof(playUses));
@@ -136,6 +139,9 @@ namespace HockeyCoach.Sim.Match
 
         /// <summary>Own ice and bench time per unit.</summary>
         public IceTimeView IceTime { get; }
+
+        /// <summary>Timeouts left for both teams and whether one may be called now (AI-4).</summary>
+        public CoachTimeouts Timeouts { get; }
 
         /// <summary>Own play uses this match (O-11 counter), by play id, in ordinal order.</summary>
         public IReadOnlyDictionary<string, double> PlayUses { get; }

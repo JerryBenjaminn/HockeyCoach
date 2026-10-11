@@ -77,6 +77,7 @@ public class CoachViewTests
             v.CanChangeForwards,
             v.CanChangeDefence,
             v.Call,
+            v.Timeouts.OwnLeft + "/" + v.Timeouts.OpponentLeft + "/" + v.Timeouts.AfterTimeoutRound + "/" + v.Timeouts.CanCall,
             v.StoppageReason?.ToString() ?? "-",
             string.Join(",", v.IceTime.Trios.Concat(v.IceTime.Pairs).Select(u => F(u.TotalSeconds) + "/" + u.Shifts + "/" + u.OnIce + "/" + F(u.CurrentShiftSeconds) + "/" + F(u.BenchSeconds))),
             string.Join(",", v.PlayUses.Select(u => u.Key + "=" + F(u.Value))),
@@ -98,7 +99,7 @@ public class CoachViewTests
         string[] expected =
         {
             "Call", "CanChangeDefence", "CanChangeForwards", "Clock", "Events", "ForwardIndex", "IceTime", "OnIce", "OpponentGoals",
-            "OpponentOnIce", "OwnGoals", "PairIndex", "Period", "PlayUses", "Side", "StoppageReason", "Team", "Time",
+            "OpponentOnIce", "OwnGoals", "PairIndex", "Period", "PlayUses", "Side", "StoppageReason", "Team", "Time", "Timeouts",
         };
 
         string[] actual = typeof(CoachView).GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -112,6 +113,7 @@ public class CoachViewTests
     [InlineData(typeof(CoachClock))]
     [InlineData(typeof(IceTimeView))]
     [InlineData(typeof(UnitIceTime))]
+    [InlineData(typeof(CoachTimeouts))]
     public void CoachViewParts_ExposeNoHiddenState(Type type)
     {
         string[] hiddenNames = { "Energy", "Organization", "Pressure", "Random", "Plan", "Committed", "Familiarity" };

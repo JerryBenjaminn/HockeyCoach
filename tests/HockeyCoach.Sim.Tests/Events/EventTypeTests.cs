@@ -24,6 +24,8 @@ public class EventTypeTests
         public string Visit(StoppageEvent e) => "Stoppage";
 
         public string Visit(LineChangeEvent e) => "LineChange";
+
+        public string Visit(TimeoutEvent e) => "Timeout";
     }
 
     public static IEnumerable<object[]> OneOfEachType()
@@ -38,6 +40,7 @@ public class EventTypeTests
         yield return new object[] { new PuckBattleEvent(c, new[] { 1 }, new[] { 11, 12 }, BattleOutcome.Loss), "PuckBattle" };
         yield return new object[] { new StoppageEvent(c, StoppageReason.Goal), "Stoppage" };
         yield return new object[] { new LineChangeEvent(c, new[] { 1, 2, 3 }, new[] { 7, 8, 9 }), "LineChange" };
+        yield return new object[] { new TimeoutEvent(c, TeamSide.Away), "Timeout" };
     }
 
     [Theory]
@@ -48,12 +51,13 @@ public class EventTypeTests
     }
 
     [Fact]
-    public void EventSchema_HasExactlyNineEventTypes()
+    public void EventSchema_HasExactlyTenEventTypes()
     {
+        // stats-and-checks.md Tapahtumaskeema: nine types plus Aikalisä (D-077).
         Type[] types = typeof(SimEvent).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(SimEvent))).ToArray();
 
-        Assert.Equal(9, types.Length);
-        Assert.Equal(9, typeof(ISimEventVisitor<int>).GetMethods().Length);
+        Assert.Equal(10, types.Length);
+        Assert.Equal(10, typeof(ISimEventVisitor<int>).GetMethods().Length);
     }
 
     [Theory]

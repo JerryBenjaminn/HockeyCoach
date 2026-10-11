@@ -163,6 +163,12 @@ public static class EventJson
             return true;
         }
 
+        public bool Visit(TimeoutEvent e)
+        {
+            _w.WriteString("team", e.Team.ToString());
+            return true;
+        }
+
         public bool Visit(StoppageEvent e)
         {
             _w.WriteString("reason", e.Reason.ToString());

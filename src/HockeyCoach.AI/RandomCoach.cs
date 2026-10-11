@@ -10,7 +10,7 @@ namespace HockeyCoach.AI
 {
     /// <summary>
     /// <c>random</c> (D-077 item 2, data-schema.md AI-2): random lines (R-L) and random tactics (R-T). At a stoppage the
-    /// draw order is lines (trio, pair), then plays, system, transition and system-mode instructions. On the fly only the
+    /// draw order is the timeout (only when one may be called), lines (trio, pair), then plays, system, transition and system-mode instructions. On the fly only the
     /// lines are drawn; the plan stays until the next stoppage. All draws come from the coach's own stream.
     /// </summary>
     public sealed class RandomCoach : ICoach
@@ -26,7 +26,7 @@ namespace HockeyCoach.AI
         public RandomCoach(IReadOnlyList<Play> library, IReadOnlyList<DefensiveSystem> systems, AiRandomConfig config, IRandom random)
         {
             _lines = new RandomLines(config, random);
-            _tactics = new RandomTactics(library, systems, random);
+            _tactics = new RandomTactics(library, systems, config, random);
         }
 
         /// <inheritdoc />
@@ -37,8 +37,9 @@ namespace HockeyCoach.AI
                 throw new ArgumentNullException(nameof(view));
             }
 
+            bool timeout = _tactics.DrawTimeout(view);
             LineChoice units = _lines.AtStoppage(view);
-            return new CoachDecision(units, _tactics.Draw());
+            return new CoachDecision(units, _tactics.Draw(), timeout);
         }
 
         /// <inheritdoc />

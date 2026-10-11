@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using HockeyCoach.Sim.Config;
+using HockeyCoach.Sim.Match;
 using HockeyCoach.Sim.Random;
 using HockeyCoach.Sim.Tactics;
 
@@ -10,10 +12,7 @@ namespace HockeyCoach.AI
     /// a uniform system (systems in ordinal id order), a uniform transition (<c>rush</c>, <c>regroup</c>) and uniform
     /// system-mode instructions (<c>netFrontAfterShot</c>, <c>looseChasers</c>, <c>pinch</c>), drawn in that order.
     /// </summary>
-    /// <remarks>
-    /// Step 1 (the timeout draw) is not drawn yet: the timeout (AI-4) is not implemented, so no timeout is available and
-    /// the spec draws nothing. When it is implemented, that draw comes before the lines and changes random coaches' logs.
-    /// </remarks>
+    /// <remarks>Step 1, the timeout draw, is <see cref="DrawTimeout"/>; the caller draws it before the lines (step 2).</remarks>
     public sealed class RandomTactics
     {
         private static readonly TransitionInstruction[] Transitions = { TransitionInstruction.Rush, TransitionInstruction.Regroup };
@@ -21,13 +20,16 @@ namespace HockeyCoach.AI
         private readonly Play[] _library;
         private readonly DefensiveSystem[] _systems;
         private readonly IRandom _random;
+        private readonly AiRandomConfig _config;
 
         /// <summary>Creates the tactics chooser.</summary>
         /// <param name="library">All plays in load order.</param>
         /// <param name="systems">All loaded systems (any order; sorted by id here).</param>
+        /// <param name="config"><c>ai.random</c>.</param>
         /// <param name="random">The coach's own stream (D-077).</param>
-        public RandomTactics(IReadOnlyList<Play> library, IReadOnlyList<DefensiveSystem> systems, IRandom random)
+        public RandomTactics(IReadOnlyList<Play> library, IReadOnlyList<DefensiveSystem> systems, AiRandomConfig config, IRandom random)
         {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
             if (library == null)
             {
                 throw new ArgumentNullException(nameof(library));
@@ -53,6 +55,20 @@ namespace HockeyCoach.AI
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             _systems = sorted.ToArray();
             _random = random ?? throw new ArgumentNullException(nameof(random));
+        }
+
+        /// <summary>
+        /// R-T step 1: only when a timeout may be called now (<see cref="CoachTimeouts.CanCall"/>), one
+        /// <c>Chance(ai.random.timeoutProbabilityPerStoppage)</c>; otherwise no draw and false.
+        /// </summary>
+        public bool DrawTimeout(CoachView view)
+        {
+            if (view == null)
+            {
+                throw new ArgumentNullException(nameof(view));
+            }
+
+            return view.Timeouts.CanCall && _random.Chance(_config.TimeoutProbabilityPerStoppage);
         }
 
         /// <summary>Draws a plan: plays, system, transition, netFrontAfterShot, looseChasers, pinch.</summary>
