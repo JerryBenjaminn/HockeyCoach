@@ -44,6 +44,43 @@ namespace HockeyCoach.AI
         /// <summary>A-T step 1: P(s) = (n_s + prior / S) / (N + prior) over the loaded systems, in ordinal id order.</summary>
         public IReadOnlyDictionary<string, double> OpponentSystemDistribution(CoachView view)
         {
+            return OpponentSystemDistribution(view, out _);
+        }
+
+        /// <summary>
+        /// A-T step 3 (D-078 K2): the most probable opponent system, ties to the first in ordinal id order; null when the
+        /// window has no observations (N = 0), since the prior alone gives every system the same P(s).
+        /// </summary>
+        public string MostProbableOpponentSystem(CoachView view)
+        {
+            IReadOnlyDictionary<string, double> p = OpponentSystemDistribution(view, out int observations);
+            if (observations == 0)
+            {
+                return null;
+            }
+
+            string best = null;
+            double bestP = double.NegativeInfinity;
+            foreach (KeyValuePair<string, double> entry in p)
+            {
+                if (entry.Value > bestP)
+                {
+                    best = entry.Key;
+                    bestP = entry.Value;
+                }
+            }
+
+            return best;
+        }
+
+        /// <inheritdoc />
+        protected override string TransitionOpponentSystem(CoachView view)
+        {
+            return MostProbableOpponentSystem(view);
+        }
+
+        private IReadOnlyDictionary<string, double> OpponentSystemDistribution(CoachView view, out int observations)
+        {
             SortedSet<int> own = PublicLog.OwnSkaters(view);
             var counts = new SortedDictionary<string, int>(StringComparer.Ordinal);
             foreach (string id in Systems.Keys)
@@ -70,6 +107,7 @@ namespace HockeyCoach.AI
                 p[count.Key] = total + prior > 0.0 ? (count.Value + (prior / s)) / (total + prior) : 1.0 / s;
             }
 
+            observations = total;
             return p;
         }
 

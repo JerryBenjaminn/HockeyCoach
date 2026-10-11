@@ -1,4 +1,6 @@
+using System.Text.Json.Nodes;
 using HockeyCoach.AI;
+using HockeyCoach.Harness.Data;
 using HockeyCoach.Harness.Simulation;
 using HockeyCoach.Sim.Config;
 using HockeyCoach.Sim.Events;
@@ -201,6 +203,84 @@ public class RuleCoachTests
         // Events outside the window are ignored: q falls back to the prior.
         double q = tactics.ControlledEntryShare(ViewAt(a.WindowSeconds + 500.0, 0, 0, Entries(40, 0), period: 1));
         Assert.Equal(AdaptiveTactics.PriorEntryShare, q, 12);
+    }
+
+    private static List<SimEvent> OpponentDefends(params (double Time, string System)[] seen)
+    {
+        int[] own = TestCoachViews.Unit(Team, 0, 0);
+        return seen.Select(x => (SimEvent)new PassEvent(TestCoachViews.Context(x.Time, own, systemId: x.System), own[0], own[1], false, true)).ToList();
+    }
+
+    private static TransitionInstruction Instruction(string transition) =>
+        transition == "regroup" ? TransitionInstruction.Regroup : TransitionInstruction.Rush;
+
+    [Fact]
+    public void RuleTactics_NormalTransition_FollowsTheLastObservedOpponentSystem()
+    {
+        var tactics = new RuleTactics(Library, Systems, Tuning);
+        IReadOnlyDictionary<string, string> map = Tuning.Ai.Rulebased.TransitionBySystem;
+        Assert.Equal("rush", map["forecheck212"]);
+        Assert.Equal("regroup", map["trap122"]);
+
+        Assert.Equal(Instruction(Tuning.Ai.Rulebased.Modes["normal"].Transition), tactics.Plan(ViewAt(20.0, 0, 0, Array.Empty<SimEvent>())).Transition);
+        Assert.Equal(TransitionInstruction.Regroup, tactics.Plan(ViewAt(20.0, 0, 0, OpponentDefends((5.0, "forecheck212"), (10.0, "trap122")))).Transition);
+        Assert.Equal(TransitionInstruction.Rush, tactics.Plan(ViewAt(20.0, 0, 0, OpponentDefends((5.0, "trap122"), (10.0, "forecheck212")))).Transition);
+    }
+
+    [Fact]
+    public void RuleTactics_ProtectAndChase_IgnoreTransitionBySystem()
+    {
+        var tactics = new RuleTactics(Library, Systems, Tuning);
+        double late = 1200.0 - 60.0;
+        ShiftPlan protect = tactics.Plan(ViewAt(late, 0, 0, OpponentDefends((late - 10.0, "forecheck212")), period: 3, own: 2, opp: 0));
+        ShiftPlan chase = tactics.Plan(ViewAt(late, 0, 0, OpponentDefends((late - 10.0, "trap122")), period: 3, own: 0, opp: 2));
+
+        Assert.Equal(Instruction(Tuning.Ai.Rulebased.Modes["protect"].Transition), protect.Transition);
+        Assert.Equal(Instruction(Tuning.Ai.Rulebased.Modes["chase"].Transition), chase.Transition);
+        Assert.NotEqual(Instruction(Tuning.Ai.Rulebased.TransitionBySystem["forecheck212"]), protect.Transition);
+        Assert.NotEqual(Instruction(Tuning.Ai.Rulebased.TransitionBySystem["trap122"]), chase.Transition);
+    }
+
+    [Fact]
+    public void RuleTactics_UnlistedSystem_FallsBackToModesNormalTransition()
+    {
+        TuningConfig tuning = TuningLoader.Parse(
+            Fixtures.Edit("tuning-small.json", root =>
+            {
+                JsonObject rule = root["ai"]!["rulebased"]!.AsObject();
+                rule["modes"]!["normal"]!["transition"] = "regroup";
+                rule["transitionBySystem"] = new JsonObject { ["trap122"] = "rush" };
+            }),
+            Fixtures.SmallRinkXgZones).Value!;
+        var tactics = new RuleTactics(Library, Systems, tuning);
+
+        Assert.Equal(TransitionInstruction.Regroup, tactics.Plan(ViewAt(20.0, 0, 0, OpponentDefends((10.0, "forecheck212")))).Transition);
+        Assert.Equal(TransitionInstruction.Rush, tactics.Plan(ViewAt(20.0, 0, 0, OpponentDefends((10.0, "trap122")))).Transition);
+        Assert.Equal(TransitionInstruction.Regroup, tactics.Plan(ViewAt(20.0, 0, 0, Array.Empty<SimEvent>())).Transition);
+    }
+
+    [Fact]
+    public void Adaptive_NormalTransition_FollowsTheMostProbableSystem_TiesByIdOrder()
+    {
+        var tactics = new AdaptiveTactics(Library, Systems, Tuning);
+
+        // No observations in the window: modes.normal.transition.
+        Assert.Null(tactics.MostProbableOpponentSystem(ViewAt(20.0, 0, 0, Array.Empty<SimEvent>())));
+        Assert.Equal(Instruction(Tuning.Ai.Rulebased.Modes["normal"].Transition), tactics.Plan(ViewAt(20.0, 0, 0, Array.Empty<SimEvent>())).Transition);
+
+        // Majority wins even if the last observation differs.
+        List<SimEvent> mostlyTrap = OpponentDefends((1.0, "trap122"), (2.0, "trap122"), (3.0, "forecheck212"));
+        Assert.Equal("trap122", tactics.MostProbableOpponentSystem(ViewAt(20.0, 0, 0, mostlyTrap)));
+        Assert.Equal(TransitionInstruction.Regroup, tactics.Plan(ViewAt(20.0, 0, 0, mostlyTrap)).Transition);
+
+        // A tie goes to the first id in ordinal order.
+        List<SimEvent> tie = OpponentDefends((1.0, "trap122"), (2.0, "forecheck212"));
+        Assert.Equal("forecheck212", tactics.MostProbableOpponentSystem(ViewAt(20.0, 0, 0, tie)));
+        Assert.Equal(TransitionInstruction.Rush, tactics.Plan(ViewAt(20.0, 0, 0, tie)).Transition);
+
+        // Observations outside the window do not count.
+        double later = Tuning.Ai.Adaptive.WindowSeconds + 100.0;
+        Assert.Null(tactics.MostProbableOpponentSystem(ViewAt(later, 0, 0, mostlyTrap)));
     }
 
     [Theory]

@@ -154,10 +154,11 @@ namespace HockeyCoach.AI
             GameMode mode = Mode(view);
             AiModeConfig settings = _tuning.Ai.Rulebased.Modes[ModeKey(mode)];
             string system = mode == GameMode.Normal ? NormalSystem(view, settings.System) : settings.System;
+            string transition = mode == GameMode.Normal ? NormalTransition(view, settings.Transition) : settings.Transition;
             return new ShiftPlan(
                 Playbook(view, PlayBonuses(view)),
                 _systems[system],
-                settings.Transition == "regroup" ? TransitionInstruction.Regroup : TransitionInstruction.Rush,
+                transition == "regroup" ? TransitionInstruction.Regroup : TransitionInstruction.Rush,
                 new SystemModeInstructions(settings.NetFrontAfterShot, settings.LooseChasers, settings.Pinch));
         }
 
@@ -165,6 +166,24 @@ namespace HockeyCoach.AI
         protected virtual string NormalSystem(CoachView view, string configured)
         {
             return configured;
+        }
+
+        /// <summary>
+        /// The transition in mode <c>normal</c> (D-078 K2, S-T step 2): <c>transitionBySystem[s]</c> when the opponent
+        /// system s is known and listed; otherwise <paramref name="configured"/> (<c>modes.normal.transition</c>).
+        /// </summary>
+        public string NormalTransition(CoachView view, string configured)
+        {
+            string system = TransitionOpponentSystem(view);
+            return system != null && _tuning.Ai.Rulebased.TransitionBySystem.TryGetValue(system, out string transition)
+                ? transition
+                : configured;
+        }
+
+        /// <summary>The opponent system the transition is chosen against; S-T: the last observed one, or null.</summary>
+        protected virtual string TransitionOpponentSystem(CoachView view)
+        {
+            return PublicLog.LastOpponentSystem(view);
         }
 
         /// <summary>
