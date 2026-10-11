@@ -24,8 +24,22 @@ namespace HockeyCoach.Sim.Shift
         /// <param name="probability">Success probability of the attacking side.</param>
         /// <param name="attackerEnergy">Mean energy of the attacking participants, NaN when none.</param>
         /// <param name="defenderEnergy">Mean energy of the defending participants (goalie for shot and rebound), NaN when none.</param>
-        public CheckObservation(int period, double time, string checkId, TeamSide attackingTeam, bool success, double probability, double attackerEnergy, double defenderEnergy)
+        /// <param name="forecheckers">
+        /// f of data-schema.md M-9 for a <c>breakout</c> check (forecheckers F1-F3 in the attacking team's defensive zone,
+        /// 0..3); null for other checks. A report annotation, not a log field (M-9, Kalibrointi).
+        /// </param>
+        public CheckObservation(
+            int period,
+            double time,
+            string checkId,
+            TeamSide attackingTeam,
+            bool success,
+            double probability,
+            double attackerEnergy,
+            double defenderEnergy,
+            int? forecheckers = null)
         {
+            Forecheckers = forecheckers;
             Period = period;
             Time = time;
             CheckId = checkId;
@@ -59,5 +73,8 @@ namespace HockeyCoach.Sim.Shift
 
         /// <summary>Mean energy of the defending participants, NaN when none.</summary>
         public double DefenderEnergy { get; }
+
+        /// <summary>f (M-9) for a <c>breakout</c> check; null for other checks.</summary>
+        public int? Forecheckers { get; }
     }
 }

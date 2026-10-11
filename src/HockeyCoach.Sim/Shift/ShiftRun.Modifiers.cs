@@ -33,20 +33,47 @@ namespace HockeyCoach.Sim.Shift
         }
 
         /// <summary>Reports a resolved check to the observer (if any), before the participation cost.</summary>
-        private void Observe(string checkId, TeamSide attacking, bool success, double probability, IReadOnlyList<int> attackerIds, IReadOnlyList<int> defenderIds)
+        private void Observe(
+            string checkId,
+            TeamSide attacking,
+            bool success,
+            double probability,
+            IReadOnlyList<int> attackerIds,
+            IReadOnlyList<int> defenderIds,
+            int? forecheckers = null)
         {
             if (_observer != null)
             {
-                _observer.OnCheck(new CheckObservation(_setup.Period, _time, checkId, attacking, success, probability, MeanEnergy(attackerIds), MeanEnergy(defenderIds)));
+                _observer.OnCheck(new CheckObservation(
+                    _setup.Period, _time, checkId, attacking, success, probability, MeanEnergy(attackerIds), MeanEnergy(defenderIds), forecheckers));
             }
         }
 
-        private void Observe(CheckResult result, TeamSide attacking, IEnumerable<Skater> attackerSide, IEnumerable<Skater> defenderSide)
+        private void Observe(CheckResult result, TeamSide attacking, IEnumerable<Skater> attackerSide, IEnumerable<Skater> defenderSide, int? forecheckers = null)
         {
             if (_observer != null)
             {
-                Observe(result.CheckId, attacking, result.Success, result.Probability, Ids(attackerSide), Ids(defenderSide));
+                Observe(result.CheckId, attacking, result.Success, result.Probability, Ids(attackerSide), Ids(defenderSide), forecheckers);
             }
+        }
+
+        /// <summary>M-9 (D-078 K4): <c>zoneEntryCarry.modifiers.strengthDifferencePerPlayer</c> x (N - M) of the entry numbers.</summary>
+        private static double StrengthDifferenceModifier(CheckDefinition zoneEntryCarry, EntryNumbers numbers)
+        {
+            return DefensiveSystemModifiers.StrengthDifference(
+                zoneEntryCarry.Modifiers.Get(TuningValidator.StrengthDifferencePerPlayerModifier), numbers.Attackers, numbers.Defenders);
+        }
+
+        /// <summary>M-9 (D-078 K4): <c>breakout.modifiers.perForechecker</c> x f.</summary>
+        private static double ForecheckerModifier(CheckDefinition breakout, int forecheckers)
+        {
+            return DefensiveSystemModifiers.Forecheckers(breakout.Modifiers.Get(TuningValidator.PerForecheckerModifier), forecheckers);
+        }
+
+        /// <summary>f of M-9 and O-7 (K1): the defending team's F1-F3 in the attacking team's defensive zone, no fallback.</summary>
+        private int ForecheckerCount(TeamSide attacking)
+        {
+            return ForecheckersInZone(attacking, out IReadOnlyDictionary<Tactics.SystemRole, Position> unused).Count;
         }
 
         private double MeanEnergy(IReadOnlyList<int> ids)

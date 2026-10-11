@@ -270,7 +270,7 @@ namespace HockeyCoach.Sim.Shift
 
         /// <summary>
         /// O-7 point 4-5 (D-078 K1): the carrier's breakout check against the forecheckers (M-1), with the usual breakout
-        /// modifiers and no familiarity penalty or action time. Failure: the nearest forechecker takes the puck as in a
+        /// modifiers (perForechecker x f included, M-9, D-078 K4) and no familiarity penalty or action time. Failure: the nearest forechecker takes the puck as in a
         /// failed skate. Returns true when the regroup goes on.
         /// </summary>
         private bool RegroupBreakout(TeamSide team, Position carrier, IReadOnlyList<Position> forecheckers)
@@ -280,7 +280,8 @@ namespace HockeyCoach.Sim.Shift
             Skater carrierSkater = _state.SkaterAt(team, carrier);
             Skater[] attackerSide = { carrierSkater };
             Skater[] defenderSide = Forecheckers(team);
-            double m = OffSide(attackerSide, team, defenderSide, defending)
+            double m = ForecheckerModifier(check, forecheckers.Count)
+                + OffSide(attackerSide, team, defenderSide, defending)
                 + StateModifier(check.Modifiers, defending, attackerSide, defenderSide);
             CheckResult result = CheckResolver.Resolve(
                 _tuning.CheckFormula,
@@ -288,7 +289,7 @@ namespace HockeyCoach.Sim.Shift
                 new CheckParticipants().With("carrier", carrierSkater).With("forecheckers", defenderSide),
                 m,
                 _random);
-            Observe(result, team, attackerSide, defenderSide);
+            Observe(result, team, attackerSide, defenderSide, forecheckers.Count);
             PayCost(attackerSide);
             PayCost(defenderSide);
             ClearActionHistory();

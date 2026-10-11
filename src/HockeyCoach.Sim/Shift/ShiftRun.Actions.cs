@@ -36,20 +36,22 @@ namespace HockeyCoach.Sim.Shift
             double m;
             Skater[] defenderSide;
             EntryNumbers numbers = default;
+            int? forecheckers = null;
             if (entry)
             {
                 check = _tuning.GetCheck("zoneEntryCarry");
                 defenderSide = new[] { defenderSkater };
                 participants.With("nearestDefender", defenderSkater);
                 numbers = Numbers(team, from);
-                m = 0.0;
+                m = StrengthDifferenceModifier(check, numbers);
             }
             else if (breakout)
             {
                 check = _tuning.GetCheck("breakout");
                 defenderSide = Forecheckers(team);
                 participants.With("forecheckers", defenderSide);
-                m = 0.0;
+                forecheckers = ForecheckerCount(team);
+                m = ForecheckerModifier(check, forecheckers.Value);
             }
             else
             {
@@ -64,7 +66,7 @@ namespace HockeyCoach.Sim.Shift
                 + StateModifier(check.Modifiers, defending, attackerSide, defenderSide)
                 - PlayFamiliarity();
             CheckResult result = CheckResolver.Resolve(_tuning.CheckFormula, check, participants, m, _random);
-            Observe(result, team, attackerSide, defenderSide);
+            Observe(result, team, attackerSide, defenderSide, forecheckers);
             PayCost(attackerSide);
             PayCost(defenderSide);
             Spend("skate");
@@ -124,8 +126,10 @@ namespace HockeyCoach.Sim.Shift
             {
                 CheckDefinition breakout = _tuning.GetCheck("breakout");
                 Skater[] forecheckers = Forecheckers(team);
+                int forecheckerCount = ForecheckerCount(team);
                 Skater[] attackerSide = { passer };
-                double m = OffSide(attackerSide, team, forecheckers, defending)
+                double m = ForecheckerModifier(breakout, forecheckerCount)
+                    + OffSide(attackerSide, team, forecheckers, defending)
                     + StateModifier(breakout.Modifiers, defending, attackerSide, forecheckers)
                     - PlayFamiliarity();
                 result = CheckResolver.Resolve(
@@ -134,7 +138,7 @@ namespace HockeyCoach.Sim.Shift
                     new CheckParticipants().With("carrier", passer).With("forecheckers", forecheckers),
                     m,
                     _random);
-                Observe(result, team, attackerSide, forecheckers);
+                Observe(result, team, attackerSide, forecheckers, forecheckerCount);
                 PayCost(attackerSide);
                 PayCost(forecheckers);
             }
