@@ -277,4 +277,67 @@ public class TargetComparisonTests
 
         Assert.Contains("goalsPerMatch [4.00, 7.00]: ", text, StringComparison.Ordinal);
     }
+    private static ControlledZoneEntryEvent Entry(int carrier, int n, int m, ZoneEntryOutcome outcome, ZoneEntryMethod method = ZoneEntryMethod.Carry) =>
+        new(Ctx(), carrier, new EntryNumbers(n, m), method, outcome);
+
+    [Theory]
+    [InlineData(2, 3, EntryStrengthGroup.Disadvantage)]
+    [InlineData(0, 1, EntryStrengthGroup.Disadvantage)]
+    [InlineData(3, 3, EntryStrengthGroup.Even)]
+    [InlineData(3, 2, EntryStrengthGroup.Advantage)]
+    public void StrengthGroupOf_ComparesAttackersWithDefenders(int n, int m, EntryStrengthGroup expected)
+    {
+        Assert.Equal(expected, TargetCounts.StrengthGroupOf(new EntryNumbers(n, m)));
+    }
+
+    [Fact]
+    public void ZoneEntryStrength_CountsOnlyKeptEntries_CarryAndPassTogether_PerTeam()
+    {
+        TargetCounts counts = Counts(
+            Entry(1, 2, 3, ZoneEntryOutcome.Kept),
+            Entry(1, 1, 2, ZoneEntryOutcome.Kept, ZoneEntryMethod.Pass),
+            Entry(1, 2, 2, ZoneEntryOutcome.Kept),
+            Entry(1, 3, 1, ZoneEntryOutcome.Kept, ZoneEntryMethod.Pass),
+            Entry(1, 3, 1, ZoneEntryOutcome.Lost),
+            Entry(1, 4, 2, ZoneEntryOutcome.Lost, ZoneEntryMethod.Pass),
+            Entry(11, 2, 2, ZoneEntryOutcome.Kept));
+
+        TargetRow disadvantage = Row(counts, Metric("zoneEntryStrengthDisadvantage", 0.5, 0.75, "share", "perTeam"));
+        TargetRow even = Row(counts, Metric("zoneEntryStrengthEven", 0.2, 0.4, "share", "perTeam"));
+        TargetRow advantage = Row(counts, Metric("zoneEntryStrengthAdvantage", 0.0, 0.15, "share", "perTeam"));
+
+        Assert.Equal(0.5, disadvantage.Teams![0]!.Values[0], 9);
+        Assert.Equal(0.25, even.Teams![0]!.Values[0], 9);
+        Assert.Equal(0.25, advantage.Teams![0]!.Values[0], 9);
+        Assert.Equal(1.0, even.Teams![1]!.Values[0], 9);
+        Assert.Equal(2.0 / 5.0, disadvantage.Combined!.Values[0], 9);
+        Assert.Equal(2.0 / 5.0, even.Combined!.Values[0], 9);
+        Assert.Equal(1.0 / 5.0, advantage.Combined!.Values[0], 9);
+        Assert.Equal(TargetStatus.TooLow, disadvantage.Status);
+        Assert.Equal(TargetStatus.Ok, even.Status);
+        Assert.Equal(TargetStatus.TooHigh, advantage.Status);
+    }
+
+    [Fact]
+    public void ZoneEntryStrength_IsNotMeasured_WithoutKeptEntries()
+    {
+        TargetCounts counts = Counts(Entry(1, 2, 3, ZoneEntryOutcome.Lost));
+
+        Assert.Equal(TargetStatus.NotMeasured, Row(counts, Metric("zoneEntryStrengthEven", 0.2, 0.4, "share", "perTeam")).Status);
+    }
+
+    [Fact]
+    public void Diagnostics_ShowStrengthDistributionOverAllAttempts_AndSuccessPerGroup()
+    {
+        TargetCounts counts = Counts(
+            Entry(1, 2, 3, ZoneEntryOutcome.Kept),
+            Entry(1, 2, 3, ZoneEntryOutcome.Lost),
+            Entry(11, 2, 2, ZoneEntryOutcome.Kept),
+            Entry(11, 3, 1, ZoneEntryOutcome.Lost));
+
+        string text = TargetComparison.WriteDiagnostics(counts);
+
+        Assert.Contains("N < M 50.0 % / N = M 25.0 % / N > M 25.0 %", text, StringComparison.Ordinal);
+        Assert.Contains("N < M 50.0 % / N = M 100.0 % / N > M 0.0 %", text, StringComparison.Ordinal);
+    }
 }

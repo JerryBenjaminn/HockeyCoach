@@ -200,6 +200,7 @@ public static class BatchReport
 
         md.AppendLine("```");
         md.Append(TargetComparison.Write(TargetComparison.Evaluate(data.Targets, counts), new[] { "A", "B" }));
+        md.Append(TargetComparison.WriteDiagnostics(counts));
         md.AppendLine("```");
         md.AppendLine();
     }

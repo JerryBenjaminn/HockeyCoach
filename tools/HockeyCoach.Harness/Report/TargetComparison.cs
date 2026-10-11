@@ -89,6 +89,9 @@ public static class TargetComparison
         ["puckBattleLossShare"] = Ratio(t => t.BattlesLost, Battles),
         ["zoneEntrySuccessCarry"] = Ratio(t => t.CarryEntriesKept, t => t.CarryEntries),
         ["zoneEntrySuccessPass"] = Ratio(t => t.PassEntriesKept, t => t.PassEntries),
+        ["zoneEntryStrengthDisadvantage"] = Ratio(t => t.EntriesKeptByStrength[(int)EntryStrengthGroup.Disadvantage], EntriesKept),
+        ["zoneEntryStrengthEven"] = Ratio(t => t.EntriesKeptByStrength[(int)EntryStrengthGroup.Even], EntriesKept),
+        ["zoneEntryStrengthAdvantage"] = Ratio(t => t.EntriesKeptByStrength[(int)EntryStrengthGroup.Advantage], EntriesKept),
         ["evenStrengthXgShareRush"] = Ratio(t => EvenXg(t, ChanceType.Rush), EvenXgWithoutFaceoffs),
         ["evenStrengthXgShareTurnover"] = Ratio(t => EvenXg(t, ChanceType.Turnover), EvenXgWithoutFaceoffs),
         ["evenStrengthXgShareZonePlay"] = Ratio(t => EvenXg(t, ChanceType.OffensiveZone), EvenXgWithoutFaceoffs),
@@ -166,6 +169,36 @@ public static class TargetComparison
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Diagnostic lines shown after the comparison (not compared with targets): the D-081 strength distribution
+    /// N &lt; M / N = M / N &gt; M over all controlled entry attempts, both teams together, and the success rate per group.
+    /// </summary>
+    public static string WriteDiagnostics(TargetCounts counts)
+    {
+        var all = new double[3];
+        var kept = new double[3];
+        foreach (TeamTargetCounts t in counts.Teams)
+        {
+            for (int g = 0; g < 3; g++)
+            {
+                all[g] += t.EntriesByStrength[g];
+                kept[g] += t.EntriesKeptByStrength[g];
+            }
+        }
+
+        double total = all.Sum();
+        if (total <= 0.0)
+        {
+            return "  Diagnostic: zone entry strength over all attempts: no controlled entries" + Environment.NewLine;
+        }
+
+        string[] names = { "N < M", "N = M", "N > M" };
+        return "  Diagnostic: zone entry strength over all attempts (carry + pass, not compared): "
+            + string.Join(" / ", names.Select((n, g) => n + " " + Number(all[g] / total, "share"))) + Environment.NewLine
+            + "  Diagnostic: zone entry success by strength: "
+            + string.Join(" / ", names.Select((n, g) => n + " " + (all[g] > 0.0 ? Number(kept[g] / all[g], "share") : "-"))) + Environment.NewLine;
     }
 
     /// <summary>OK, TOO LOW, TOO HIGH, TOO LOW and TOO HIGH, or empty.</summary>
@@ -258,6 +291,8 @@ public static class TargetComparison
     private static Func<TeamTargetCounts, double>[] PerMatch(Func<TeamTargetCounts, double> sum) => new[] { sum, t => t.Matches };
 
     private static Func<TeamTargetCounts, double>[] Ratio(Func<TeamTargetCounts, double> num, Func<TeamTargetCounts, double> den) => new[] { num, den };
+
+    private static double EntriesKept(TeamTargetCounts t) => t.CarryEntriesKept + t.PassEntriesKept;
 
     private static double Battles(TeamTargetCounts t) => t.BattlesWon + t.BattlesNoWinner + t.BattlesLost;
 

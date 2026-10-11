@@ -283,6 +283,7 @@ public static class MatchCommand
         sb.AppendLine();
         sb.AppendLine("Targets (data/targets.json, D-071): value for both teams together (team A / team B); OK / TOO LOW / TOO HIGH where min and max are set:");
         sb.Append(TargetComparison.Write(TargetComparison.Evaluate(data.Targets, targets), new[] { "A", "B" }));
+        sb.Append(TargetComparison.WriteDiagnostics(targets));
         return sb.ToString();
     }
 

@@ -93,6 +93,15 @@ public sealed class TeamTargetCounts
     /// <summary>Pass entries that kept the puck.</summary>
     public int PassEntriesKept { get; set; }
 
+    /// <summary>
+    /// Controlled entries (carry and pass) by M-8 strength group, indexed by <see cref="EntryStrengthGroup"/>
+    /// (D-081 diagnostic: all attempts).
+    /// </summary>
+    public int[] EntriesByStrength { get; } = new int[3];
+
+    /// <summary>Controlled entries that kept the puck, by M-8 strength group (D-081 targets).</summary>
+    public int[] EntriesKeptByStrength { get; } = new int[3];
+
     /// <summary>Offensive-zone seconds, all strengths.</summary>
     public double ZoneSeconds { get; set; }
 
@@ -107,6 +116,19 @@ public sealed class TeamTargetCounts
 
     /// <summary>Defence pair shifts.</summary>
     public int PairShifts { get; set; }
+}
+
+/// <summary>Strength group of a controlled zone entry by M-8 numbers (D-081): N &lt; M, N = M, N &gt; M.</summary>
+public enum EntryStrengthGroup
+{
+    /// <summary>Fewer attackers than defenders (N &lt; M).</summary>
+    Disadvantage = 0,
+
+    /// <summary>Equal numbers (N = M).</summary>
+    Even = 1,
+
+    /// <summary>More attackers than defenders (N &gt; M).</summary>
+    Advantage = 2,
 }
 
 /// <summary>
@@ -279,6 +301,9 @@ public sealed class TargetCounts
     private static void AddEntry(TeamTargetCounts t, ControlledZoneEntryEvent entry)
     {
         int kept = entry.Outcome == ZoneEntryOutcome.Kept ? 1 : 0;
+        int group = (int)StrengthGroupOf(entry.Numbers);
+        t.EntriesByStrength[group]++;
+        t.EntriesKeptByStrength[group] += kept;
         if (entry.Method == ZoneEntryMethod.Carry)
         {
             t.CarryEntries++;
@@ -290,6 +315,12 @@ public sealed class TargetCounts
             t.PassEntriesKept += kept;
         }
     }
+
+    /// <summary>The D-081 strength group of entry numbers N vs M.</summary>
+    public static EntryStrengthGroup StrengthGroupOf(EntryNumbers numbers) =>
+        numbers.Attackers < numbers.Defenders ? EntryStrengthGroup.Disadvantage
+        : numbers.Attackers == numbers.Defenders ? EntryStrengthGroup.Even
+        : EntryStrengthGroup.Advantage;
 
     private void AddBattle(int attackerSlot, BattleOutcome outcome)
     {
