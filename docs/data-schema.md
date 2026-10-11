@@ -255,6 +255,7 @@ Tavoitehaarukoiden ainoa totuus (D-016). Vain haarukoita, ei otteluiden raakadat
 | `offensiveZoneTime` | seconds / perTeamPerMatch | Joukkueen hyökkäysalueaika (`OffensiveZoneSeconds`) erien summana |
 | `offensiveZoneTime5v5` | seconds / perTeamPerMatch | Sama, vain 5 vs 5 |
 | `zoneEntrySuccessCarry`, `zoneEntrySuccessPass` | share / perTeam | Hallitut alueelletuonnit tavalla kuljetus / syöttö: lopputulos "hallinta säilytetty" / kaikki |
+| `zoneEntryStrengthDisadvantage`, `zoneEntryStrengthEven`, `zoneEntryStrengthAdvantage` | share / perTeam | Voimasuhdejakauma (M-8, D-081): hallitut alueelletuonnit, joiden lopputulos on "hallinta säilytetty", kuljetus ja syöttö yhdessä, ryhmissä N < M / N = M / N > M jaettuna samoilla onnistuneilla alueelletuonneilla. Vain onnistuneet, koska Wisehockeyn data sisältää vain kiekon säilyttäneet alueelletuonnit. Raportti näyttää lisäksi saman jakauman kaikista yrityksistä (diagnostiikka) |
 | `shiftLengthForward` | seconds / perShift | Joukkueen kolmikoiden jääaika / kolmikoiden vaihdot |
 | `shiftLengthDefence` | seconds / perShift | Joukkueen parien jääaika / parien vaihdot |
 

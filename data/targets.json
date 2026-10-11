@@ -43,6 +43,9 @@
     "offensiveZoneTime": {"_note": "Optional. Full match, all strengths.", "unit": "seconds", "scope": "perTeamPerMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},
     "zoneEntrySuccessCarry": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
     "zoneEntrySuccessPass": {"unit": "share", "scope": "perTeam", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot"},
+    "zoneEntryStrengthDisadvantage": {"_note": "Share of successful controlled zone entries (carry + pass) by strength M-8: N < M / N = M / N > M. Wide ranges: sample is one match. Observed 65 / 29 / 6 %, most common 2v3, 1v2, 3v4; 5v5 never.", "unit": "share", "scope": "perTeam", "min": 0.50, "max": 0.75, "status": "approved", "source": "Wisehockey Jokerit-HIFK, 3 periods 5v5, 31 controlled entries (D-081)"},
+    "zoneEntryStrengthEven": {"unit": "share", "scope": "perTeam", "min": 0.20, "max": 0.40, "status": "approved", "source": "Wisehockey Jokerit-HIFK, 3 periods 5v5, 31 controlled entries (D-081)"},
+    "zoneEntryStrengthAdvantage": {"unit": "share", "scope": "perTeam", "min": 0.0, "max": 0.15, "status": "approved", "source": "Wisehockey Jokerit-HIFK, 3 periods 5v5, 31 controlled entries (D-081)"},
 
     "faceoffsPerMatch": {"_note": "Both teams combined: faceoff events per match in regulation, period openings included.", "unit": "count", "scope": "perMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (Q-048, D-071)"},
     "meanTimeBetweenStoppages": {"_note": "Optional. Per match 3600 s / faceoffs, mean over matches.", "unit": "seconds", "scope": "perMatch", "min": null, "max": null, "status": "placeholder", "source": "stats-and-checks.md, Tavoitearvot (D-071)"},

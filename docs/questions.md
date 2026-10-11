@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-068 · 2026-10-11 · kirjaaja: Jerry (designerille, myöhemmin)
+**Kysymys:** pitäisikö kuljetus vai päätyyn lyönti alivoimalla (N < M) olla oma taitopäätös?
+**Konteksti:** Wisehockeyn data (Jokerit–HIFK, 31 hallittua alueelletuontia, D-081): kaikki hallitut alueelletuonnit säilyttivät kiekon, eli epäonnistuneet yritykset eivät ole datassa. Oikeat pelaajat kuljettavat kiekon sisään vain, kun se todennäköisesti onnistuu, ja muuten lyövät sen päätyyn. Simulaatiossa kuljetus yritetään voimasuhteesta riippumatta (M-9:n porras 51–76 %). Päätös voisi olla pelaajan tai valmentajan ohje (esim. kynnys N − M), jolloin hyvä päätös on taitoa.
+**Ehdotettu oletus:** ei muutosta nyt. Designer tekee ehdotuksen, kun voimasuhdejakauma ja K4:n arvo on kalibroitu.
+
 ### Q-067 · 2026-10-11 · kirjaaja: game-designer
 **Kysymys:** hyväksytkö `adaptive`n järjestelmävalinnan speksin A-T2 (D-080 kohta 3)?
 **Konteksti:** `data-schema.md`, AI-2, A-T2. Tiivistelmä: (1) Skeemamuutosta ei tarvita. Vastustajan siirtymä luokitellaan sen hallinnan ensimmäisestä toimintotapahtumasta: kuvio-id tyhjä = suorahyökkäys, kuvio-id asetettu = kokoaminen (D-045, O-7). Aloituksesta alkaneet hallinnat ja hallinnat, joiden ensimmäinen toiminto on kiekonmenetys, jätetään pois. (2) Vain havainnot nykyistä omaa järjestelmää vastaan lasketaan, joten vaihdon jälkeen ikkuna alkaa tyhjästä. (3) Vaihto vain katkolla, kun vähintään `styleMinEvents` (4) havaintoa viimeisestä `styleWindowEvents` (6) havainnosta antaa suorahyökkäysosuuden ≥ 0,65 (→ trap) tai ≤ 0,35 (→ karvaus). Avaimet `controlledEntryShareFor*` poistuvat. (4) Kierre `rulebased`ia vastaan jää, koska `rulebased` vastaa yhden katkon viiveellä ja kumpikin on toisen paras vastaus (kolikkopeli). Heilunnan esto ei voi nostaa `adaptive`a yli n. 50 %:n `rulebased`ia vastaan. Arvio: 38–48 % (nyt 30,2 %), vs `randomLines` 60–72 % (nyt 52,2 %).
