@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-062 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** onko taktiikkamatriisin (D-078 K3) komentorivimuoto hyväksyttävä? E-005 sanoo "taktiikkamatriisi batch-raporttiin", mutta ei kerro, ajetaanko matriisi aina batchin mukana vai omana tilanaan, eikä mitä vastustaja pelaa matriisissa.
+**Konteksti:** toteutettu näin: `batch --tactic-matrix` ajaa AI-parien sijaan pelkän matriisin ja kirjoittaa `tactic-matrix.md`:n ja `tactic-matrix.csv`:n `--out`-kansioon. Joukkue A = `rotation`, oma järjestelmä `--rotation-system` (oletus forecheck212), rivin siirtymäohje (rush, regroup). Joukkue B = `rotation`, sarakkeen järjestelmä (kaikki ladatut järjestelmät latausjärjestyksessä), siirtymäohje `--rotation-transition` (oletus rush, kuten E-005:ssä). Kokoonpanot ovat aina peilattuja. `--matches` on otteluita per solu, oletus 2000 tässä tilassa. Ilman `--tactic-matrix`-lippua `--rotation-transition` asettaa `rotation`-valmentajan siirtymäohjeen tavallisessa batchissa. Täysi batch-raportti ei sisällä matriisia (4 × 2000 lisäottelua joka ajossa). `match`-komento ei vielä tunne `--rotation-transition`-optiota.
+**Ehdotettu oletus:** yllä kuvattu, kunnes Jerry päättää.
+**Vastaus:** (Jerry täyttää)
+
 ### Q-061 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys (myöhemmin, virstanpylvään 5 jälkeen):** riittääkö tapahtumaloki Unity-toiston animointiin?
 **Konteksti:** Unity-toisto. Tarkistetaan, että jokaisessa tapahtumassa on kiekon lähtö- ja tulosolmu. Reitin muotoa (suora, laidan kautta, kiertää laitaa) ei tallenneta simulaatioon, vaan Unity päättelee sen geometriasta.
