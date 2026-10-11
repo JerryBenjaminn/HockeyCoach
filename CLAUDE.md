@@ -2,7 +2,7 @@
 
 ## Tavoite
 
-Mobiilipeli, jossa pelaaja on jääkiekkovalmentaja: hän kokoaa ketjut, valitsee kuviot ja puolustusjärjestelmän, ja pelaajat pelaavat vaihdon automaattisesti. Tämän repon nykyinen tavoite on **headless-simulaatio ja testiympäristö**, joka vastaa kysymykseen: ratkaiseeko taito vai tuuri. Ei grafiikkaa, ei käyttöliittymää, ei Unityä.
+Mobiilipeli, jossa pelaaja on jääkiekkovalmentaja: hän kokoaa ketjut, valitsee kuviot ja puolustusjärjestelmän, ja pelaajat pelaavat vaihdon automaattisesti. Tämän repon nykyinen tavoite on **headless-simulaatio ja testiympäristö**, joka vastaa kysymykseen: ratkaiseeko taito vai tuuri. Ainoa grafiikka on Unityn 2D-toisto ylhäältä, joka lukee ottelun JSON-lokin (D-087). Ei muuta grafiikkaa eikä käyttöliittymää.
 
 ## Dokumentit ovat ainoa totuus
 
@@ -58,7 +58,12 @@ Sim- ja AI-projektien pitää kääntyä Unity 6:ssa sellaisenaan. Siksi niissä
 3. **Tapahtumaloki noudattaa tapahtumaskeemaa** (`docs/stats-and-checks.md`). Uusi tapahtumatyyppi vaatii dokumentin päivityksen ensin.
 4. **Testit ennen valmista.** Ominaisuus on valmis vasta, kun sillä on testit ja `dotnet test` menee läpi.
 5. **Otteluanalyysien raakadataa ei tallenneta repoon.** Vain keskiarvot ja haarukat dokumentteihin.
-6. **Älä koske `unity/`-kansioon.** Ei muokkauksia, ei committeja, ei stagea. Jerry hoitaa Unity-projektin itse.
+6. **`unity/`-kansiossa vain sallitut polut (D-087, muuttaa D-054:ää).**
+   - Agentit saavat luoda, muokata ja commitoida vain tekstitiedostoja (.cs, .asmdef, .asmref) polussa `unity/HockeyCoach/Assets/HockeyCoach/**` sekä Unityn jo luomia .meta-tiedostoja näille poluille. GUIDeja ei keksitä: Unity luo .meta-tiedostot Jerryn importissa.
+   - `unity/HockeyCoach/Packages/manifest.json` vain Jerryn erillisellä hyväksynnällä per muutos.
+   - Aina kielletty: `ProjectSettings/**`, `Library`, `Temp`, `Logs`, `UserSettings`, `obj`, `*.csproj`/`*.sln*`, `packages-lock.json`, kaikki .unity-, .prefab-, .asset- ja .mat-tiedostot (scenet ovat Jerryn) sekä `Assets/`-sisältö `HockeyCoach/`-kansion ulkopuolella.
+   - Stagea vain nimetyt polut, ei koskaan `git add -A`, `git add .` tai `commit -a`. Ennen jokaista committia `git diff --cached --name-only | grep '^unity/' | grep -v '^unity/HockeyCoach/Assets/HockeyCoach/'` on tyhjä, ja Jerryn omat muutokset (esim. `ProjectSettings/QualitySettings.asset`) jäävät stagettamatta.
+   - Unityn käännöksen ja EditMode-testit saa ajaa batchmodessa pysyvällä luvalla, kun Editor on kiinni. Tarkista ensin, ettei tiedostoa `unity/HockeyCoach/Temp/UnityLockfile` ole: `"E:/Unity/6000.6.0f1/Editor/Unity.exe" -batchmode -nographics -projectPath unity/HockeyCoach -runTests -testPlatform EditMode -testResults <scratchpad>/r.xml -logFile <scratchpad>/u.log` (ei `-quit`).
 
 ## Työnjako
 
@@ -93,4 +98,4 @@ Pienet commitit, yksi asia kerrallaan, Conventional Commits -muoto (`feat:`, `fi
 
 ## Ei tässä vaiheessa
 
-Unity, grafiikka, käyttöliittymä, kuvioeditori, verkko ja PvP-palvelin, draft- ja kausijärjestelmä. Erikoistilanteet (ylivoima, alivoima) vasta, kun virstanpylväät 1–5 ovat valmiit.
+Unity ja grafiikka 2D-toistoa lukuun ottamatta (D-087), käyttöliittymä, kuvioeditori, verkko ja PvP-palvelin, draft- ja kausijärjestelmä. Erikoistilanteet (ylivoima, alivoima) vasta, kun virstanpylväät 1–5 ovat valmiit.

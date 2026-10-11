@@ -1,6 +1,6 @@
 # Handoff
 
-Tilanne 2026-10-11 (päivitetty virstanpylvään 5 ensimmäisen kierroksen jälkeen). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
+Tilanne 2026-10-11 (päivitetty kalibrointikierroksen ja Unity-suunnitelman hyväksynnän jälkeen). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
 
 ## Missä ollaan
 
@@ -17,7 +17,7 @@ Tilanne 2026-10-11 (päivitetty virstanpylvään 5 ensimmäisen kierroksen jälk
     - M = kiekon ja oman maalin välissä olevat.
   - Uusi mittari: voimasuhdejakauma Wisehockeyn datasta, `targets.json` (D-081).
   - `adaptive` valitsee järjestelmänsä vastustajan siirtymätyylin mukaan julkisesta lokista (A-T2, D-082).
-- 873 testiä menee läpi, ja `validate` hyväksyy datan.
+- 878 testiä menee läpi, ja `validate` hyväksyy datan.
 
 ## Päätulokset (batch 5000 / pari, siemen 1, `reports/d082-batch5000`)
 
@@ -49,66 +49,97 @@ Tilanne 2026-10-11 (päivitetty virstanpylvään 5 ensimmäisen kierroksen jälk
 
   Syöttämällä tehdyissä alueelletuonneissa N on aina 3, koska syöttötuloja tulee vain kuviosta `middleDriveWidePass`.
 
+## Virstanpylväs 5: kalibrointikierros (voimasuhteet, D-083–D-087)
+
+- **E-006 (D-084):** kiekon tasalla olevia ei lasketa kummallekaan puolelle.
+- **Paluukarvaus (D-085–D-087):** vastustajan suorahyökkäyksessä kiekon väärällä puolella oleva puolustaja luistelee omaa kaistaansa kohti omaa maalia, enintään `transitions.backcheckNodesPerBeat` solmua per toiminto.
+- Mittaukset (batch 1000, `rulebased` vs `rulebased`):
+
+  | Tila | Alivoima / tasavoima / ylivoima | `rulebased` vs `random` | Maalit |
+  | --- | --- | --- | --- |
+  | Tavoite | 50–75 / 20–40 / 0–15 % | ≥ 75 % | 4–7 |
+  | E-006 ilman paluukarvausta (k = 0) | 66,4 / 33,6 / 0,0 ✅ | 78,7 % | 6,41 |
+  | Paluukarvaus, kohde riviä kiekon ohi | 89,4 / 10,6 / 0,0 ❌ | 78,9 % | 6,48 |
+  | **Paluukarvaus, kohde kiekon tasalla (nykyinen koodi, 4530105)** | **54,2 / 13,0 / 32,8 ❌** | 79,7 % | 6,35 |
+
+  - 11 × 5 -verkossa pelaajalla on vain kolme sijaintia suhteessa kiekkoon (takana, tasalla, edellä), joten paluukarvauksen kohderivi kääntää jakauman ääripäästä toiseen.
+- **Taktiikkamatriisi** (viimeksi ajettu riviä kiekon ohi -versiolla): suorahyökkäys 50,0 / 57,2 %, uudelleenryhmittyminen 34,7 / 75,9 % (forecheck212 / trap122).
+  - Rajat täyttyvät.
+  - Uudelleenryhmittyminen karvausta vastaan jää rajan 35 % alle, mutta luottamusväli sisältää rajan, joten K4:ää ei ole säädetty.
+- **Q-074 ja Q-075** on ratkaistu: Q-075:n peilatun kuvion bugi on korjattu.
+- 878 testiä menee läpi.
+
+## Unity-toisto, vaihe 1 (hyväksytty, D-087)
+
+2D-toisto ylhäältä lukee vain `match --json` -viennin. Unity ei viittaa Simiin, ja JSON luetaan Newtonsoft-paketilla. Hyväksymiskriteerit siemenellä 42:
+
+1. Kaikki 12 pelaajaa näkyvät jokaisessa tapahtumassa.
+2. Tulos ja maalien ajat vastaavat tekstitulostetta.
+3. Syötöt ja laukaukset alkavat tekijästä ja päättyvät `placement`-sijaintiin.
+4. Aloitukset tapahtuvat aloituspisteillä.
+5. Blokit pysähtyvät blokkaajaan, ja maalit menevät oikeaan verkkoon.
+6. Vaihdot ovat oikein.
+7. Kello ei kulje taaksepäin.
+8. Askellus on deterministinen.
+9. 8× nopeudella koko ottelu menee läpi muutamassa minuutissa.
+
+Vaiheet:
+
+1. ✅ Jerry vastasi Q-076:een ja muutti D-054:ää (D-087).
+2. **Harness:** `match --json` -vientiin otsake.
+   - Sisältö: `formatVersion`, erän pituus, erät, kokoonpano (id, joukkue, pelipaikka, ketju tai pari, maalivahti) ja kaukalodata `rink.json`:sta (mitat metreinä, solmut, maalisolmut).
+   - Lisäksi testit.
+   - Tapahtumaskeema ei muutu.
+3. **Core:** `unity/HockeyCoach/Assets/HockeyCoach/Replay/Core/`.
+   - asmdef `HockeyCoach.Replay.Core`, `noEngineReferences`, C# 9.
+   - Sisältää DTO:t, `ReplayJsonReader`, `RinkMapping`, `TimelineBuilder` ja `ReplayCursor`.
+   - Testit: `tests/HockeyCoach.Replay.Tests` (net10.0, xUnit) kääntää Core-tiedostot, generoi siemenen 42 ottelun prosessissa ja tarkistaa hyväksymiskriteerit. JSON-fixturea ei commitoida.
+4. **Newtonsoft-paketti** (`com.unity.nuget.newtonsoft-json`) tiedostoon `Packages/manifest.json` Jerryn erillisellä hyväksynnällä. Jerry commitoi `packages-lock.json`:n.
+5. **View:** `Replay/View/` (`ReplayBootstrap`, `RinkView`, `PlayerDiscView`, `PuckView`, `HudView`, `ReplayInput`) ja `Tests/EditMode/`-savutestit.
+   - Käännös ja EditMode-testit ajetaan batchmodessa, kun Editor on kiinni (tarkista ensin `Temp/UnityLockfile`).
+6. **Jerry Editorissa:**
+   - import, joka luo .meta-tiedostot
+   - scene `Assets/HockeyCoach/Scenes/Replay.unity` ja `ReplayBootstrap`
+   - Test Runner ja silmämääräinen tarkistus
+   - scenen ja .meta-tiedostojen commit
+7. Agentit korjaavat Jerryn havainnot.
+
+**Agenttien sallitut polut** (CLAUDE.md, sääntö 6):
+
+| Oikeus | Polut |
+| --- | --- |
+| Saa muokata ja commitoida | Vain .cs-, .asmdef- ja .asmref-tiedostot polussa `unity/HockeyCoach/Assets/HockeyCoach/**` sekä Unityn jo luomat .meta-tiedostot niille. |
+| Erillisellä hyväksynnällä | `Packages/manifest.json` |
+| Aina kielletty | ProjectSettings (myös Jerryn muokkaama `QualitySettings.asset`), Library, Temp, Logs, UserSettings, csproj/sln, packages-lock, scenet, prefabit ja assetit. |
+
+- Stageen vain nimetyt polut.
+
+## Seuraavat askeleet järjestyksessä
+
+1. **Paluukarvaus pois päältä.** Vaihtoehto 1 (kohde kiekon tasalla, k = 2) on jo toteutettu ja mitattu (4530105). Voimasuhteet eivät ole haarukoissa (54,2 / 13,0 / 32,8 %), joten D-087:n mukaan se kytketään pois.
+   - Toimenpide: `transitions.backcheckNodesPerBeat` = 0 (`data:`-commit).
+   - Sen jälkeen batch 1000. Odotettu tulos on E-006:n taso 66,4 / 33,6 / 0,0 %, `rulebased` vs `random` vähintään 75 % ja maaleja 4–7.
+   - Jos jakauma on haarukoissa, taktiikkamatriisia ei tarvitse ajaa.
+2. **Unity-toiston vaiheet 2–5** yllä olevan suunnitelman mukaan, yksi vaihe ja commit kerrallaan. Vaihe 4 vaatii Jerryn hyväksynnän.
+3. **Myöhemmin:**
+   - Q-071: ansaitut ylivoimat. Laiturit kiekollisen edelle, ja nopeusero tai nopea siirtymä ratkaisee. Paluukarvaus palataan säätämään samassa yhteydessä.
+   - Muut virstanpylvään 5 kalibroinnit.
+   - Pitkä kiekko (Q-042).
+   - `compare`-komento.
+
 ## Avoimet asiat
 
-Kysymysten sisältö on tiedostossa `docs/questions.md`.
-
-- **Odottavat Jerryn vastausta:** Q-048 ja Q-050 (Wisehockey).
-- **Toteutettu oletuksilla:** Q-057, Q-058, Q-059 ja Q-062.
-- **Kysymykset veljelle:** Q-060 (ohilaukausten päätyminen), Q-049, Q-059 (1)–(2), Q-040, Q-039, Q-030, Q-014, Q-004 ja Q-003.
+- **Kysymykset veljelle:**
+  - Q-073: karvaajien reitti, eli palaavatko hyökkääjät keskikaistaa ja pakit omia kaistojaan.
+  - Q-060: minne ohilaukaukset päätyvät.
+  - Q-049, Q-059, Q-040, Q-039, Q-030, Q-014, Q-004 ja Q-003.
 - **Myöhemmin:**
-  - Q-068: kuljetus vai päätyyn lyönti alivoimalla taitopäätöksenä.
-  - Q-070: ottelun jälkeinen kertomusraportti.
-  - Q-061: tapahtumaloki Unity-toistoon.
-  - Q-042: pitkä kiekko.
-  - Q-043, Q-041, Q-032, Q-021, Q-019 ja Q-002.
-- **Virstanpylvääseen 5 siirretyt poikkeamat:**
-  - syöttöjen paineosuus
-  - laukaukset paineen alla
-  - laukausyritykset
-  - vaihtojen pituus
-  - riistojen xG-osuus
-  - `adaptive`n vastapelattu aika
-  - `strengthDifferencePerPlayer`-arvon kalibrointi
-
-## Virstanpylväs 5: ensimmäinen kierros (voimasuhteet, D-083–D-085)
-
-- **E-006 (D-084):** kiekon tasalla olevia ei lasketa kummallekaan puolelle. Batch 1000 ottelua, rb vs rb: 66,4 / 33,6 / 0,0 % (tavoite 50–75 / 20–40 / 0–15), kaikki haarukoissa.
-- **Paluukarvaus (D-085, `transitions.backcheckNodesPerBeat` = 2)** on toteutettu, testejä 873.
-
-  | | E-006 (k = 0) | Paluukarvaus (k = 2) | Tavoite |
-  | --- | --- | --- | --- |
-  | Alivoima / tasavoima / ylivoima | 66,4 / 33,6 / 0,0 % | **89,4 / 10,6 / 0,0 %** | 50–75 / 20–40 / 0–15 |
-  | Kuljetuksen onnistuminen | 63,3 % | 60,3 % | |
-  | `rulebased` vs `random` | 78,7 % | 78,9 % | ≥ 75 % |
-  | Maalit / ottelu (rb vs rb) | 6,41 | 6,48 | 4–7 |
-
-  - Paluukarvaus ylikorjaa (designerin arvio oli "muutama prosenttiyksikkö"). Syy: puolustaja, joka on riviä kiekon takana, päätyy riviä kiekon ohi ja lasketaan M:ään. Kiekollinen liikkuu kaksi riviä, ja sama toistuu.
-  - Oman alueen riistojen jälkeen ylivoimaisia on 0 % sekä ennen että jälkeen.
-  - Raportissa on uusi osio, jossa voimasuhteet on eritelty hallinnan alkupaikan mukaan.
-- **Taktiikkamatriisi paluukarvauksen kanssa** (`reports/tactic-counterplay/backcheck`):
-
-  | Oma siirtymä | forecheck212 | trap122 |
-  | --- | --- | --- |
-  | Suorahyökkäys | 50,0 % | 57,2 % |
-  | Uudelleenryhmittyminen | 34,7 % (32,8–36,5) | 75,9 % |
-
-  - Rajat täyttyvät: karvausta vastaan +15,4 %-yks., trapia vastaan +18,6 %-yks.
-  - Uudelleenryhmittyminen karvausta vastaan jää rajan 35 % alle, mutta luottamusväli sisältää rajan, joten K4:ää ei säädetty (D-082).
-  - K4:n porras laskee voimasuhteen mukaan: 3v3 70 %, 1v1 67 %, 1v2 62 %, 1v3 57 %, 1v5 45 %.
-- **Uudet kysymykset:**
-  - Q-074: paluukarvauksen reunatapaus.
-  - Q-075: bugi, peilattu kuvio ohittaa alueelletuontisyötön (0,0–0,1 % kuljetuksista), ei korjattu.
-
-## Seuraavat askeleet
-
-1. **Jerry päättää paluukarvauksen ylikorjauksesta.** Vaihtoehdot:
-   - `backcheckNodesPerBeat` = 1
-   - kohderivi kiekon tasalle eikä riviä sen ohi
-   - hyväksytään ja palataan siihen ansaittujen ylivoimien kanssa (Q-071)
-2. **Ansaitut ylivoimat (Q-071):** laiturit kiekollisen edelle, ja nopeusero tai nopea siirtymä ratkaisee.
-3. **Muut virstanpylvään 5 kalibroinnit tavoitearvoihin.** Jerry täyttää `targets.json`-haarukat.
-4. Pitkä kiekko (Q-042) ja `compare`-komento.
+  - Q-071: ansaitut ylivoimat.
+  - Q-068: kuljetus vai päätyyn lyönti alivoimalla.
+  - Q-070: kertomusraportti.
+  - Q-042, Q-043, Q-041, Q-032, Q-021, Q-019 ja Q-002.
+- **Odottavat Jerryä:** Q-048 ja Q-050 (Wisehockey).
+- **Oletuksilla toteutetut:** Q-057, Q-058, Q-059 ja Q-062.
 
 ## Työtapa
 
@@ -119,4 +150,4 @@ Kysymysten sisältö on tiedostossa `docs/questions.md`.
   - Harness-komennot kirjoittavat raporttinsa itse.
   - Analyysiteksti palautetaan pääistunnolle, joka tallentaa sen.
 - Suunnitelma näytetään Jerrylle ennen toteutusta. Muutetaan yksi asia kerrallaan ja mitataan jokaisen muutoksen jälkeen.
-- Vain Jerry merkitsee kysymykset ratkaistuiksi. `unity/`-kansioon ei kosketa.
+- Vain Jerry merkitsee kysymykset ratkaistuiksi. `unity/`-kansiossa vain sallitut polut (CLAUDE.md, sääntö 6).

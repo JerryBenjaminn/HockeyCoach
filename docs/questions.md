@@ -14,12 +14,6 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
-### Q-076 · 2026-10-11 · kirjaaja: game-designer
-**Kysymys:** saako ottelun JSON-vientiin (`match --json`) lisätä otsakkeen toistoa varten: kokoonpano (pelaajan id, joukkue, pelipaikka C/LW/RW/LD/RD/G, ketju) ja erän pituus sekunteina? Tämä ei ole uusi tapahtumatyyppi eikä muuta tapahtumaskeemaa, mutta muuttaa vientimuotoa.
-**Konteksti:** Q-061-tarkistus (D-086 kohta 4), ottelu `rulebased` vs `random`, siemen 42, 815 tapahtumaa. Jokaisessa tapahtumassa on `placement`: kaikki 10 kenttäpelaajaa ja 2 maalivahtia solmuina sekä kiekon solmu ja haltija, kotijoukkueen koordinaatistossa (maalivahdit solmuissa 7 ja 47 kaikissa erissä). Kiekon lähtö- ja tulosolmu saadaan siis jokaiseen tapahtumaan: lähtö = edellisen tapahtuman kiekon solmu (syötössä syöttäjän ja laukauksessa ampujan solmu), välipiste = maali tai blokkaajan solmu (`stoppedById`), tulo = tapahtuman `placement.puckNodeId`. Aloituspiste saadaan keskushyökkääjien yhteisestä solmusta (23/23 aloitusta). Ainoa puuttuva tieto on pelipaikka ja ketju: lokissa on vain id, joukkue ja maalivahtilippu, joten toisto ei voi näyttää pelaajia pelipaikan mukaan.
-**Ehdotettu oletus:** lisätään otsake vientiin (programmer), tapahtumaskeemaa ei muuteta. Siihen asti toisto näyttää pelaajat joukkueen ja id:n mukaan.
-**Vastaus:** (Jerry täyttää)
-
 ### Q-073 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys veljelle:** palaavatko paluukarvauksessa hyökkääjät keskikaistaa ja pakit omia kaistojaan?
 **Konteksti:** paluukarvaus (`data-schema.md`, D-085). Nyt kaikki väärällä puolella kiekkoa olevat palaavat omaa kaistaansa.
@@ -155,6 +149,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Huom. (2026-10-09):** pituus ratkaistu: E-002 hyväksytty, verkko 11 × 5 (D-027). Leveys arvioidaan kuvioiden kirjoittamisen jälkeen.
 
 ## Ratkaistut
+
+### Q-076 · 2026-10-11 · kirjaaja: game-designer
+**Kysymys:** saako ottelun JSON-vientiin (`match --json`) lisätä otsakkeen toistoa varten: kokoonpano (pelaajan id, joukkue, pelipaikka C/LW/RW/LD/RD/G, ketju) ja erän pituus sekunteina? Tämä ei ole uusi tapahtumatyyppi eikä muuta tapahtumaskeemaa, mutta muuttaa vientimuotoa.
+**Konteksti:** Q-061-tarkistus (D-086 kohta 4), ottelu `rulebased` vs `random`, siemen 42, 815 tapahtumaa. Jokaisessa tapahtumassa on `placement`: kaikki 10 kenttäpelaajaa ja 2 maalivahtia solmuina sekä kiekon solmu ja haltija, kotijoukkueen koordinaatistossa (maalivahdit solmuissa 7 ja 47 kaikissa erissä). Kiekon lähtö- ja tulosolmu saadaan siis jokaiseen tapahtumaan: lähtö = edellisen tapahtuman kiekon solmu (syötössä syöttäjän ja laukauksessa ampujan solmu), välipiste = maali tai blokkaajan solmu (`stoppedById`), tulo = tapahtuman `placement.puckNodeId`. Aloituspiste saadaan keskushyökkääjien yhteisestä solmusta (23/23 aloitusta). Ainoa puuttuva tieto on pelipaikka ja ketju: lokissa on vain id, joukkue ja maalivahtilippu, joten toisto ei voi näyttää pelaajia pelipaikan mukaan.
+**Ehdotettu oletus:** lisätään otsake vientiin (programmer), tapahtumaskeemaa ei muuteta. Siihen asti toisto näyttää pelaajat joukkueen ja id:n mukaan.
+**Vastaus (Jerry, 2026-10-11):** kyllä. `match --json` -vientiin otsake, jossa on formaattiversio, erän pituus, kokoonpano (id, joukkue, pelipaikka, ketju tai pari, maalivahti) ja kaukalodata (`rink.json`:sta: mitat metreinä, solmut, maalisolmut). Tapahtumaskeema ei muutu. Kirjattu: D-087.
 
 ### Q-075 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** D-036:n kuvionvalinta ja peilaus: verrataanko kiekollista kuvion kirjoitettuun vai pelattavaan (tarvittaessa peilattuun) `puckCarrier`-pelipaikkaan? Nykyinen koodi vertaa kirjoitettuun ja peilaa vasta sen jälkeen. Jos kiekollinen on `LW` ja kuvion kirjoitettu kiekollinen `LW`, mutta kuvio peilataan (`LW` → `RW`), avaussyöttöä ei tehdä. Silloin kuvion tahdit ajaa `RW`, jolla kiekkoa ei ole: esim. `skate` siirtää `RW`:n alueelle, lokiin kirjataan hänen alueelletuontinsa, mutta kiekko jää `LW`:lle.
