@@ -28,6 +28,10 @@ namespace HockeyCoach.Sim.Shift
         /// f of data-schema.md M-9 for a <c>breakout</c> check (forecheckers F1-F3 in the attacking team's defensive zone,
         /// 0..3); null for other checks. A report annotation, not a log field (M-9, Kalibrointi).
         /// </param>
+        /// <param name="puckNodeId">
+        /// The puck node (home view) when the check was resolved, before any move it causes (e.g. the carrier's node of a
+        /// carry, the passer's node of a pass); −1 when unknown. A report annotation, not a log field.
+        /// </param>
         public CheckObservation(
             int period,
             double time,
@@ -37,9 +41,11 @@ namespace HockeyCoach.Sim.Shift
             double probability,
             double attackerEnergy,
             double defenderEnergy,
-            int? forecheckers = null)
+            int? forecheckers = null,
+            int puckNodeId = -1)
         {
             Forecheckers = forecheckers;
+            PuckNodeId = puckNodeId;
             Period = period;
             Time = time;
             CheckId = checkId;
@@ -76,5 +82,8 @@ namespace HockeyCoach.Sim.Shift
 
         /// <summary>f (M-9) for a <c>breakout</c> check; null for other checks.</summary>
         public int? Forecheckers { get; }
+
+        /// <summary>The puck node (home view) when the check was resolved, before any move it causes; −1 when unknown.</summary>
+        public int PuckNodeId { get; }
     }
 }

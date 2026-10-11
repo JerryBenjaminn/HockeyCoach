@@ -44,8 +44,18 @@ namespace HockeyCoach.Sim.Shift
         {
             if (_observer != null)
             {
+                GridPoint puck = _state.PuckNode;
                 _observer.OnCheck(new CheckObservation(
-                    _setup.Period, _time, checkId, attacking, success, probability, MeanEnergy(attackerIds), MeanEnergy(defenderIds), forecheckers));
+                    _setup.Period,
+                    _time,
+                    checkId,
+                    attacking,
+                    success,
+                    probability,
+                    MeanEnergy(attackerIds),
+                    MeanEnergy(defenderIds),
+                    forecheckers,
+                    _rink.IdOf(puck.X, puck.Y)));
             }
         }
 

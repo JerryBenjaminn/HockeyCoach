@@ -14,7 +14,7 @@ namespace HockeyCoach.Harness.Batch;
 /// <param name="Gain">How the possession started: "faceoff", "turnover" (takeaway or interception), "loose" (puck battle or dump-in won), "other".</param>
 /// <param name="Mode">"rush" (no play id on the entry) or "play".</param>
 /// <param name="Group">M-8 group of the logged numbers.</param>
-/// <param name="Behind">Defending skaters behind the puck in the entry's placement (x &lt; puck x, entering team's view).</param>
+/// <param name="Behind">Defending skaters behind the puck at the M-8 moment (x &lt; puck x, entering team's view).</param>
 /// <param name="Level">Defending skaters level with the puck.</param>
 /// <param name="Ahead">Defending skaters between the puck and their goal (x &gt; puck x).</param>
 public sealed record EntryOrigin(string Zone, string Gain, string Mode, Report.EntryStrengthGroup Group, int Behind, int Level, int Ahead);
@@ -44,10 +44,28 @@ public sealed class EntryOrigins
     /// <summary>Kept entries by "zone gain mode": N = entries, Hits = defenders ahead, Sum = behind, Sum2 = level (totals).</summary>
     public Tally Defenders { get; } = new();
 
+    /// <summary>
+    /// Kept carry entries: N = all, Hits = the logged carrier is not the puck holder in the entry's placement (Q-075: a
+    /// mirrored play whose entry pass was skipped).
+    /// </summary>
+    public Tally Carries { get; } = new();
+
     /// <summary>Adds the kept entries of one match.</summary>
-    public void Add(IReadOnlyList<SimEvent> events, Func<int, TeamSide> teamOf, Rink rink)
+    /// <param name="events">The match log.</param>
+    /// <param name="teamOf">Team of a player id.</param>
+    /// <param name="rink">The rink.</param>
+    /// <param name="carryPuckNodes">Puck node of every <c>zoneEntryCarry</c> check in order (<see cref="Sim.Shift.CheckObservation.PuckNodeId"/>), or null.</param>
+    public void Add(IReadOnlyList<SimEvent> events, Func<int, TeamSide> teamOf, Rink rink, IReadOnlyList<int>? carryPuckNodes = null)
     {
-        foreach (EntryOrigin o in Classify(events, teamOf, rink))
+        foreach (ControlledZoneEntryEvent e in events.OfType<ControlledZoneEntryEvent>())
+        {
+            if (e.Method == ZoneEntryMethod.Carry && e.Outcome == ZoneEntryOutcome.Kept)
+            {
+                Carries.Add("kept carry", e.Context.Placement.PuckCarrierId != e.CarrierId);
+            }
+        }
+
+        foreach (EntryOrigin o in Classify(events, teamOf, rink, carryPuckNodes))
         {
             string key = o.Zone + " " + o.Gain + " " + o.Mode;
             Strength.Add(
@@ -62,12 +80,21 @@ public sealed class EntryOrigins
         }
     }
 
-    /// <summary>Every kept controlled zone entry of the log with its possession origin, in log order. Pure.</summary>
+    /// <summary>
+    /// Every kept controlled zone entry of the log with its possession origin, in log order. Pure. Defenders are counted
+    /// around the M-8 puck (D-084): the passer's node for a pass entry (the pass moves nobody, so the entry's placement is
+    /// that moment), the carrier's node before the carry for a carry entry (from <paramref name="carryPuckNodes"/>; the
+    /// carry moves only the carrier). Without carry nodes a carry uses the entry's puck node (after the carry).
+    /// </summary>
     /// <param name="events">The match log.</param>
     /// <param name="teamOf">Team of a player id.</param>
     /// <param name="rink">The rink (node ids, zones).</param>
-    public static IReadOnlyList<EntryOrigin> Classify(IReadOnlyList<SimEvent> events, Func<int, TeamSide> teamOf, Rink rink)
+    /// <param name="carryPuckNodes">Puck node of every <c>zoneEntryCarry</c> check in log order, or null.</param>
+    public static IReadOnlyList<EntryOrigin> Classify(
+        IReadOnlyList<SimEvent> events, Func<int, TeamSide> teamOf, Rink rink, IReadOnlyList<int>? carryPuckNodes = null)
     {
+        int carries = 0;
+        PassEvent? lastPass = null;
         var origins = new List<EntryOrigin>();
         TeamSide? holder = null;
         string zone = "neutral";
@@ -112,13 +139,29 @@ public sealed class EntryOrigins
                         Start(team, e.Context.Placement.PuckNodeId, "other");
                     }
 
+                    int puckNode = e.Context.Placement.PuckNodeId;
+                    if (entry.Method == ZoneEntryMethod.Carry)
+                    {
+                        if (carryPuckNodes != null && carries < carryPuckNodes.Count)
+                        {
+                            puckNode = carryPuckNodes[carries];
+                        }
+
+                        carries++;
+                    }
+                    else if (lastPass != null)
+                    {
+                        puckNode = NodeOf(entry.Context.Placement, lastPass.PasserId) ?? puckNode;
+                    }
+
                     if (entry.Outcome == ZoneEntryOutcome.Kept)
                     {
-                        origins.Add(Origin(entry, team, zone, gain, rink));
+                        origins.Add(Origin(entry, team, zone, gain, rink, puckNode));
                     }
 
                     break;
                 default:
+                    lastPass = e as PassEvent ?? lastPass;
                     int? actor = AI.PublicLog.Actor(e);
                     if (actor.HasValue && holder != teamOf(actor.Value))
                     {
@@ -146,13 +189,26 @@ public sealed class EntryOrigins
         }
     }
 
-    private static EntryOrigin Origin(ControlledZoneEntryEvent entry, TeamSide team, string zone, string gain, Rink rink)
+    private static int? NodeOf(PlacementSnapshot placement, int playerId)
+    {
+        foreach (PlayerPlacement p in placement.Players)
+        {
+            if (p.PlayerId == playerId)
+            {
+                return p.NodeId;
+            }
+        }
+
+        return null;
+    }
+
+    private static EntryOrigin Origin(ControlledZoneEntryEvent entry, TeamSide team, string zone, string gain, Rink rink, int puckNode)
     {
         EntryNumbers n = entry.Numbers;
         var group = n.Attackers < n.Defenders ? Report.EntryStrengthGroup.Disadvantage
             : n.Attackers == n.Defenders ? Report.EntryStrengthGroup.Even
             : Report.EntryStrengthGroup.Advantage;
-        int puckX = ViewX(rink, entry.Context.Placement.PuckNodeId, team);
+        int puckX = ViewX(rink, puckNode, team);
         int behind = 0;
         int level = 0;
         int ahead = 0;
@@ -203,7 +259,7 @@ public sealed class EntryOrigins
     {
         md.AppendLine("### Entry strength by possession origin (D-085)");
         md.AppendLine();
-        md.AppendLine("Successful controlled zone entries (carry + pass). N vs M from the logged numbers (M-8); defenders behind / level / ahead of the puck from the entry's placement (x vs puck x, entering team's view). "
+        md.AppendLine("Successful controlled zone entries (carry + pass). N vs M from the logged numbers (M-8); mean defenders behind / level with / ahead of the puck (x vs puck x, entering team's view) at the M-8 moment (carrier's node before the carry, passer's node), so Ahead = mean M. "
             + "Possession start zone in the entering team's view; gain: turnover = takeaway or interception, loose = puck battle or dump-in won, other = puck changed teams without such an event.");
         md.AppendLine();
         md.AppendLine("| Start zone | Gain | Mode | Entries | N < M | N = M | N > M | Behind | Level | Ahead |");
@@ -227,6 +283,10 @@ public sealed class EntryOrigins
             }
         }
 
+        md.AppendLine();
+        int carries = Carries.N.GetValueOrDefault("kept carry");
+        int nonHolder = Carries.Hits.GetValueOrDefault("kept carry");
+        md.AppendLine("Kept carries whose logged carrier is not the puck holder (Q-075): " + nonHolder + " of " + carries + " (" + BatchReport.Pct(carries > 0 ? nonHolder / (double)carries : 0.0) + ").");
         md.AppendLine();
     }
 

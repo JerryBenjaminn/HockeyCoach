@@ -172,7 +172,7 @@ public sealed class MatchupStats
         AddPlayXg(events, SlotOf);
         AddEntries(events, SlotOf);
         AddBreakouts(batchGame, SlotOfSide);
-        EntryOrigins.Add(events, teamOf, rink);
+        EntryOrigins.Add(events, teamOf, rink, batchGame.Checks.Where(c => c.CheckId == "zoneEntryCarry").Select(c => c.PuckNodeId).ToList());
         Adaptive.Add(batchGame);
     }
 

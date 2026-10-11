@@ -1,8 +1,13 @@
 using System.Text;
+using HockeyCoach.AI;
 using HockeyCoach.Harness.Batch;
+using HockeyCoach.Harness.Simulation;
 using HockeyCoach.Harness.Report;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Match;
+using HockeyCoach.Sim.Random;
+using HockeyCoach.Sim.Shift;
+using HockeyCoach.Sim.Tactics;
 using HockeyCoach.Sim.Tests.Match;
 using HockeyCoach.Sim.Tests.Shift;
 
@@ -12,6 +17,50 @@ namespace HockeyCoach.Sim.Tests.Report;
 public class EntryOriginsTests
 {
     private static IEnumerable<IReadOnlyList<SimEvent>> Logs() => MatchTestData.Sample(4).Select(r => r.Log.Events);
+
+    private sealed class Recorder : ICheckObserver
+    {
+        public List<CheckObservation> Checks { get; } = new();
+
+        public void OnCheck(CheckObservation observation) => Checks.Add(observation);
+    }
+
+    [Theory]
+    [InlineData(1UL)]
+    [InlineData(2UL)]
+    public void DefendersAhead_AtTheM8Moment_EqualTheLoggedM(ulong seed)
+    {
+        var data = ShiftTestData.Data;
+        var recorder = new Recorder();
+        MatchResult result = MatchSimulator.Run(
+            MatchTestData.Setup,
+            new RotationCoach(data.Plays, HarnessTeams.System(data, "forecheck212"), TransitionInstruction.Rush),
+            new RotationCoach(data.Plays, HarnessTeams.System(data, "trap122"), TransitionInstruction.Regroup),
+            new MatchStreams(seed).Simulation(),
+            recorder);
+        IReadOnlyList<int> carryNodes = recorder.Checks.Where(c => c.CheckId == "zoneEntryCarry").Select(c => c.PuckNodeId).ToList();
+        List<ControlledZoneEntryEvent> kept = result.Log.Events.OfType<ControlledZoneEntryEvent>().Where(e => e.Outcome == ZoneEntryOutcome.Kept).ToList();
+
+        IReadOnlyList<EntryOrigin> origins = EntryOrigins.Classify(result.Log.Events, MatchTestData.TeamOf, data.Rink, carryNodes);
+
+        Assert.Equal(kept.Count, origins.Count);
+        Assert.Contains(kept, e => e.Method == ZoneEntryMethod.Carry);
+        Assert.Contains(kept, e => e.Method == ZoneEntryMethod.Pass);
+        int compared = 0;
+        for (int i = 0; i < kept.Count; i++)
+        {
+            // Q-075: a mirrored play can make a non-holder skate the carry; the observed puck node is then the holder's.
+            if (kept[i].Method == ZoneEntryMethod.Carry && kept[i].Context.Placement.PuckCarrierId != kept[i].CarrierId)
+            {
+                continue;
+            }
+
+            Assert.Equal(kept[i].Numbers.Defenders, origins[i].Ahead);
+            compared++;
+        }
+
+        Assert.True(compared > kept.Count / 2);
+    }
 
     [Fact]
     public void EveryKeptEntry_IsClassifiedOnce_WithFiveDefendersSplitAroundThePuck()
