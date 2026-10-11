@@ -848,6 +848,121 @@ Siirtymäohje (valmentajan päätös, oletus `rush`) koskee kiekon saamista muut
 
 Raja `transitions.regroupForecheckersAllowed` = 1: 1-2-2-trapin F1 yksin ei estä kokoamista, mutta kaksi tai kolme syvällä karvaavaa (2-1-2) haastaa sen. Kiekkoperuste: 2-1-2-karvaus on rakennettu estämään rauhallinen kokoaminen omassa päässä, ja trapia vastaan kiekkoa kierrätetään ja kootaan (E-005). Testit: f = raja → ei tarkistusta, f = raja + 1 → tarkistus; epäonnistuminen tuottaa riiston ja oikean riistäjän; askelmäärä n_reg + n_set = n_tot; keskialueen kokoaminen ei koskaan tarkista; determinismi (sama siemen → sama loki).
 
+#### Paluukarvaus suorahyökkäyksessä (D-084 kohta 2) – odottaa Jerryn hyväksyntää
+
+**Valittu tapa: (b) väärällä puolella kiekkoa oleva puolustaja luistelee kohti omaa maaliaan.** Perustelut:
+
+- (b) on paikallinen sääntö. Se lukee vain nykyiset sijainnit, koskee vain väärällä puolella olevia ja vain rushia. Muut puolustajat, kuviot, setup ja regroup pysyvät ennallaan.
+- (a) vaatisi kiekollisen liikkeen ennustamisen ennen toimintoa. Ennustettava olisi `skate`n kohde, syötön vastaanottaja tai laukaus, ja `skate` voi epäonnistua. Ennuste muuttaisi kaikkien viiden kohteet ja säännön valinnan (alue), eli myös kuvioiden tahdit.
+- (a) veisi F1:n (`puckOffset` [0, 0]) kiekollisen solmusta tämän tulevaan solmuun. Paine (M-7, säde 0) ja `breakout`-tarkistuksen f putoaisivat silloin lähes kaikista tahdeista.
+- Arvio samasta otoksesta kuin E-006: (a) lisäisi F1:n M:ään lähes jokaisessa kuljetuksessa (1v1 → 1v2), ja N < M nousisi yli 75 %:n.
+
+**Väärä puoli.** Puolustaja on väärällä puolella, kun x_p < x_k hyökkäävän joukkueen näkökulmasta. x_p on puolustajan x ja x_k kiekon x eli kiekollisen solmu. Puolustajan omassa näkökulmassa ehto on x_p > x_k. Säännössä:
+
+- Kiekon tasalla oleva (x_p = x_k) ei ole väärällä puolella. Ehto on M-8:n (D-084) peilikuva, joten tasalla oleva on neutraali kummassakin.
+- Kaikki viisi kenttäpelaajaa ovat mukana. Pelipaikka ja rooli eivät vaikuta. E-006:n otoksessa väärällä puolella olleet olivat kaikki hyökkääjiä.
+- Ehto arvioidaan jokaisen liikkeen alussa erikseen ennen vaihetta 2, eli hyökkääjien siirtojen (vaihe 1) jälkeen.
+
+**Milloin.** Sääntö koskee vain vastustajan suorahyökkäystä (O-7 `rush`), sen jokaisen toiminnon D-041:n vaihetta 2 (puolustajien järjestelmäliike), myös ensimmäistä. Se ei koske:
+
+- kuvion tai aloituskuvion tahteja
+- setuppia
+- regroupia, ei myöskään K1:n n_reg-liikettä (alla)
+- järjestelmätilan askelta
+- irtokiekkoa
+- O-10:n ohjeita
+- toista yritystä (O-8), jossa puolustajat eivät liiku
+
+Kun rush päättyy (O ≥ raja tai toiminnot käytetty), sääntö lakkaa heti, ja setup liikkuu järjestelmän mukaan kuten ennen.
+
+**Liike.**
+
+1. Roolit (F1–F3, D1–D2) ja järjestelmän sääntö jaetaan kuten ennen kaikille viidelle. Roolia tarvitaan D-058:n käsittelyjärjestykseen ja M-7:n painostajaan.
+2. Väärällä puolella olevan pelaajan järjestelmäkohde ohitetaan tässä liikkeessä. Ohitus koskee myös `pinch`-D1:n korvattua kohdetta ja trap122:n F1:n siirtymää.
+   - Pelaajan uusi kohde on (x_t, y_p) hyökkäävän joukkueen näkökulmasta.
+   - x_t = min(x_k + 1, `opponentGoal.x` − 1), eli rivi kiekon ja puolustajan oman maalin välissä, enintään oman maalin edustan rivi.
+   - y_p on puolustajan oma kaista, eli kaista ei vaihdu.
+3. Askel on suoraan kohti omaa maalia: (+1, 0) hyökkäävän joukkueen näkökulmasta. Askeleita otetaan enintään k = `transitions.backcheckNodesPerBeat`, kunnes x = x_t.
+   - Pelaaja ei ylitä kohdettaan, joten tasalla tai edellä olevaksi ehtinyt jää riville x_t.
+   - Jos askel osuisi maalisolmuun, kierto tehdään D-053:n mukaan. Näin käy vain hyökkäävän joukkueen oman maalin takaa (x = 0, y = 2) lähtevälle, ja kiertoaskel on yksi k:sta.
+4. **D-074:** jos väärällä puolella oleva on rushin viivästetty painostaja (lähin syötön vastaanottajaan), askeleita on min(k, `pressure.presserReactionNodes`).
+5. **D-058:** paluukarvaajan ihannepääte on kohdan 3 pääte, ja polku on sen suora polku. Kaikki viisi käsitellään samassa sijoituksessa tavallisella järjestyksellä (`F1`, `D1`, `D2`, `F2`, `F3`). Peruutus omaa polkua pitkin ja renkaat ovat ennallaan.
+6. Muut puolustajat (tasalla tai kiekon ja maalin välissä) liikkuvat järjestelmän mukaan `plays.maxNodesPerBeat` askelta kuten ennen. Sama koskee painostajaa, joka ei ole väärällä puolella. Jos järjestelmäkohde vie tasalla olevan väärälle puolelle (esim. forecheck212:n F2 (9, 3) omasta näkökulmasta), sääntö koskee häntä seuraavassa liikkeessä.
+
+**Ei muutu:**
+
+- M-7: rushin paine on edelleen lähin puolustaja toiminnon hetkellä.
+- M-8/M-9: luvut lasketaan sijainneista kuten ennen. Paluukarvaus muuttaa vain sijainteja.
+- O-6: O on skaalaari eikä muutu.
+- K1: regroup ei ole rush.
+- `forecheckers` (M-1) ja f lasketaan liikkeen jälkeisistä sijainneista kuten ennen.
+
+Ei satunnaisuutta, ei uutta tapahtumaa eikä uutta tapahtumakenttää.
+
+**Tasapainoarvo.** Lisätään `transitions`-osioon olemassa olevien rinnalle, samassa commitissa lataajan tuen kanssa (D-030). Polku lisätään `_placeholders`-listaan.
+
+| Polku | Arvo | Hylätään, jos |
+| --- | --- | --- |
+| `transitions.backcheckNodesPerBeat` | 2 | ei kokonaisluku, < 0 tai > 2 × `plays.maxNodesPerBeat` |
+
+- Arvo 0 poistaa säännön kokonaan: väärällä puolella oleva liikkuu järjestelmän mukaan kuten ennen, eikä seiso paikallaan. Näin muutoksen voi mitata samalla koodilla ilman sääntöä.
+- Arvo 2 on sama nopeus kuin kiekollisella. Paluukarvaaja on silloin yhtä nopea kuin kiekollinen, ja vain suunta muuttuu.
+- Arvo, joka on suurempi kuin `plays.maxNodesPerBeat`, tarkoittaa "kiekoton on nopeampi kuin kiekollinen". Se on oma päätöksensä, ja sen päättää Jerry (alla).
+
+`_notes`-tekstin loppuun lisätään: "backcheckNodesPerBeat: during the opponent's rush, a defender behind the puck (x < puck x, attacking view) ignores his system target and skates straight toward his own goal, at most this many nodes, to the row one past the puck (D-084). 0 = off."
+
+**Testit.**
+
+1. Rushissa väärällä puolella oleva liikkuu suoraan (+1, 0) enintään k askelta ja pysähtyy riville x_k + 1. Esimerkiksi rako 1 → kiekon edelle, rako 2 → tasalle, rako 4 → 2 riviä kiekon taakse.
+2. Tasalla oleva ja kiekon ja maalin välissä oleva liikkuvat järjestelmän mukaan, sama tulos kuin arvolla 0.
+3. Ei vaikutusta kuvion tahdissa, aloituskuviossa, setupissa, regroupissa (myös K1), järjestelmätilassa, irtokiekossa eikä toisessa yrityksessä.
+4. Raja x_t ≤ `opponentGoal.x` − 1. Pelaaja ei koskaan päädy maalisolmuun. Maalin takaa lähtevä kiertää D-053:n mukaan.
+5. D-074: väärällä puolella oleva viivästetty painostaja ottaa min(k, `presserReactionNodes`) askelta.
+6. D-058: kaksi paluukarvaajaa samalla kaistalla eivät päädy samaan solmuun (peruutus tai rengas). Invarianttitesti pysyy voimassa.
+7. Peilisymmetria: koti/vieras ja vasen/oikea kaista tuottavat peilikuvat.
+8. Arvo 0 tuottaa saman tapahtumalokin kuin muutosta edeltävä koodi samalla siemenellä. Sama siemen tuottaa aina saman lokin.
+9. Lataaja: puuttuva avain, ei-kokonaisluku, −1 ja 2 × `maxNodesPerBeat` + 1 hylätään. 0 hyväksytään.
+
+**Arvioitu vaikutus** (designerin arvio, ei mitattu; esimerkki forecheck212, riisto hyökkäävän joukkueen omalla alueella x = 3, alueelletuonti toisella rush-toiminnolla kiekon ollessa x = 5):
+
+| | Väärällä puolella | Tasalla | Edellä (M) | N vs M (E-006) |
+| --- | --- | --- | --- | --- |
+| Nyt | F2 (x = 3) | F1, F3, D1 | D2 | 1v1 |
+| k = 2 | – | F1, F2, F3, D1 | D2 | 1v1 |
+| k = 3 | – | – | kaikki viisi | 1v5 |
+
+- **k = 2:** syvä karvaaja (F2) lähtee takaisin jo ensimmäisessä toiminnossa eikä pidä forecheck212:n kohdetta (9, 3). Koska nopeudet ovat samat, hän ehtii vain kiekon tasalle, ja tasalla olevaa ei lasketa (D-084).
+  - Väärällä puolella olevia oman alueen riistojen jälkeen arviolta 1,64 → 0,6–0,9 ja kaikissa tuonneissa 0,65 → 0,3–0,4.
+  - Voimasuhdejakauma (E-006:n arvio 64,6 / 35,4 / 0,0) muuttuu enintään muutaman %-yksikön. Ylivoimaisten osuus oman alueen riistojen jälkeen on E-006:n määritelmällä jo n. 0 %.
+  - Pari 2v2-tilannetta voi muuttua 2v3:ksi, kun rako 1 muuttuu edellä olevaksi.
+  - Taktiikka (D-078): karvausta vastaan rush − regroup pienenee arviolta 0–3 %-yks., eli raja +5 pysyy. Trapia vastaan vaikutus on pieni, koska trapin pelaajat ovat jo kiekon takana.
+- **k = 3:** ylikorjaa. Tasalle jäävät ehtivät kiekon edelle, joten oman alueen riistojen jälkeen tulee 1v4–1v5.
+  - N < M nousee arviolta yli 80 %:n (haarukka 50–75).
+  - Karvauksen rush-haavoittuvuus katoaa, ja D-078:n raja (rush − regroup karvausta vastaan ≥ +5) on vaarassa.
+
+**Mittaus** (D-084 kohta 3, E-006:n batchin jälkeen):
+
+1. `batch --matches 1000 --matchups all --seed 1` arvoilla 0 ja 2 (sama koodi).
+2. Mitataan:
+   - `zoneEntryStrength*`
+   - alueelletuontien onnistuminen voimasuhteittain
+   - `zoneEntrySuccessCarry`
+   - maalit per ottelu
+3. Sen jälkeen taktiikkamatriisi 2000 / solu ja D-078:n rajat.
+
+**Harness tarvitsee uuden raporttiosion** (programmer). Se ei ole tavoite eikä uusi tapahtuma. Osio raportoi onnistuneiden hallittujen alueelletuontien N vs M -ryhmäosuudet ja keskimääräiset puolustajat kiekon takana / tasalla / edellä (M-8:n x-vertailu, placement-kentästä). Luvut jaetaan näin:
+
+- hallinnan alkupaikan alueen mukaan hyökkäävän joukkueen näkökulmasta (oma alue, keskialue, hyökkäysalue; hallinta kuten O-12)
+- tavan mukaan (rush tai kuvio)
+
+E-006:n luvut (1,64 ja 85–91 %) laskettiin käsin, joten niitä ei nyt saa batchista.
+
+**Avoimet kysymykset Jerrylle:**
+
+1. Riittääkö k = 2 (vain suunta), vai haluatko kiekottoman olevan nopeampi kuin kiekollisen? Jälkimmäinen olisi uusi päätös, ja arvio näyttää ylikorjauksen.
+2. Toteutetaanko paluukarvaus lainkaan, jos E-006:n batch jo täyttää haarukat? Hyöty olisi realismi: syvä karvaaja ei enää jää kohteeseensa (9, 3), kun vastustaja lähtee.
+3. Kaista: suoraan omalla kaistalla (speksi) vai keskikaistan kautta? Oikeassa kiekossa paluukarvaaja tulee usein keskeltä ja ottaa heikon puolen pelaajan. Kysymys veljelle, jos halutaan tarkentaa.
+
 ### O-8 Toinen yritys (D-059, D-065)
 
 Kun hyökkääjäpuolen kamppailija voittaa irtokiekkokamppailun (M-6) hyökkäysalueen slotissa eli vastustajan maalin edustalla, solmuissa (7, 2) ja (8, 2) **oman joukkueensa näkökulmasta**, hän laukoo heti: ei kuvion valintaa, ei setuppia, ei siirtymäohjetta eikä puolustajien liikettä ennen laukausta. Oman pään vastaavat solmut eivät käy. Sääntö koskee kaikkia irtokiekkoja (rebound, blokattu laukaus, kaukaloon jäänyt ohilaukaus, `dump`, epäonnistunut syöttö, uusinnat), ei syötönkatkoja eikä riistoja.

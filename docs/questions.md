@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-072 · 2026-10-11 · kirjaaja: game-designer (kirjannut koordinaattori)
+**Kysymys:** paluukarvauksen speksin (`data-schema.md`, Paluukarvaus suorahyökkäyksessä, D-084 kohta 2) avoimet kohdat: (1) riittääkö `transitions.backcheckNodesPerBeat` = 2 (vain suunta muuttuu), vai pitäisikö kiekottoman pelaajan olla kiekollista nopeampi (arvio: 3 ylikorjaa, alivoimaisia yli 80 %)? (2) Rakennetaanko paluukarvaus, kun E-006 yksin toi jakauman haarukoihin (66,4 / 33,6 / 0,0 %)? Hyöty olisi realismi, ei jakauma. (3) **Kysymys veljelle:** palaavatko karvaajat omaa kaistaansa vai keskikautta?
+**Konteksti:** D-084, E-006:n batch (`reports/m5-strength/e006`). Designerin käsin laskettu arvio: väärällä puolella olevia puolustajia oman alueen riistojen jälkeen n. 1,64 → 0,6–0,9, jakauma muuttuu enintään muutaman prosenttiyksikön.
+**Ehdotettu oletus:** (1) 2, (2) Jerry päättää, (3) oma kaista.
+
 ### Q-071 · 2026-10-11 · kirjaaja: Jerry (myöhemmin)
 **Kysymys:** pitäisikö laitureiden sijoittua suorahyökkäyksessä kiekollisen edelle?
 **Konteksti:** E-006:n analyysi (D-084): O-7:n suorahyökkäyssäännössä tukipelaajien kohde on kiekollisen x-rivi, joten alueelle tulossa hyökkääjiä on kolme 63 %:ssa tuonneista, kun Wisehockeyssa yleensä 1–2. Esim. laiturit riviä kiekollisen edellä muuttaisivat voimasuhteita ja paikkojen syntyä.
