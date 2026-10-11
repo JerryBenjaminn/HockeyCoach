@@ -36,6 +36,7 @@ public class TuningStateSectionsLoaderTests
         Assert.Equal(0.5, t.Familiarity.IntermissionMultiplier);
         Assert.Equal(4, t.Transitions.RushMaxActions);
         Assert.Equal(0.05, t.Transitions.RushShotMinBaseXg);
+        Assert.Equal(1, t.Transitions.RegroupForecheckersAllowed);
         Assert.Equal(0.01, t.Pressure.DecayPerSecond);
         Assert.Equal(0.5, t.Pressure.KeepOnStoppage);
         Assert.Equal(20.0, t.Time.StoppageChangeMinSeconds);
@@ -61,6 +62,7 @@ public class TuningStateSectionsLoaderTests
     [InlineData("familiarity", "intermissionMultiplier")]
     [InlineData("pressure", "decayPerSecond")]
     [InlineData("time", "stoppageChangeMinSeconds")]
+    [InlineData("transitions", "regroupForecheckersAllowed")]
     public void RequiredKey_IsReported(string section, string key)
     {
         Assert.Contains(section + "." + key + ": missing", Load(r => r[section]!.AsObject().Remove(key)).Errors);
@@ -106,6 +108,33 @@ public class TuningStateSectionsLoaderTests
         Assert.Contains(result.Errors, e => e.StartsWith(section + "." + key, StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(4)]
+    public void RegroupForecheckersAllowed_OutsideZeroToThree_IsRejected(int value)
+    {
+        Assert.Contains(
+            "transitions.regroupForecheckersAllowed: must be an integer 0..3, was " + value,
+            Load(r => r["transitions"]!["regroupForecheckersAllowed"] = value).Errors);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public void RegroupForecheckersAllowed_ZeroAndThree_AreAccepted(int value)
+    {
+        LoadResult<TuningConfig> result = Load(r => r["transitions"]!["regroupForecheckersAllowed"] = value);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(value, result.Value!.Transitions.RegroupForecheckersAllowed);
+    }
+
+    [Fact]
+    public void RegroupForecheckersAllowed_NotAnInteger_IsRejected()
+    {
+        Assert.Contains(Load(r => r["transitions"]!["regroupForecheckersAllowed"] = 1.5).Errors, e => e.StartsWith("transitions.regroupForecheckersAllowed", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void DropOnTurnover_NeedsExactlyTheThreeZones_AndWeightsSumToOne()
     {
@@ -121,6 +150,7 @@ public class TuningStateSectionsLoaderTests
         TuningConfig t = GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning;
 
         Assert.Equal(4, t.Transitions.RushMaxActions);
+        Assert.Equal(1, t.Transitions.RegroupForecheckersAllowed);
         Assert.Equal(0.01, t.Pressure.DecayPerSecond);
         Assert.Equal(20.0, t.Time.StoppageChangeMinSeconds);
         Assert.Equal(8.0, t.ChanceTypes.TurnoverWindowSeconds);

@@ -203,6 +203,11 @@ namespace HockeyCoach.Sim.Config
             }
 
             RequireUnit("transitions.rushShotMinBaseXg", transitions.RushShotMinBaseXg, errors);
+            if (transitions.RegroupForecheckersAllowed < 0 || transitions.RegroupForecheckersAllowed > ForwardLine.Size)
+            {
+                errors.Add("transitions.regroupForecheckersAllowed: must be an integer 0.." + ForwardLine.Size + ", was " + transitions.RegroupForecheckersAllowed);
+            }
+
             return errors;
         }
 
