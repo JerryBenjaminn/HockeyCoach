@@ -14,6 +14,11 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-070 · 2026-10-11 · kirjaaja: Jerry (idea myöhemmäksi, ei virstanpylväisiin)
+**Kysymys:** lisätäänkö peliin ottelun jälkeinen kertomusraportti pelaajalle Wisehockeyn AI-analyysin tyyliin?
+**Konteksti:** raportti kertoo, kumpi joukkue hallitsi (hyökkäysalueaika, xG), mistä paikat syntyivät (paikkatyypit, maski, Royal Road, voimasuhteet) ja miksi tulos meni niin kuin meni (esim. "loit 4,8 xG, mutta maalivahti torjui"). Data on jo tapahtumalokissa. Tukee visiota ja pilaria "jokainen tappio opettaa".
+**Ehdotettu oletus:** ei toteuteta nyt. Otetaan esille käyttöliittymävaiheessa.
+
 ### Q-069 · 2026-10-11 · kirjaaja: programmer
 **Kysymys:** lasketaanko A-T2:n ikkunaan (kohta 3) myös vanhat havainnot järjestelmää c vastaan ajalta ennen kuin `adaptive` viimeksi vaihtoi c:hen?
 **Konteksti:** kohdan 3 sääntö on kirjaimellisesti "viimeiset `styleWindowEvents` luokiteltua havaintoa, joiden järjestelmä-id = c". Saman kohdan perustelu, kohta 4 ("aikalisän jälkeinen uusi kutsu: uuden c:n ikkuna on tyhjä, n = 0") ja testilistan kohta 4 ("vaihdon jälkeen ikkuna on tyhjä") edellyttävät kuitenkin, että ikkuna on vaihdon jälkeen tyhjä. Kirjaimellinen sääntö ei takaa sitä, kun `adaptive` palaa järjestelmään, jota se on jo pelannut: esim. trap → karvaus → trap, jolloin ensimmäisen trap-jakson havainnot (joiden perusteella vaihdettiin karvaukseen) olisivat heti ikkunassa ja voisivat vaihtaa takaisin karvaukseen jo seuraavalla katkolla tai aikalisän jälkeisellä kierroksella.
