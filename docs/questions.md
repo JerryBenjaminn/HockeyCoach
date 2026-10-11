@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-074 · 2026-10-11 · kirjaaja: programmer
+**Kysymys:** paluukarvauksen (D-085) reunatapaus: väärällä puolella oleva puolustaja, joka on jo riviä x_t lähempänä omaa maaliaan. Esimerkki: kiekko on puolustavan joukkueen maalin takana (hyökkäävän näkökulmasta x_k = 10), joten x_t = `opponentGoal.x` − 1 = 8, ja puolustaja on maalin vieressä x = 9. Speksin askel on aina (+1, 0) kohti omaa maalia, mutta kohde (x_t, y_p) on hänen takanaan. Liikkuuko hän taaksepäin riville x_t, pysyykö paikallaan vai liikkuuko järjestelmän mukaan?
+**Konteksti:** `data-schema.md`, Paluukarvaus suorahyökkäyksessä, Liike kohdat 2–3. Tilanne on harvinainen (rushin kiekollinen maalin takana).
+**Ehdotettu oletus (toteutettu):** pysyy rivillään. Kohde on (max(x_t, x_p), y_p) hyökkäävän näkökulmasta, eli askel ei koskaan vie poispäin omasta maalista. Samalla tavalla toteutettiin kohta, jota speksi ei mainitse: jos `pinch`-D1 paluukarvaa, korvattua kohdetta ei ole, joten hän ei ole sitoutunut (O-10: "`pinch`-D1 korvatun kohteen ajan").
+**Vastaus:**
+
 ### Q-073 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys veljelle:** palaavatko paluukarvauksessa hyökkääjät keskikaistaa ja pakit omia kaistojaan?
 **Konteksti:** paluukarvaus (`data-schema.md`, D-085). Nyt kaikki väärällä puolella kiekkoa olevat palaavat omaa kaistaansa.
