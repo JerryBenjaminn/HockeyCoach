@@ -12,9 +12,9 @@ namespace HockeyCoach.Sim.Shift
     internal static class EntryStrength
     {
         /// <summary>
-        /// N = the carrier (or passer) always, plus attacking skaters with x ≥ the puck's x; M = defending skaters with
-        /// x &gt; the puck's x (strictly between the puck and their own goal). Players level with the puck count for the
-        /// attack only.
+        /// N = the carrier (or passer) always, plus attacking skaters with x &gt; the puck's x; M = defending skaters with
+        /// x &gt; the puck's x (strictly between the puck and their own goal). Players level with the puck count for
+        /// neither side (E-006, D-084).
         /// </summary>
         /// <param name="puck">The carrier's or passer's node, attacker's view.</param>
         /// <param name="carrier">The carrier's or passer's position; always counted in N.</param>
@@ -30,7 +30,7 @@ namespace HockeyCoach.Sim.Shift
             int m = 0;
             foreach (Position position in PositionOrder.All)
             {
-                if (position == carrier || attackers[position].X >= puck.X)
+                if (position == carrier || attackers[position].X > puck.X)
                 {
                     n++;
                 }

@@ -4,7 +4,7 @@ using HockeyCoach.Sim.Shift;
 
 namespace HockeyCoach.Sim.Tests.Shift;
 
-/// <summary>The zone entry strength "N vs M" of data-schema.md M-8 as corrected by D-080 (Q-065).</summary>
+/// <summary>The zone entry strength "N vs M" of data-schema.md M-8 as corrected by D-080 (Q-065) and D-084 (E-006).</summary>
 public class EntryStrengthTests
 {
     private static readonly GridPoint Puck = new(4, 2);
@@ -40,11 +40,11 @@ public class EntryStrengthTests
     }
 
     [Fact]
-    public void LevelAttacker_IsCounted()
+    public void LevelAttacker_IsNotCounted()
     {
-        EntryNumbers numbers = Count(Position.Center, Xs(4, 4, 3, 2, 2), Xs(0, 0, 0, 0, 0));
+        EntryNumbers numbers = Count(Position.Center, Xs(4, 4, 4, 2, 2), Xs(0, 0, 0, 0, 0));
 
-        Assert.Equal(2, numbers.Attackers);
+        Assert.Equal(1, numbers.Attackers);
     }
 
     [Fact]
@@ -81,11 +81,11 @@ public class EntryStrengthTests
     }
 
     [Fact]
-    public void FullExample_ThreeVsTwo()
+    public void FullExample_TwoVsTwo()
     {
-        // Carrier C at the puck, LW level, RW ahead, D pair behind; defenders: two deep, one level, two behind.
+        // Carrier C at the puck, LW level (not counted), RW ahead, D pair behind; defenders: two deep, one level, two behind.
         EntryNumbers numbers = Count(Position.Center, Xs(4, 4, 6, 2, 2), Xs(4, 3, 3, 8, 7));
 
-        Assert.Equal(new EntryNumbers(3, 2), numbers);
+        Assert.Equal(new EntryNumbers(2, 2), numbers);
     }
 }

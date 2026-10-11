@@ -108,7 +108,7 @@ public static class TacticMatrix
 
         md.AppendLine("## Team A zone entries by strength (M-8, M-9)");
         md.AppendLine();
-        md.AppendLine("Controlled entries of team A: success = possession kept; cell = success (attempts). N v M = carrier plus attackers level with or ahead of the puck vs defenders between the puck and their goal (M-8, D-080). Columns: A transition vs B system.");
+        md.AppendLine("Controlled entries of team A: success = possession kept; cell = success (attempts). N v M = carrier plus attackers ahead of the puck vs defenders between the puck and their goal; players level with the puck count for neither (M-8, D-080, D-084). Columns: A transition vs B system.");
         md.AppendLine();
         List<RateColumn> entries = Columns(s => s.Entries);
         Counterplay.WriteTable(md, "Entry", Counterplay.OrderEntryRows(entries.SelectMany(c => c.Rates.Keys)), entries);
