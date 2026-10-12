@@ -14,23 +14,32 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-081 · 2026-10-12 · kirjaaja: Jerry (kirjannut koordinaattori) · virstanpylväs 5
+**Kysymys:** onko simulaation tapahtumatiheys (tapahtumia minuutissa) realistinen verrattuna Wisehockeyn aikajanaan?
+**Konteksti:** toiston esityskerroksen suunnittelu (D-088). Designerin mittauksen mukaan (siemen 42, 874 tapahtumaa, 3596 s) lähes puolet pelikellosta (45–49 %) on kokoamista (`setup` 6 s, `regroup` 8 s) ja järjestelmän askeleita (2 s), ja toiminta-ajat ovat oikeaa kiekkoa pidempiä: 1×-nopeudella luistelijat liikkuvat vain 2,8–4,2 m/s. Tapahtumatiheys vaikuttaa vaihtojen pituuteen, energiaan ja katkoihin.
+**Ehdotettu oletus:** ei toteuteta nyt. Selvitetään virstanpylväässä 5: tapahtumia minuutissa tyypeittäin simulaatiossa vs Wisehockeyn aikajana.
+**Vastaus:**
+
 ### Q-080 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** miten toisto näyttää pelaajat, jotka ovat samassa solmussa? Placementit ovat ruudukon solmuja, joten esim. aloituksessa molemmat sentterit ja vastakkaiset laiturit ovat samassa solmussa, ja kiekkokiistoissa ja vaihdoissa saman joukkueen pelaajiakin voi osua samaan solmuun. Päällekkäin piirretyt kiekot rikkovat hyväksymiskriteerin 1 ("kaikki 12 pelaajaa näkyvät").
 **Konteksti:** Unity-toisto, vaihe 5 (View, `PlayerDiscView`). Core ja testit käyttävät tarkkoja solmusijainteja, joten kyse on vain piirrosta.
 **Ehdotettu oletus (toteutettu):** pelaajan GameObject on tarkalleen solmun kohdalla, mutta piirretty kiekko ja tunniste siirretään 0,9 m (`ReplayViewStyle.teamShift`, Inspectorissa) kohti joukkueen omaa päätyä. Vastustajat samassa solmussa näkyvät siis vierekkäin kuin aloituksessa. Saman joukkueen pelaajat samassa solmussa menevät yhä päällekkäin. Vaihtoehto: pieni hajautus solmun sisällä kaikille samassa solmussa oleville (esim. ympyrälle id-järjestyksessä).
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** kyllä: jokaisella pelaajalla oma poikkeama solmun sisällä ja erotteluvaihe joukkueen yhteisen siirron sijaan. Kirjattu: D-088.
 
 ### Q-079 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** mihin maalin kiekko jää toistossa? Maalilaukauksen `placement.puckNodeId` on ampujan solmu (siemen 42: molemmat maalit), joten polku "ampuja → maalisuu → `placement.puckNodeId`" vie kiekon verkosta takaisin ampujalle saman laukaussegmentin aikana.
 **Konteksti:** Unity-toisto, vaihe 3 (Core, `TimelineBuilder`), hyväksymiskriteerit 3 ja 5. Torjutuissa laukauksissa `puckNodeId` on samoin ampujan solmu ja haltija on rebound-pelaaja, joten kiekko käy maalivahdissa ja palaa.
 **Ehdotettu oletus (toteutettu):** polku päättyy aina `placement.puckNodeId`:hen (kriteeri 3), ja maali kulkee maalisuun kautta (kriteeri 5). Vaihtoehto: maalissa polku päättyy maalisuuhun ja kiekko pysyy verkossa seuraavaan aloitukseen asti.
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** kiekko jää maaliin aloitukseen asti. Kirjattu: D-088.
 
 ### Q-078 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** riittääkö 8× nopeudella 7,5 minuuttia koko otteluun (hyväksymiskriteeri 9: "muutamassa minuutissa")? Toisto etenee ottelukellon mukaan, joten 3 × 20 min / 8 = 450 s. Pitäisikö samalla sekunnilla olevat tapahtumat (siemen 42: 180 / 874) näyttää vähimmäiskestolla, vai riittääkö, että ne näkyvät askeltamalla?
 **Konteksti:** Unity-toisto, vaihe 3 (`ReplayCursor`). Tapahtumien kellonajat ovat kokonaisia sekunteja. Esim. syötön jälkeinen riisto tai maalin jälkeiset katko ja vaihdot tapahtuvat samalla sekunnilla, ja jatkuvassa toistossa ne ohitetaan hetkessä.
 **Ehdotettu oletus (toteutettu):** puhdas ottelukello, ei kuolleen ajan ohitusta eikä vähimmäiskestoa. Nopeus on vapaa kerroin, ja 16× vie 3,75 min.
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** esitysaika erillään pelikellosta; kello saa kulkea toiminnan aikana nopeammin, kunhan se näyttää oikeaa peliaikaa ja kulkee aina eteenpäin. Kirjattu: D-088.
 
 ### Q-077 · 2026-10-12 · kirjaaja: koordinaattori
 **Kysymys:** mistä toiston otsakkeen kaukalon metrimitat (D-087 kohta 4: "mitat metreinä") tulevat? `rink.json`:ssa on vain 11 × 5 -verkko, ei metrejä.
