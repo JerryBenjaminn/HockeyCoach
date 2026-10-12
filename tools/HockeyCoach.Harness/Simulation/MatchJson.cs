@@ -5,7 +5,7 @@ using HockeyCoach.Sim.State;
 
 namespace HockeyCoach.Harness.Simulation;
 
-/// <summary>Writes a match as JSON: score, the event log (same event objects as <c>shift --json</c>), goal notes and period snapshots.</summary>
+/// <summary>Writes a match as JSON: score, the replay header (<see cref="ReplayHeader"/>), the event log (same event objects as <c>shift --json</c>), goal notes and period snapshots.</summary>
 public static class MatchJson
 {
     /// <summary>Serializes the match (indented JSON).</summary>
@@ -20,6 +20,7 @@ public static class MatchJson
             w.WriteNumber("homeGoals", result.HomeGoals);
             w.WriteNumber("awayGoals", result.AwayGoals);
             w.WriteBoolean("stalled", result.Stalled);
+            ReplayHeader.Write(w, setup);
             w.WriteStartArray("events");
             foreach (SimEvent e in result.Log.Events)
             {
