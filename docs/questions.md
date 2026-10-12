@@ -14,6 +14,18 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-079 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** mihin maalin kiekko jää toistossa? Maalilaukauksen `placement.puckNodeId` on ampujan solmu (siemen 42: molemmat maalit), joten polku "ampuja → maalisuu → `placement.puckNodeId`" vie kiekon verkosta takaisin ampujalle saman laukaussegmentin aikana.
+**Konteksti:** Unity-toisto, vaihe 3 (Core, `TimelineBuilder`), hyväksymiskriteerit 3 ja 5. Torjutuissa laukauksissa `puckNodeId` on samoin ampujan solmu ja haltija on rebound-pelaaja, joten kiekko käy maalivahdissa ja palaa.
+**Ehdotettu oletus (toteutettu):** polku päättyy aina `placement.puckNodeId`:hen (kriteeri 3), ja maali kulkee maalisuun kautta (kriteeri 5). Vaihtoehto: maalissa polku päättyy maalisuuhun ja kiekko pysyy verkossa seuraavaan aloitukseen asti.
+**Vastaus:**
+
+### Q-078 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** riittääkö 8× nopeudella 7,5 minuuttia koko otteluun (hyväksymiskriteeri 9: "muutamassa minuutissa")? Toisto etenee ottelukellon mukaan, joten 3 × 20 min / 8 = 450 s. Pitäisikö samalla sekunnilla olevat tapahtumat (siemen 42: 180 / 874) näyttää vähimmäiskestolla, vai riittääkö, että ne näkyvät askeltamalla?
+**Konteksti:** Unity-toisto, vaihe 3 (`ReplayCursor`). Tapahtumien kellonajat ovat kokonaisia sekunteja. Esim. syötön jälkeinen riisto tai maalin jälkeiset katko ja vaihdot tapahtuvat samalla sekunnilla, ja jatkuvassa toistossa ne ohitetaan hetkessä.
+**Ehdotettu oletus (toteutettu):** puhdas ottelukello, ei kuolleen ajan ohitusta eikä vähimmäiskestoa. Nopeus on vapaa kerroin, ja 16× vie 3,75 min.
+**Vastaus:**
+
 ### Q-077 · 2026-10-12 · kirjaaja: koordinaattori
 **Kysymys:** mistä toiston otsakkeen kaukalon metrimitat (D-087 kohta 4: "mitat metreinä") tulevat? `rink.json`:ssa on vain 11 × 5 -verkko, ei metrejä.
 **Konteksti:** Unity-toiston vaihe 2 (`match --json` -otsake). `data-schema.md` (Alueiden perustelu) johtaa verkon NHL-mitoista: maaliviivojen väli 178 ft, siniviiva 64 ft maaliviivasta.
