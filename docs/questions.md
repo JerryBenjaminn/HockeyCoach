@@ -14,6 +14,24 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-084 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** liikekerroksen (D-088 osa 2) havainnot ja tulkinnat. Hyväksytäänkö nämä, vai muutetaanko speksiä?
+1. **Erottelu hyppää.** Tilaton pareittainen erottelu työntää paria keskipisteiden suuntaan. Kun kahden pelaajan reitit risteävät, suunta kääntyy ja piirretty sijainti voi siirtyä yhdessä ruudussa jopa `separationMin` × `separationIterations`. Siemen 42 60 Hz:llä: suurin hyppy 4,1 m, ja yli 0,5 m:n siirtymiä on 0,4 % pelaajaruuduista. Reitti itse ei hyppää koskaan (≤ `topSpeed`). Lisäksi kolme kierrosta ei aina erota ruuhkaa, ja laitarajaus voi työntää pelaajat takaisin yhteen: alle 2 m:n pareja on 0,29 % parinäytteistä, pienin etäisyys 0,01 m. Mahdollisia korjauksia ovat parin kiinteä suunta (esim. pienemmän id:n kulma aina), suunnan pehmennys tai useampi kierros.
+2. **Toimijat myöhästyvät.** Speksin mukaan luistelijan alaraja takaa, että toimijat ehtivät. Ennakointi (−0,3 s), kaarevat reitit, omat poikkeamat ja edellisestä välistä periytyvä myöhästyminen tekevät kuitenkin toimijoistakin myöhässä 238 / 1 459 kohteessa (suurin 4,7 s, lentävä vaihto). Myöhästyminen toimii speksin kaavalla.
+3. **Lähestyminen ylittää `topSpeed`:n.** Lähestymisen kesto rajataan välille [1, 2] s ja kaikki saapuvat samaan aikaan, joten nopeus ylittää `topSpeed`:n (huippu 1,5 × matka / kesto). Lähestymisen nopeusprofiili on toteutettu kuutiollisella pehmennyksellä (s = L(3x² − 2x³)), koska speksi sanoo vain "alkaa ja päättyy lepoon".
+4. **Kaukalon rajaus.** Piirretyt sijainnit rajataan kaukalon suorakulmioon erottelun jälkeen (koordinaattorin pyyntö, ei speksissä).
+5. **Vaihtoaukko.** Aukolta lähtevillä ei ole omaa poikkeamaa (speksi: poikkeama on solmun sisällä), joten samaan aikaan tulevat pelaajat ovat aukolla päällekkäin, kunnes reitit erkanevat. Tämä aiheuttaa osan kohdan 1 hypyistä.
+6. **Kiekko.**
+   - Torjunnan kautta kulkeva piste on maalivahdin sijainti maalin keskilinjalla. Kun kiekko on maalivahdissa, hänen sivuseurantansa kiintopiste on maalin keskikohta.
+   - Hakeutuva reitti (syöttö, irtokiekko) lentää vastaanottajan kuljettaman kiekon kohtaan saapumishetkellä. Jos vastaanottaja on kiekkoa nopeampi tai hyppää erottelussa, ratkaisua ei ole, ja kiekko lentää lähimpään kohtaan toisella keskinopeudella. Tämä koskee 12 / 623 reittiä.
+   - Hävitty `ControlledZoneEntry` (`Carry`, haltija vaihtuu) saa irtokiekon reitin.
+   - `Stoppage`, `LineChange` tai `Timeout`, jossa haltija poistuu, jättää kiekon paikalleen. Jos haltija vaihtuu toiseen pelaajaan, kiekko saa irtokiekon reitin.
+   - Kiekon alaraja (osa 1) ei tiedä näistä haltijavaihdoista.
+
+**Konteksti:** D-088 osa 2 (commitit 2350034, c7ff26b, d4353b4), testit `SkaterMotionTests` ja `PuckMotionTests` toleransseineen.
+**Ehdotettu oletus (toteutettu):** kuten yllä. Testit sallivat kohdan 1 hypyt (reitin askel + joustoliike + `separationMin` × `separationIterations`, alle 1 % ruuduista) ja alle 1 %:n lähiparit.
+**Vastaus:**
+
 ### Q-083 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** esitysajan pienet tulkinnat (D-088, `data-schema.md` replay.json, Esitysaika ja katkon sarja). Ovatko nämä oikein?
 1. **Luistelijan alaraja katkon sarjan päättävässä `Faceoff`-välissä.** Speksi: "Rajaa ei sovelleta katkon sarjan sisällä" ja sarja "päättyy seuraavaan `Faceoff`-tapahtumaan". Lähestyminen vie pelaajat jo aloitussijainteihin, joten rajaa ei sovelleta tähän väliin. Kirjaimellisesti edellisen tapahtuman (vaihdon) solmuista mitattu siirtymä venyttäisi aloitusväliä.
