@@ -9,6 +9,9 @@ namespace HockeyCoach.Replay.Tests;
 public sealed class SkaterMotionTests
 {
     private const double Eps = 1e-9;
+
+    /// <summary>The orbit window of D-089 A2 (presentation seconds).</summary>
+    private const double OrbitWindowSeconds = 0.5;
     private readonly Seed42Match _m;
 
     public SkaterMotionTests(Seed42Match m)
@@ -186,50 +189,58 @@ public sealed class SkaterMotionTests
     }
 
     [Fact]
-    public void DrawnPositions_OnlyJumpWhereSeparationFlips_WithinTheStatedTolerance()
+    public void DrawnDisplacement_ChangesSlowly_SoContactsNeverPop()
     {
-        // Separation (data-schema.md, Erottelu) is stateless: when two skaters' paths cross, the push between them flips
-        // side, so a drawn position can move by up to separationMin per pair and iteration in one frame (Q-084). The path
-        // itself never jumps (PathSpeed test). Tolerance per frame: the path step + the largest idle step
-        // (2 × 2π f × amplitude × frame) + separationMin × separationIterations; such frames stay rare.
-        double idleStep = 2 * 2 * Math.PI * Sk.IdleFrequencyHz * Math.Max(1, Sk.IdleYFrequencyRatio) * Sk.IdleAmplitudeMetres * MotionSweep.Frame;
-        double separation = Sk.SeparationMinMetres * Sk.SeparationIterations;
-        var last = new Dictionary<int, (RinkPoint Position, RinkPoint Path, int Segment)>();
+        // D-089 A2: the displacement from the path changes at most contactShiftMetresPerSecond; only the turn limit of
+        // close pairs can move it further in a step (by at most half of contactTurnMetres). Such steps stay rare.
+        double limit = (Sk.ContactShiftMetresPerSecond * MotionSweep.Frame) + (Sk.ContactTurnMetres / 2);
+        var last = new Dictionary<int, (RinkPoint Shift, int Segment)>();
         long moves = 0;
-        long big = 0;
+        long fast = 0;
         foreach (SweepFrame f in Sweep.Frames)
         {
-            var now = new Dictionary<int, (RinkPoint, RinkPoint, int)>();
-            foreach (SkaterPose pose in f.Skaters)
+            var now = new Dictionary<int, (RinkPoint, int)>();
+            foreach (SkaterPose pose in f.Skaters.Where(x => !x.IsWaiting))
             {
+                var shift = new RinkPoint(pose.Position.X - pose.Path.Position.X, pose.Position.Y - pose.Path.Position.Y);
                 if (last.TryGetValue(pose.Id, out var before) && SamePeriod(before.Segment, f.Segment))
                 {
-                    double moved = RinkPoint.Distance(before.Position, pose.Position);
-                    double pathMoved = RinkPoint.Distance(before.Path, pose.Path.Position);
-                    Assert.True(moved <= pathMoved + idleStep + separation + 1e-9, "player " + pose.Id + " jumped " + moved + " m at " + f.Time);
+                    double change = RinkPoint.Distance(before.Shift, shift);
+                    Assert.True(change <= limit + 1e-6, "player " + pose.Id + " shifted " + change + " m at " + f.Time);
                     moves++;
-                    if (moved > 0.5)
+                    if (change > (Sk.ContactShiftMetresPerSecond * MotionSweep.Frame) + 0.1)
                     {
-                        big++;
+                        fast++;
                     }
                 }
 
-                now[pose.Id] = (pose.Position, pose.Path.Position, f.Segment);
+                now[pose.Id] = (shift, f.Segment);
             }
 
             last = now;
         }
 
-        Assert.True(big < moves / 100, big + " of " + moves + " frame moves exceed 0.5 m");
+        Assert.True(fast * 200 < moves, fast + " of " + moves + " steps shift faster than the limit");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1.8)]
+    public void NoOrbiting_CloseSkatersNeverTurnAroundEachOtherMoreThan90DegreesInHalfASecond(double distance)
+    {
+        // D-089 A2. Distance 0 = skaters.contactTurnMetres (discs in contact); 1.8 m is a closer check.
+        double within = distance > 0 ? distance : Sk.ContactTurnMetres;
+        OrbitMetric.Result r = OrbitMetric.Measure(Sweep, within, OrbitWindowSeconds);
+        Assert.True(r.ContactFrames > 10000, "pairs in contact " + r.ContactFrames);
+        Assert.True(r.Violations == 0, r.Violations + " orbiting pair frames, worst " + r.Worst);
+        Assert.True(r.MaxRotationDegrees <= 90, r.Worst);
     }
 
     [Fact]
-    public void Separation_KeepsPairsApart_WithTheMeasuredResidual()
+    public void Teammates_KeepSeparationMin_ExceptInRareCrowds()
     {
-        // Three passes over the pairs do not resolve every crowd (and the clamp at the boards can push players back
-        // together), so the spec's minimum is a goal, not a guarantee (Q-084). Changing players are left out of the
-        // separation (D-089 A1), so only pairs of settled players count. Asserted: such pairs closer than
-        // separationMin are under 1 % of all their samples.
+        // Pairwise rules relaxed contactIterations times cannot resolve every crowd (and the boards clamp), so the
+        // minimum is a goal: asserted for all but 2 % of the settled teammate pair samples.
         long pairs = 0;
         long close = 0;
         foreach (SweepFrame f in Sweep.Frames)
@@ -238,13 +249,13 @@ public sealed class SkaterMotionTests
             {
                 for (int b = a + 1; b < f.Skaters.Length; b++)
                 {
-                    if (f.Skaters[a].IsChanging || f.Skaters[b].IsChanging)
+                    if (f.Skaters[a].IsChanging || f.Skaters[b].IsChanging || f.Skaters[a].Team != f.Skaters[b].Team)
                     {
                         continue;
                     }
 
                     pairs++;
-                    if (RinkPoint.Distance(f.Skaters[a].Position, f.Skaters[b].Position) < Sk.SeparationMinMetres - 1e-6)
+                    if (RinkPoint.Distance(f.Skaters[a].Position, f.Skaters[b].Position) < Sk.SeparationMinMetres - 0.05)
                     {
                         close++;
                     }
@@ -252,27 +263,52 @@ public sealed class SkaterMotionTests
             }
         }
 
-        Assert.True(close < pairs / 100, close + " of " + pairs);
+        Assert.True(close * 50 < pairs, close + " of " + pairs);
     }
 
     [Fact]
-    public void Separate_PushesAClosePairApartSymmetrically_AndCoincidentPairsAlongTheSmallerIdsAngle()
+    public void CloseOpponents_StandShoulderToShoulder_WithTheDefenderOnHisGoalSide()
     {
-        var x = new[] { 10.0, 11.0, 30.0 };
-        var y = new[] { 5.0, 5.0, 5.0 };
-        int[] ids = Skaters.Tracks.Keys.Take(3).ToArray();
-        Skaters.Separate(x, y, ids, new[] { 0, 1, 2 }, 2, 1);
-        Assert.Equal(9.5, x[0], 12);
-        Assert.Equal(11.5, x[1], 12);
-        Assert.Equal(30, x[2]);
+        // D-089 A2: opponents whose paths are within opponentPlaceMetres are placed opponentShoulderMetres apart, home
+        // player on the home-goal side. The placement turns at contactTurnDegreesPerSecond and the shift is speed
+        // limited, so it is reached most of the time, not always (measured: 89 % goal side, 75 % within 0.3 m).
+        RinkMapping map = P.Timeline.Mapping;
+        long pairs = 0;
+        long goalSide = 0;
+        long shoulder = 0;
+        foreach (SweepFrame f in Sweep.Frames)
+        {
+            SkaterPose[] s = f.Skaters;
+            for (int a = 0; a < s.Length; a++)
+            {
+                for (int b = a + 1; b < s.Length; b++)
+                {
+                    if (s[a].IsChanging || s[b].IsChanging || s[a].Team == s[b].Team || RinkPoint.Distance(s[a].Path.Position, s[b].Path.Position) > Sk.OpponentPlaceMetres)
+                    {
+                        continue;
+                    }
 
-        var cx = new[] { 10.0, 10.0 };
-        var cy = new[] { 5.0, 5.0 };
-        Skaters.Separate(cx, cy, ids.Take(2).ToArray(), new[] { 0, 1 }, 2, 1);
-        double a = SkaterOffsets.Angle(_m.Match.Seed, ids[0]);
-        Assert.Equal(10 + Math.Cos(a), cx[0], 12);
-        Assert.Equal(5 + Math.Sin(a), cy[0], 12);
-        Assert.Equal(10 - Math.Cos(a), cx[1], 12);
+                    SkaterPose home = s[a].Team == ReplayTeam.Home ? s[a] : s[b];
+                    SkaterPose away = s[a].Team == ReplayTeam.Home ? s[b] : s[a];
+                    var mid = new RinkPoint((home.Position.X + away.Position.X) / 2, (home.Position.Y + away.Position.Y) / 2);
+                    RinkPoint axis = SkaterAvoidance.Axis(map, mid);
+                    pairs++;
+                    if (((home.Position.X - away.Position.X) * axis.X) + ((home.Position.Y - away.Position.Y) * axis.Y) > 0)
+                    {
+                        goalSide++;
+                    }
+
+                    if (Math.Abs(RinkPoint.Distance(home.Position, away.Position) - Sk.OpponentShoulderMetres) < 0.3)
+                    {
+                        shoulder++;
+                    }
+                }
+            }
+        }
+
+        Assert.True(pairs > 10000, "placed pairs " + pairs);
+        Assert.True(goalSide * 10 > pairs * 8, goalSide + " of " + pairs + " on the goal side");
+        Assert.True(shoulder * 100 > pairs * 65, shoulder + " of " + pairs + " shoulder to shoulder");
     }
 
     [Fact]
@@ -410,23 +446,15 @@ public sealed class SkaterMotionTests
     }
 
     [Fact]
-    public void EveryFrame_DrawsAtLeastTwelve_AndChangingPlayersAreNotSeparated()
+    public void EveryFrame_DrawsAtLeastTwelve_AndWaitingPlayersStayOnTheirPath()
     {
-        SkaterSettings sk = Sk;
-        double w = 2 * Math.PI * sk.IdleFrequencyHz;
-        RinkMapping map = P.Timeline.Mapping;
         foreach (SweepFrame f in Sweep.Frames)
         {
             int drawn = f.Sample.Players.Count(p => !p.IsWaiting) + f.Sample.Leaving.Count;
             Assert.True(drawn >= 12, drawn + " players drawn at " + f.Time);
-            foreach (SkaterPose pose in f.Skaters.Where(x => x.IsChanging))
+            foreach (SkaterPose pose in f.Skaters.Where(x => x.IsWaiting))
             {
-                double amplitude = pose.IsWaiting ? 0 : sk.IdleAmplitudeMetres * (1 - Math.Min(1, pose.Path.Speed / sk.TopSpeed));
-                double phi = SkaterOffsets.Phase(_m.Match.Seed, pose.Id);
-                double x = Math.Max(0, Math.Min(map.LengthMetres, pose.Path.Position.X + (amplitude * Math.Sin((w * f.Time) + phi))));
-                double y = Math.Max(0, Math.Min(map.WidthMetres, pose.Path.Position.Y + (amplitude * Math.Sin((w * sk.IdleYFrequencyRatio * f.Time) + (2 * phi)))));
-                Assert.Equal(x, pose.Position.X, 9);
-                Assert.Equal(y, pose.Position.Y, 9);
+                Assert.Equal(pose.Path.Position, pose.Position);
             }
         }
     }
@@ -439,13 +467,16 @@ public sealed class SkaterMotionTests
             .Add("Pass", 1, 30, 27, 1, SyntheticMatch.OnIce(27, 2, 52, 22), new JObject { ["passerId"] = 1, ["receiverId"] = 1, ["succeeded"] = true })
             .Present();
         SkaterSettings sk = p.Config.Skaters;
-        double t = p.Segments[1].Start + 1.234;
-        SkaterPose pose = p.Motion.Skaters.Sample(1, t).Single(x => x.Id == 1);
+        double step = p.Motion.Skaters.Contacts.StepSeconds;
+        double t = Math.Ceiling((p.Segments[1].Start + 1.234) / step) * step;
+        SkaterPose pose = p.Motion.Skaters.Sample(p.SegmentIndexAt(t), t).Single(x => x.Id == 1);
         Assert.Equal(0, pose.Path.Speed);
         double phi = SkaterOffsets.Phase(p.Timeline.Match.Seed, 1);
         double w = 2 * Math.PI * sk.IdleFrequencyHz;
-        Assert.Equal(pose.Path.Position.X + (sk.IdleAmplitudeMetres * Math.Sin((w * t) + phi)), pose.Position.X, 12);
-        Assert.Equal(pose.Path.Position.Y + (sk.IdleAmplitudeMetres * Math.Sin((w * sk.IdleYFrequencyRatio * t) + (2 * phi))), pose.Position.Y, 12);
+
+        // Precomputed per step in single precision.
+        Assert.Equal(pose.Path.Position.X + (sk.IdleAmplitudeMetres * Math.Sin((w * t) + phi)), pose.Position.X, 4);
+        Assert.Equal(pose.Path.Position.Y + (sk.IdleAmplitudeMetres * Math.Sin((w * sk.IdleYFrequencyRatio * t) + (2 * phi))), pose.Position.Y, 4);
     }
 
     [Fact]

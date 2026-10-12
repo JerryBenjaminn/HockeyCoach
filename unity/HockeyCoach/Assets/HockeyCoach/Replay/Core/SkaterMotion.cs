@@ -47,13 +47,12 @@ namespace HockeyCoach.Replay.Core
     /// Skater motion of the presentation layer (D-088, D-089, data-schema.md, replay.json, Luistelijat): one
     /// <see cref="SkaterTrack"/> per skater built once from the <see cref="PresentationTimeline"/>, and a stateless
     /// sample at any presentation time: path position (node + own offset targets, centripetal Catmull-Rom, trapezoid
-    /// speed profile, anticipation, late arrivals, line changes at the benches, faceoff approach), idle motion,
-    /// separation in id order and a clamp inside the rink. Goalies have no track (see <see cref="ReplayMotion"/>).
+    /// speed profile, anticipation, late arrivals, line changes at the benches, faceoff approach), precomputed contact
+    /// displacements (<see cref="SkaterContacts"/>, D-089 A2), idle motion and a clamp inside the rink. Goalies have no
+    /// track (see <see cref="ReplayMotion"/>).
     /// </summary>
     public sealed class SkaterMotion
     {
-        private const double CoincidentMetres = 1e-6;
-
         /// <summary>Time step of the search for the moment an outgoing partner nears his bench (presentation seconds).</summary>
         private const double PartnerScanSeconds = 1.0 / 120;
 
@@ -139,18 +138,58 @@ namespace HockeyCoach.Replay.Core
                 tracks[pair.Key] = pair.Value.Finish();
             }
 
-            return new SkaterMotion(presentation, tracks, offsets, phases, angles, Extras(presentation, tracks));
+            var motion = new SkaterMotion(presentation, tracks, offsets, phases, angles, Extras(presentation, tracks));
+            motion.Contacts = SkaterContacts.Build(motion);
+            return motion;
         }
+
+        /// <summary>The precomputed contact displacements (D-089 A2).</summary>
+        public SkaterContacts Contacts { get; private set; }
 
         /// <summary>
         /// The skaters of segment <paramref name="segmentIndex"/> at presentation time <paramref name="t"/>, in id order:
         /// its on-ice skaters (including incoming players still waiting at the bench) and the players still skating off to
-        /// their bench.
+        /// their bench. Drawn position = path + the precomputed displacement (contacts and idle motion,
+        /// <see cref="SkaterContacts"/>), clamped inside the rink.
         /// </summary>
         public SkaterPose[] Sample(int segmentIndex, double t)
         {
+            var visible = new List<Visible>();
+            Collect(segmentIndex, t, visible);
+            RinkMapping map = Presentation.Timeline.Mapping;
+            var poses = new SkaterPose[visible.Count];
+            for (int i = 0; i < visible.Count; i++)
+            {
+                Visible v = visible[i];
+                RinkPoint shift = v.Waiting ? new RinkPoint(0, 0) : Contacts.At(v.Id, t);
+                double x = v.State.Position.X + shift.X;
+                double y = v.State.Position.Y + shift.Y;
+                var position = new RinkPoint(Math.Max(0, Math.Min(map.LengthMetres, x)), Math.Max(0, Math.Min(map.WidthMetres, y)));
+                poses[i] = new SkaterPose(v.Id, v.Team, position, v.State, v.Leaving, v.Waiting, v.Changing);
+            }
+
+            return poses;
+        }
+
+        /// <summary>The player's idle phase φ = 2πu₃.</summary>
+        internal double PhaseOf(int id)
+        {
+            double phi;
+            return _phases.TryGetValue(id, out phi) ? phi : 0;
+        }
+
+        /// <summary>The player's own angle 2πu₂ (fallback axis of a coincident teammate pair).</summary>
+        internal double AngleOf(int id)
+        {
+            double a;
+            return _angles.TryGetValue(id, out a) ? a : 0;
+        }
+
+        /// <summary>Collects the skaters of segment <paramref name="segmentIndex"/> at <paramref name="t"/> in id order.</summary>
+        internal void Collect(int segmentIndex, double t, List<Visible> into)
+        {
+            into.Clear();
             TimelineSegment segment = Presentation.Timeline.Segments[segmentIndex];
-            SkaterSettings sk = Presentation.Config.Skaters;
             var ids = new List<int>();
             var leaving = new HashSet<int>();
             foreach (SegmentPlayer p in segment.Players)
@@ -171,98 +210,40 @@ namespace HockeyCoach.Replay.Core
             }
 
             ids.Sort();
-            int count = ids.Count;
-            var states = new TrackState[count];
-            var waiting = new bool[count];
-            var changing = new bool[count];
-            var x = new double[count];
-            var y = new double[count];
-            double w = 2 * Math.PI * sk.IdleFrequencyHz;
-            for (int i = 0; i < count; i++)
+            foreach (int id in ids)
             {
-                SkaterTrack track = _tracks[ids[i]];
-                TrackState state = track.StateAt(t);
-                states[i] = state;
-                waiting[i] = !leaving.Contains(ids[i]) && !track.IsActive(t);
-                changing[i] = leaving.Contains(ids[i]) || waiting[i] || track.IsEntering(t);
-                double amplitude = waiting[i] ? 0 : sk.IdleAmplitudeMetres * (1 - Math.Min(1, state.Speed / sk.TopSpeed));
-                double phi = _phases[ids[i]];
-                x[i] = state.Position.X + (amplitude * Math.Sin((w * t) + phi));
-                y[i] = state.Position.Y + (amplitude * Math.Sin((w * sk.IdleYFrequencyRatio * t) + (2 * phi)));
+                SkaterTrack track = _tracks[id];
+                bool isLeaving = leaving.Contains(id);
+                bool waiting = !isLeaving && !track.IsActive(t);
+                bool changing = isLeaving || waiting || track.IsEntering(t);
+                into.Add(new Visible(id, track.Team, track.StateAt(t), isLeaving, waiting, changing));
             }
-
-            var settled = new List<int>();
-            for (int i = 0; i < count; i++)
-            {
-                if (!changing[i])
-                {
-                    settled.Add(i);
-                }
-            }
-
-            Separate(x, y, ids, settled, sk.SeparationMinMetres, sk.SeparationIterations);
-            RinkMapping map = Presentation.Timeline.Mapping;
-            var poses = new SkaterPose[count];
-            for (int i = 0; i < count; i++)
-            {
-                var position = new RinkPoint(Math.Max(0, Math.Min(map.LengthMetres, x[i])), Math.Max(0, Math.Min(map.WidthMetres, y[i])));
-                poses[i] = new SkaterPose(ids[i], _tracks[ids[i]].Team, position, states[i], leaving.Contains(ids[i]), waiting[i], changing[i]);
-            }
-
-            return poses;
         }
 
-        /// <summary>
-        /// Stateless separation (data-schema.md, replay.json, Erottelu) of the skaters at the indices
-        /// <paramref name="members"/>: <paramref name="iterations"/> passes over the pairs in id order; a pair closer than
-        /// <paramref name="minimum"/> is pushed apart by (minimum − d) / 2 each; coincident pairs use the smaller id's angle
-        /// 2πu₂. Changing players are not members (D-089 A1).
-        /// </summary>
-        public void Separate(double[] x, double[] y, IReadOnlyList<int> ids, IReadOnlyList<int> members, double minimum, int iterations)
+        /// <summary>One skater of a sample before contacts and idle motion.</summary>
+        internal readonly struct Visible
         {
-            if (x == null || y == null || ids == null || members == null)
+            public Visible(int id, ReplayTeam team, TrackState state, bool leaving, bool waiting, bool changing)
             {
-                throw new ArgumentNullException(nameof(x));
+                Id = id;
+                Team = team;
+                State = state;
+                Leaving = leaving;
+                Waiting = waiting;
+                Changing = changing;
             }
 
-            for (int it = 0; it < iterations; it++)
-            {
-                for (int a = 0; a < members.Count; a++)
-                {
-                    for (int b = a + 1; b < members.Count; b++)
-                    {
-                        int i = members[a];
-                        int j = members[b];
-                        double dx = x[i] - x[j];
-                        double dy = y[i] - y[j];
-                        double d = Math.Sqrt((dx * dx) + (dy * dy));
-                        if (!(d < minimum))
-                        {
-                            continue;
-                        }
+            public int Id { get; }
 
-                        double ux;
-                        double uy;
-                        if (d < CoincidentMetres)
-                        {
-                            double angle = _angles[Math.Min(ids[i], ids[j])];
-                            ux = Math.Cos(angle);
-                            uy = Math.Sin(angle);
-                        }
-                        else
-                        {
-                            ux = dx / d;
-                            uy = dy / d;
-                        }
+            public ReplayTeam Team { get; }
 
-                        double push = (minimum - d) / 2;
-                        x[i] += ux * push;
-                        y[i] += uy * push;
-                        x[j] -= ux * push;
-                        y[j] -= uy * push;
-                    }
-                }
-            }
+            public TrackState State { get; }
+
+            public bool Leaving { get; }
+
+            public bool Waiting { get; }
+
+            public bool Changing { get; }
         }
 
         /// <summary>

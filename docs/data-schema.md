@@ -1542,7 +1542,7 @@ Kiekon reitti alkaa toimintaikkunan alussa ja kulkee alla olevilla nopeuksilla. 
 
 | Tapahtuma | Reitti | Nopeus |
 | --- | --- | --- |
-| `Pass`, onnistunut | syöttäjä → vastaanottaja | `passSpeed`, tai `longPassSpeed`, jos suora matka ≥ `longPassMinMetres` |
+| `Pass`, onnistunut | syöttäjä → vastaanottaja | `passSpeed`, tai `longPassSpeed`, jos suora matka toimintaikkunan alussa ≥ `longPassMinMetres` |
 | `Pass`, epäonnistunut | syöttäjä → `placement.puckNodeId` (tai uusi haltija) | kuten yllä |
 | `Shot`, `Goal` | ampuja → verkko: maalisuun keskikohta, `goal.netInsideMetres` maaliviivan takana | `shotSpeed` |
 | `Shot`, `Saved` | ampuja → maalivahdin esityssijainti → `placement.puckNodeId` | `shotSpeed`, sitten `reboundSpeed` |
@@ -1590,13 +1590,25 @@ Kiekon reitti alkaa toimintaikkunan alussa ja kulkee alla olevilla nopeuksilla. 
 - v on pelaajan hetkellinen nopeus nopeusprofiilista.
 - Maalivahdeilla joustoliikettä ei ole.
 
-**Erottelu.** Erottelu tehdään jokaisessa näytteessä poikkeaman ja joustoliikkeen jälkeen, kaikille kentällä oleville kenttäpelaajille (molemmat joukkueet). Toistoja on `separationIterations`.
+**Kontaktit (D-089 A2, korvaa säteittäisen erottelun).** Lähellä toisiaan olevat pelaajat eivät kierrä toisiaan. Säännöt lasketaan kerran koko ottelulle `skaters.contactStepsPerSecond`-tahdilla. Näyte interpoloi askelten välistä lineaarisesti, joten näytteistys on tilaton, ja kelaus antaa saman tuloksen kuin toisto. Parit kantavat tilaa askeleelta toiselle. Jokaisella askeleella:
 
-- Parit käydään läpi id-järjestyksessä (i < j). Jos etäisyys d < `separationMinMetres`, kumpaakin siirretään (`separationMinMetres` − d) / 2 poispäin toisistaan.
-- Jos d < 10⁻⁶, suunta on pienemmän id:n kulma 2πu₂.
-- Maalivahteja ei siirretä, eivätkä ne siirrä muita.
-- Erottelu on tilaton: se riippuu vain saman näytteen sijainneista.
-- Kuljetettu kiekko lasketaan erottelun jälkeen. `ReplayViewStyle.teamShift` poistuu.
+1. **Säännöt reiteistä.** Parit päätetään reittisijainneista (poikkeama mukana, ei joustoliikettä) ja reittinopeuksista. Vaihtuvat pelaajat (lähtevät, odottavat ja sisään luistelevat, D-089 A1) ja maalivahdit eivät ole mukana.
+   - **Joukkuetoverit.** r = Pᵢ − Pⱼ ja u = Vᵢ − Vⱼ. Paino on suurempi ajan painosta ja etäisyyden painosta.
+     - Ajan paino on β × smoothstep(1 − |τ| / `teammateAnticipationSeconds`). Tässä τ = −(r · u) / |u|² on aika lähimpään ohitukseen (negatiivinen sen jälkeen) ja β = smoothstep(|u| / `teammateRelativeSpeedMetresPerSecond`).
+     - Etäisyyden paino on 1, kun d ≤ m, smoothstep((2m − d) / m) välillä m–2m ja 0 kauempana. m = `separationMinMetres`.
+     - Kun paino nousee nollasta, pari saa kiinteän akselin a. Jos |u| ≥ `teammateRelativeSpeedMetresPerSecond` / 2, akseli on suhteellisen liikkeen poikki (perp(u)) sillä puolella, jolla i jo on. Muuten akseli on r:n suuntainen. Jos pelaajat ovat samassa pisteessä, akseli on pienemmän id:n kulma 2πu₂.
+     - Pari pidetään akselin suunnassa vähintään m päässä toisistaan painon verran: väistö alkaa ennen ohitusta, pari ohittaa rinnakkain ja jatkaa matkaa. Puoli ei vaihdu kesken kontaktin.
+   - **Vastustajat.** Säteittäistä erottelua ei ole. Paino on 1, kun d ≤ `opponentPlaceMetres`, smoothstep((`opponentContactMetres` − d) / (`opponentContactMetres` − `opponentPlaceMetres`)) välissä ja 0 kauempana.
+     - Pari asettuu kiinteään asemaan: kotipelaaja on kotimaalin puolella (kummankin joukkueen puolustaja oman maalinsa puolella), `opponentShoulderMetres` päässä vastustajasta.
+     - Akseli parin keskipisteestä on unit(kohti kotimaalia − kohti vierasmaalia + kaukalon akseli vierasmaalilta kotimaalille). Sen x-komponentti on aina negatiivinen, joten se ei käänny.
+     - Suunta vierailijasta kotipelaajaan kääntyy reitin suunnasta akselin suuntaan painon verran (lyhyempää tietä), mutta enintään `contactTurnDegreesPerSecond`. Etäisyys on d + w² (`opponentShoulderMetres` − d), joten kääntyminen tapahtuu ennen kuin pelaajat tulevat lähelle. Kun paino palaa nollaan, suunta kääntyy takaisin reitin suuntaan ja pari vapautuu.
+2. **Rentoutus.** Piirretyt sijainnit lähtevät reittisijainneista. Parisäännöt sovelletaan id-järjestyksessä `contactIterations` kertaa, ja sijainnit rajataan kaukalon sisään jokaisen kierroksen jälkeen.
+3. **Joustoliike** lisätään ja kerrotaan luvulla (1 − pelaajan suurin kontaktipaino). Kontaktissa olevat pelaajat eivät huoju toistensa ympäri.
+4. **Siirtymän nopeusraja.** Piirretyn sijainnin ero reitistä muuttuu enintään `contactShiftMetresPerSecond` sekunnissa, joten kontaktit eivät hyppää.
+5. **Kääntymisraja.** Jos kaksi pelaajaa on alle `contactTurnMetres` päässä toisistaan sekä edellisellä että tällä askeleella, niiden välinen suunta kääntyy edellisestä askeleesta enintään `contactTurnDegreesPerSecond`. Pari kierretään keskipisteensä ympäri, ja etäisyys säilyy. Rajaa sovelletaan `contactIterations` kertaa, myös vaihtuviin pelaajiin, joten kukaan ei kierrä toista eikä mene toisen läpi.
+6. Maalivahteja ei siirretä, eivätkä ne siirrä muita. Kuljetettu kiekko lasketaan piirretyistä sijainneista.
+
+**Kiertoliikkeen mittari (testi).** Siemenellä 42 ja 60 Hz:llä jokaisen piirretyn parin suunta saa kääntyä enintään 90° minkä tahansa 0,5 s:n ikkunan aikana, kun pari pysyy koko ajan `contactTurnMetres` päässä toisistaan. Odottavat pelaajat eivät ole mukana, koska niitä ei piirretä.
 
 **Penkit (D-089 A1).** Kummallakin joukkueella on oma penkki y = 0 -laidan puolella, oman puolustuspäänsä puoliskolla (koti hyökkää +x, joten kotipenkki on keskiviivasta −x-suuntaan). Penkin etureunan keskikohta on x = keskiviiva + `bench.homeFromCentreMetres` (koti) tai `bench.awayFromCentreMetres` (vieras), y = `bench.frontYMetres`.
 
@@ -1658,8 +1670,17 @@ Maalivahdin sijainti määräytyy kiekon mukaan.
 | `skaters.stopTurnDegrees` | 120 | astetta | < 0 tai > 180 |
 | `skaters.anticipationSeconds` | 0,3 | s | < 0 tai > 2 |
 | `skaters.nodeOffsetRadiusMetres` | 1,0 | m | < 0 tai > 2,5 |
-| `skaters.separationMinMetres` | 2,0 | m | < 0 tai > 4 |
-| `skaters.separationIterations` | 3 | kpl | ei kokonaisluku, < 0 tai > 10 |
+| `skaters.separationMinMetres` | 2,0 | m (joukkuetovereiden väli) | < 0 tai > 4 |
+| `skaters.teammateAnticipationSeconds` | 1,0 | s | ≤ 0 tai > 5 |
+| `skaters.teammateRelativeSpeedMetresPerSecond` | 1,0 | m/s | ≤ 0 tai > 10 |
+| `skaters.opponentContactMetres` | 3,0 | m | ≤ `opponentPlaceMetres` tai > 8 |
+| `skaters.opponentPlaceMetres` | 2,0 | m | < `opponentShoulderMetres` tai > 6 |
+| `skaters.opponentShoulderMetres` | 0,9 | m | < 0,5 tai > 2 |
+| `skaters.contactTurnDegreesPerSecond` | 150 | astetta / s | ≤ 0 tai > 3600 |
+| `skaters.contactTurnMetres` | 2,2 | m | ≤ 0 tai > 6 |
+| `skaters.contactShiftMetresPerSecond` | 6,0 | m/s | ≤ 0 tai > 50 |
+| `skaters.contactStepsPerSecond` | 60 | 1/s | < 10 tai > 240 |
+| `skaters.contactIterations` | 4 | kpl | ei kokonaisluku, < 1 tai > 20 |
 | `skaters.idleAmplitudeMetres` | 0,3 | m | < 0 tai > 1 |
 | `skaters.idleFrequencyHz` | 0,4 | Hz | < 0 tai > 3 |
 | `skaters.idleYFrequencyRatio` | 0,7 | – | ≤ 0 tai > 3 |
@@ -1672,4 +1693,4 @@ Maalivahdin sijainti määräytyy kiekon mukaan.
 | `bench.doorSpacingMetres` | 3,0 | m | < 0 tai > 10 |
 | `bench.enterWithinMetres` | 3,0 | m | < 0 tai > 20 |
 
-Arvo 0 poistaa vaikutuksen niissä avaimissa, jotka sen sallivat. Esimerkiksi `anticipationSeconds` 0 poistaa ennakoinnin, `nodeOffsetRadiusMetres` 0 poikkeamat, `separationIterations` 0 erottelun ja `idleAmplitudeMetres` 0 joustoliikkeen. Levykkeiden koot ja värit eivät kuulu tähän tiedostoon, vaan ne ovat edelleen Viewn `ReplayViewStyle`-asetuksia Inspectorissa. Erottelu ei tarvitse niitä.
+Arvo 0 poistaa vaikutuksen niissä avaimissa, jotka sen sallivat. Esimerkiksi `anticipationSeconds` 0 poistaa ennakoinnin, `nodeOffsetRadiusMetres` 0 poikkeamat, `separationMinMetres` 0 joukkuetovereiden väistön ja `idleAmplitudeMetres` 0 joustoliikkeen. Levykkeiden koot ja värit eivät kuulu tähän tiedostoon, vaan ne ovat edelleen Viewn `ReplayViewStyle`-asetuksia Inspectorissa. Kontaktit eivät tarvitse niitä.

@@ -287,8 +287,9 @@ namespace HockeyCoach.Replay.Core
 
                 case ReplayEventType.Pass:
                 {
-                    RinkPoint aim = AimPoint(holder, node, start, ws, puck.PassSpeed);
-                    double speed = RinkPoint.Distance(start, aim) >= puck.LongPassMinMetres ? puck.LongPassSpeed : puck.PassSpeed;
+                    // Long or short by the straight distance to the target at the start of the window.
+                    RinkPoint target = holder.HasValue ? Carried(holder.Value, ws, null) : node;
+                    double speed = RinkPoint.Distance(start, target) >= puck.LongPassMinMetres ? puck.LongPassSpeed : puck.PassSpeed;
                     Toward(legs, start, ws, holder, node, speed);
                     return End(i, ws, start, legs, holder, node);
                 }
@@ -397,11 +398,6 @@ namespace HockeyCoach.Replay.Core
             {
                 legs.Add(new PuckLeg(from, node, null, t0, t0 + (RinkPoint.Distance(from, node) / speed), speed));
             }
-        }
-
-        private RinkPoint AimPoint(int? holder, RinkPoint node, RinkPoint from, double t0, double speed)
-        {
-            return holder.HasValue ? Aim(holder.Value, from, t0, speed, true) : node;
         }
 
         /// <summary>

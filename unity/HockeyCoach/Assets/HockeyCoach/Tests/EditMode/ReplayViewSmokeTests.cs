@@ -62,7 +62,7 @@ namespace HockeyCoach.Replay.Tests.EditMode
             _bootstrap.Refresh();
             AssertSample();
             SkaterSettings sk = _bootstrap.Presentation.Config.Skaters;
-            double reach = sk.NodeOffsetRadiusMetres + (sk.SeparationMinMetres * sk.SeparationIterations) + (2 * sk.IdleAmplitudeMetres);
+            double reach = sk.NodeOffsetRadiusMetres + sk.SeparationMinMetres + sk.OpponentContactMetres + (2 * sk.IdleAmplitudeMetres);
             RinkMapping m = _bootstrap.Timeline.Mapping;
             foreach (KeyValuePair<int, int> p in SyntheticReplayJson.PassPlacement)
             {

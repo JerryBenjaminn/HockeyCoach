@@ -178,11 +178,38 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Radius of a player's own offset within a node (m).</summary>
         public double NodeOffsetRadiusMetres { get; internal set; }
 
-        /// <summary>Minimum distance between skaters after separation (m).</summary>
+        /// <summary>Distance teammates keep (m, D-089 A2).</summary>
         public double SeparationMinMetres { get; internal set; }
 
-        /// <summary>Separation iterations per sample.</summary>
-        public int SeparationIterations { get; internal set; }
+        /// <summary>How early teammates start to sidestep before their closest approach (s).</summary>
+        public double TeammateAnticipationSeconds { get; internal set; }
+
+        /// <summary>Relative speed at which the teammates' early sidestep reaches full weight (m/s); slower pairs stand apart along their offset.</summary>
+        public double TeammateRelativeSpeedMetresPerSecond { get; internal set; }
+
+        /// <summary>Opponents closer than this start to turn into their fixed placement (m).</summary>
+        public double OpponentContactMetres { get; internal set; }
+
+        /// <summary>Opponents closer than this are fully in their fixed placement (m).</summary>
+        public double OpponentPlaceMetres { get; internal set; }
+
+        /// <summary>Distance of opponents in their fixed placement, shoulder to shoulder (m).</summary>
+        public double OpponentShoulderMetres { get; internal set; }
+
+        /// <summary>Fastest turn of the direction between two skaters in contact (degrees per presentation second).</summary>
+        public double ContactTurnDegreesPerSecond { get; internal set; }
+
+        /// <summary>Skaters closer than this turn around each other at most <see cref="ContactTurnDegreesPerSecond"/> (m).</summary>
+        public double ContactTurnMetres { get; internal set; }
+
+        /// <summary>Fastest change of a skater's drawn displacement from his path (m per presentation second).</summary>
+        public double ContactShiftMetresPerSecond { get; internal set; }
+
+        /// <summary>Steps per presentation second of the precomputed contacts.</summary>
+        public double ContactStepsPerSecond { get; internal set; }
+
+        /// <summary>Relaxation passes over the contact pairs per step.</summary>
+        public int ContactIterations { get; internal set; }
 
         /// <summary>Idle motion amplitude (m).</summary>
         public double IdleAmplitudeMetres { get; internal set; }

@@ -101,7 +101,16 @@ namespace HockeyCoach.Replay.Core
             skaters.AnticipationSeconds = s.Number("anticipationSeconds", 0, false, 2);
             skaters.NodeOffsetRadiusMetres = s.Number("nodeOffsetRadiusMetres", 0, false, 2.5);
             skaters.SeparationMinMetres = s.Number("separationMinMetres", 0, false, 4);
-            skaters.SeparationIterations = s.Integer("separationIterations", 0, 10);
+            skaters.TeammateAnticipationSeconds = s.Number("teammateAnticipationSeconds", 0, true, 5);
+            skaters.TeammateRelativeSpeedMetresPerSecond = s.Number("teammateRelativeSpeedMetresPerSecond", 0, true, 10);
+            skaters.OpponentShoulderMetres = s.Number("opponentShoulderMetres", 0.5, false, 2);
+            skaters.OpponentPlaceMetres = s.Number("opponentPlaceMetres", skaters.OpponentShoulderMetres, false, 6);
+            skaters.OpponentContactMetres = s.Number("opponentContactMetres", skaters.OpponentPlaceMetres, true, 8);
+            skaters.ContactTurnDegreesPerSecond = s.Number("contactTurnDegreesPerSecond", 0, true, 3600);
+            skaters.ContactTurnMetres = s.Number("contactTurnMetres", 0, true, 6);
+            skaters.ContactShiftMetresPerSecond = s.Number("contactShiftMetresPerSecond", 0, true, 50);
+            skaters.ContactStepsPerSecond = s.Number("contactStepsPerSecond", 10, false, 240);
+            skaters.ContactIterations = s.Integer("contactIterations", 1, 20);
             skaters.IdleAmplitudeMetres = s.Number("idleAmplitudeMetres", 0, false, 1);
             skaters.IdleFrequencyHz = s.Number("idleFrequencyHz", 0, false, 3);
             skaters.IdleYFrequencyRatio = s.Number("idleYFrequencyRatio", 0, true, 3);

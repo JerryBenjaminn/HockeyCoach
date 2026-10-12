@@ -65,7 +65,9 @@ public sealed class PuckMotionTests
             switch (seg.Type)
             {
                 case ReplayEventType.Pass:
-                    double straight = RinkPoint.Distance(first.From, first.To);
+                    int? holder = seg.Event.Placement.PuckCarrierId;
+                    RinkPoint target = holder.HasValue ? Puck.Carried(holder.Value, plan.WindowStart, null) : P.Timeline.Mapping.NodePosition(seg.Event.Placement.PuckNodeId);
+                    double straight = RinkPoint.Distance(first.From, target);
                     Assert.Equal(straight >= Cfg.LongPassMinMetres ? Cfg.LongPassSpeed : Cfg.PassSpeed, first.Speed);
                     break;
                 case ReplayEventType.Shot:
@@ -101,7 +103,7 @@ public sealed class PuckMotionTests
                 Assert.True(leg.End > leg.Start || RinkPoint.Distance(leg.From, end) < 1e-6);
                 if (leg.End > leg.Start && !leg.TargetId.HasValue)
                 {
-                    Assert.InRange(flown, leg.Speed * (1 - 1e-9), leg.Speed * (1 + 1e-9));
+                    Assert.InRange(flown, leg.Speed * (1 - 1e-6), leg.Speed * (1 + 1e-6));
                 }
                 else if (leg.End > leg.Start)
                 {

@@ -44,7 +44,7 @@ public sealed class PresentationConfigReaderTests
         Assert.Equal((double)root["timing"]!["faceoffApproachMaxSeconds"]!, c.Timing.FaceoffApproachMaxSeconds);
         Assert.Equal((double)root["goal"]!["slowMoRate"]!, c.Goal.SlowMoRate);
         Assert.Equal((double)root["puck"]!["carriedHeadingMinSpeed"]!, c.Puck.CarriedHeadingMinSpeed);
-        Assert.Equal((int)root["skaters"]!["separationIterations"]!, c.Skaters.SeparationIterations);
+        Assert.Equal((double)root["skaters"]!["opponentShoulderMetres"]!, c.Skaters.OpponentShoulderMetres);
         Assert.Equal((double)root["skaters"]!["idleYFrequencyRatio"]!, c.Skaters.IdleYFrequencyRatio);
         Assert.Equal((double)root["goalies"]!["lateralMaxMetres"]!, c.Goalies.LateralMaxMetres);
         Assert.Equal((double)root["bench"]!["homeFromCentreMetres"]!, c.Bench.HomeFromCentreMetres);
@@ -235,9 +235,16 @@ public sealed class PresentationConfigReaderTests
     [InlineData("skaters.anticipationSeconds", 2.1)]
     [InlineData("skaters.nodeOffsetRadiusMetres", 2.6)]
     [InlineData("skaters.separationMinMetres", 4.1)]
-    [InlineData("skaters.separationIterations", -1)]
-    [InlineData("skaters.separationIterations", 11)]
-    [InlineData("skaters.separationIterations", 2.5)]
+    [InlineData("skaters.teammateAnticipationSeconds", 0)]
+    [InlineData("skaters.teammateAnticipationSeconds", 5.1)]
+    [InlineData("skaters.teammateRelativeSpeedMetresPerSecond", 0)]
+    [InlineData("skaters.teammateRelativeSpeedMetresPerSecond", 10.1)]
+    [InlineData("skaters.opponentShoulderMetres", 0.4)]
+    [InlineData("skaters.opponentShoulderMetres", 2.1)]
+    [InlineData("skaters.opponentPlaceMetres", 0.8)]
+    [InlineData("skaters.opponentPlaceMetres", 6.1)]
+    [InlineData("skaters.opponentContactMetres", 2.0)]
+    [InlineData("skaters.opponentContactMetres", 8.1)]
     [InlineData("skaters.idleAmplitudeMetres", 1.1)]
     [InlineData("skaters.idleFrequencyHz", -0.1)]
     [InlineData("skaters.idleYFrequencyRatio", 0)]
@@ -259,8 +266,8 @@ public sealed class PresentationConfigReaderTests
     [InlineData("goal.slowMoRate", 1)]
     [InlineData("goal.netInsideMetres", 1.12)]
     [InlineData("puck.longPassSpeed", 20)]
-    [InlineData("skaters.separationIterations", 0)]
-    [InlineData("skaters.separationIterations", 10)]
+    [InlineData("skaters.opponentPlaceMetres", 0.9)]
+    [InlineData("skaters.opponentShoulderMetres", 2.0)]
     [InlineData("skaters.anticipationSeconds", 0)]
     public void Read_AcceptsBoundaryValues(string path, double value)
     {
