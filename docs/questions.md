@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-077 · 2026-10-12 · kirjaaja: koordinaattori
+**Kysymys:** mistä toiston otsakkeen kaukalon metrimitat (D-087 kohta 4: "mitat metreinä") tulevat? `rink.json`:ssa on vain 11 × 5 -verkko, ei metrejä.
+**Konteksti:** Unity-toiston vaihe 2 (`match --json` -otsake). `data-schema.md` (Alueiden perustelu) johtaa verkon NHL-mitoista: maaliviivojen väli 178 ft, siniviiva 64 ft maaliviivasta.
+**Ehdotettu oletus (toteutettu):** Harness kirjoittaa otsakkeeseen NHL-kaukalon mitat nimettyinä vakioina, vain toistoa varten (simulaatio ei käytä niitä): pituus 60,96 m (200 ft), leveys 25,91 m (85 ft), maaliviiva 3,35 m (11 ft) ja siniviiva 22,86 m (75 ft) päädystä. Jos mitat kuuluvat dataan, designer lisää ne `rink.json`:iin ja Harness lukee ne sieltä.
+**Vastaus:**
+
 ### Q-073 · 2026-10-11 · kirjaaja: Jerry
 **Kysymys veljelle:** palaavatko paluukarvauksessa hyökkääjät keskikaistaa ja pakit omia kaistojaan?
 **Konteksti:** paluukarvaus (`data-schema.md`, D-085). Nyt kaikki väärällä puolella kiekkoa olevat palaavat omaa kaistaansa.
