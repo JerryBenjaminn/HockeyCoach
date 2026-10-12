@@ -177,7 +177,11 @@ namespace HockeyCoach.Replay.View
             Cursor = null;
         }
 
-        /// <summary>Draws the cursor's current sample: on-ice discs, hidden bench players, puck and HUD.</summary>
+        /// <summary>
+        /// Draws the cursor's current sample from the presentation layer (D-088): the on-ice discs and the players still
+        /// skating off to their bench gate at their drawn positions, bench players hidden, the puck and the HUD (true game
+        /// clock and speed).
+        /// </summary>
         public void Refresh()
         {
             if (Cursor == null)
@@ -187,17 +191,8 @@ namespace HockeyCoach.Replay.View
 
             ReplaySample sample = Cursor.Sample();
             _shown.Clear();
-            foreach (PlayerSample p in sample.Players)
-            {
-                PlayerDiscView disc;
-                if (!_discs.TryGetValue(p.Id, out disc))
-                {
-                    disc = AddDisc(p.Id, p.Team, p.IsGoalie, Timeline.FindPlayer(p.Id));
-                }
-
-                disc.Show(p.Position);
-                _shown.Add(p.Id);
-            }
+            ShowDiscs(sample.Players);
+            ShowDiscs(sample.LeavingPlayers);
 
             foreach (KeyValuePair<int, PlayerDiscView> pair in _discs)
             {
@@ -209,6 +204,21 @@ namespace HockeyCoach.Replay.View
 
             Puck.Show(sample.Puck);
             Hud.Show(Cursor, sample);
+        }
+
+        private void ShowDiscs(IReadOnlyList<PlayerSample> players)
+        {
+            foreach (PlayerSample p in players)
+            {
+                PlayerDiscView disc;
+                if (!_discs.TryGetValue(p.Id, out disc))
+                {
+                    disc = AddDisc(p.Id, p.Team, p.IsGoalie, Timeline.FindPlayer(p.Id));
+                }
+
+                disc.Show(p.Position);
+                _shown.Add(p.Id);
+            }
         }
 
         /// <summary>Fits the orthographic camera to the rink plus <see cref="ReplayViewStyle.cameraMargin"/> at the camera's aspect.</summary>

@@ -55,27 +55,39 @@ namespace HockeyCoach.Replay.Tests.EditMode
         }
 
         [Test]
-        public void DiscPositions_EqualTheRinkMappingOfThePlacement()
+        public void DiscsAndPuck_AreDrawnAtTheSampledPositions_NearTheirPlacementNodes()
         {
-            AssertPlacement(SyntheticReplayJson.FaceoffPlacement);
+            AssertSample();
             _bootstrap.Cursor.SeekEvent(1);
             _bootstrap.Refresh();
-            AssertPlacement(SyntheticReplayJson.PassPlacement);
-            AssertNear(_bootstrap.Timeline.Mapping.NodePosition(SyntheticReplayJson.PassPuckNode), _bootstrap.Puck.transform.localPosition);
+            AssertSample();
+            SkaterSettings sk = _bootstrap.Presentation.Config.Skaters;
+            double reach = sk.NodeOffsetRadiusMetres + (sk.SeparationMinMetres * sk.SeparationIterations) + (2 * sk.IdleAmplitudeMetres);
+            RinkMapping m = _bootstrap.Timeline.Mapping;
+            foreach (KeyValuePair<int, int> p in SyntheticReplayJson.PassPlacement)
+            {
+                if (_bootstrap.Discs[p.Key].IsGoalie)
+                {
+                    continue;
+                }
+
+                Vector3 at = _bootstrap.Discs[p.Key].transform.localPosition;
+                RinkPoint node = m.NodePosition(p.Value);
+                Assert.LessOrEqual(Vector2.Distance(new Vector2(at.x, at.y), new Vector2((float)node.X, (float)node.Y)), (float)reach + 1e-3f, "player " + p.Key);
+            }
         }
 
         [Test]
-        public void Advance_InterpolatesDiscsBetweenPlacements()
+        public void Advance_MovesDiscsAlongTheirSampledPaths()
         {
+            Vector3 before = _bootstrap.Discs[2].transform.localPosition;
             SegmentTiming pass = _bootstrap.Presentation.Segments[1];
             _bootstrap.Cursor.Play();
             _bootstrap.Cursor.Advance((pass.Start + pass.EventEnd) / 2);
             _bootstrap.Refresh();
             Assert.AreEqual(1, _bootstrap.Cursor.SegmentIndex);
-            RinkMapping m = _bootstrap.Timeline.Mapping;
-            RinkPoint from = m.NodePosition(SyntheticReplayJson.FaceoffPlacement[2]);
-            RinkPoint to = m.NodePosition(SyntheticReplayJson.PassPlacement[2]);
-            AssertNear(RinkPoint.Lerp(from, to, 0.5), _bootstrap.Discs[2].transform.localPosition);
+            AssertSample();
+            Assert.Greater(Vector3.Distance(before, _bootstrap.Discs[2].transform.localPosition), 0.5f);
         }
 
         [Test]
@@ -114,9 +126,16 @@ namespace HockeyCoach.Replay.Tests.EditMode
         }
 
         [Test]
-        public void LineChange_HidesThePlayersWhoLeft_AndShowsThoseWhoCameOn()
+        public void LineChange_ShowsTheLeavingPlayersUntilTheGate_ThenOnlyTheNewTwelve()
         {
             _bootstrap.Cursor.SeekEvent(4);
+            _bootstrap.Refresh();
+            ReplaySample atChange = _bootstrap.Cursor.Sample();
+            Assert.AreEqual(12, atChange.Players.Count);
+            CollectionAssert.AreEquivalent(new[] { 1, 2, 3 }, IdsOf(atChange.LeavingPlayers));
+            AssertSample();
+
+            _bootstrap.Cursor.SeekEvent(5);
             _bootstrap.Refresh();
             List<int> visible = VisibleIds();
             Assert.AreEqual(12, visible.Count);
@@ -130,7 +149,7 @@ namespace HockeyCoach.Replay.Tests.EditMode
                 Assert.IsTrue(_bootstrap.Discs[id].IsOnIce, "player " + id + " should be on the ice");
             }
 
-            AssertPlacement(SyntheticReplayJson.ChangePlacement);
+            AssertSample();
         }
 
         [Test]
@@ -180,15 +199,33 @@ namespace HockeyCoach.Replay.Tests.EditMode
             return ids;
         }
 
-        private void AssertPlacement(SortedDictionary<int, int> placement)
+        private void AssertSample()
         {
-            RinkMapping m = _bootstrap.Timeline.Mapping;
-            foreach (KeyValuePair<int, int> p in placement)
+            ReplaySample sample = _bootstrap.Cursor.Sample();
+            foreach (PlayerSample p in sample.Players)
             {
-                PlayerDiscView disc = _bootstrap.Discs[p.Key];
-                Assert.IsTrue(disc.IsOnIce, "player " + p.Key + " should be on the ice");
-                AssertNear(m.NodePosition(p.Value), disc.transform.localPosition);
+                Assert.IsTrue(_bootstrap.Discs[p.Id].IsOnIce, "player " + p.Id + " should be on the ice");
+                AssertNear(p.Position, _bootstrap.Discs[p.Id].transform.localPosition);
             }
+
+            foreach (PlayerSample p in sample.LeavingPlayers)
+            {
+                Assert.IsTrue(_bootstrap.Discs[p.Id].IsOnIce, "leaving player " + p.Id + " should be drawn");
+                AssertNear(p.Position, _bootstrap.Discs[p.Id].transform.localPosition);
+            }
+
+            AssertNear(sample.Puck, _bootstrap.Puck.transform.localPosition);
+        }
+
+        private static List<int> IdsOf(IReadOnlyList<PlayerSample> players)
+        {
+            var ids = new List<int>();
+            foreach (PlayerSample p in players)
+            {
+                ids.Add(p.Id);
+            }
+
+            return ids;
         }
 
         private static void AssertNear(RinkPoint expected, Vector3 actual)
