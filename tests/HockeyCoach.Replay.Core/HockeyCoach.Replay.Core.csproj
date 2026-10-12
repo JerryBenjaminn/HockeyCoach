@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Build shim for the Unity replay Core (D-087): compiles the .cs files of
+    unity/HockeyCoach/Assets/HockeyCoach/Replay/Core exactly as Unity does (netstandard2.1, C# 9, no nullable
+    context, no implicit usings, only Newtonsoft.Json 13.0.2 = com.unity.nuget.newtonsoft-json 3.2.2, no UnityEngine).
+    A C# 10+ feature, a UnityEngine using or an API outside netstandard2.1 breaks this build, so dotnet build enforces
+    the Unity constraints. The tests reference this assembly instead of compiling the files a second time.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>HockeyCoach.Replay.Core</RootNamespace>
+    <AssemblyName>HockeyCoach.Replay.Core</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\unity\HockeyCoach\Assets\HockeyCoach\Replay\Core\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+  </ItemGroup>
+
+</Project>
