@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-085 · 2026-10-12 · kirjaaja: Jerry (kirjannut koordinaattori) · jonossa D-089 B:n jälkeen
+**Kysymys:** taklaukset: `stats-and-checks.md`:n taulukoissa on taklaus (Voima vs Voima, jäähyriski Kurinalaisuuden mukaan). Onko se toteutettu? Jos ei, mitä se vaatii ilman jäähyjä ja erikoistilanteita?
+**Konteksti:** `stats-and-checks.md` (statsit: Voima, Kurinalaisuus; tarkistukset: Taklaus "Täytetään"; roolit: Taklaaja). Erikoistilanteet odottavat virstanpylväitä 1–5.
+**Ehdotettu oletus:** selvitetään hyökkäyksen tuen ja paitsion (D-089 B) jälkeen.
+**Vastaus:**
+
 ### Q-084 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** liikekerroksen (D-088 osa 2) havainnot ja tulkinnat. Hyväksytäänkö nämä, vai muutetaanko speksiä?
 1. **Erottelu hyppää.** Tilaton pareittainen erottelu työntää paria keskipisteiden suuntaan. Kun kahden pelaajan reitit risteävät, suunta kääntyy ja piirretty sijainti voi siirtyä yhdessä ruudussa jopa `separationMin` × `separationIterations`. Siemen 42 60 Hz:llä: suurin hyppy 4,1 m, ja yli 0,5 m:n siirtymiä on 0,4 % pelaajaruuduista. Reitti itse ei hyppää koskaan (≤ `topSpeed`). Lisäksi kolme kierrosta ei aina erota ruuhkaa, ja laitarajaus voi työntää pelaajat takaisin yhteen: alle 2 m:n pareja on 0,29 % parinäytteistä, pienin etäisyys 0,01 m. Mahdollisia korjauksia ovat parin kiinteä suunta (esim. pienemmän id:n kulma aina), suunnan pehmennys tai useampi kierros.
@@ -31,6 +37,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Konteksti:** D-088 osa 2 (commitit 2350034, c7ff26b, d4353b4), testit `SkaterMotionTests` ja `PuckMotionTests` toleransseineen.
 **Ehdotettu oletus (toteutettu):** kuten yllä. Testit sallivat kohdan 1 hypyt (reitin askel + joustoliike + `separationMin` × `separationIterations`, alle 1 % ruuduista) ja alle 1 %:n lähiparit.
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** päätetään myöhemmin katselun perusteella (D-089).
 
 ### Q-083 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** esitysajan pienet tulkinnat (D-088, `data-schema.md` replay.json, Esitysaika ja katkon sarja). Ovatko nämä oikein?
@@ -42,6 +49,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 **Konteksti:** toiston esityskerroksen osa 1 (otsake v2, asetukset, esitysaika).
 **Ehdotettu oletus (toteutettu):** kuten yllä.
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** programmerin tulkinnat hyväksytty. Kirjattu: D-089.
 
 ### Q-082 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** miten kiekon alaraja lasketaan, kun reitin päätepisteet ovat speksin mukaan pelaajien *esityssijainteja sillä hetkellä*, mutta ajoitus pitää lukita ennen liikettä? Ja kuuluuko torjunnan, blokin ja ohilaukauksen jälkimmäinen osuus (`reboundSpeed`, `blockDeflectSpeed`) alarajaan?
@@ -51,6 +59,7 @@ Kirjaa uusin ylimmäksi. Muoto:
 - Lähtö toimijan *edellisestä* solmusta (kaikki osuudet): siemen 42 18,2 s / 24,3 min.
 **Ehdotettu oletus (toteutettu):** reitin pituus solmusijainneista ilman poikkeamia. Syöttäjän, ampujan ja edellisen kiekonhaltijan solmu otetaan tämän tapahtuman placementista, koska toimintaikkuna on välin lopussa ja toimija on silloin lähellä kohdettaan. Torjujan solmu, maalin piste (`netInsideMetres`) ja ohipiste kuten Kiekko-osiossa. Kaikki osuudet lasketaan mukaan. Jos Mitoitus-taulukko on tarkoitettu oikeaksi, muutos on pieni: alarajaan otetaan vain ensimmäinen osuus.
 **Vastaus:**
+**Vastaus (Jerry, 2026-10-12):** laskutapa asetukseksi `replay.json`:iin (koko reitti / ensimmäinen osuus), Jerry valitsee Editorissa. Kirjattu: D-089.
 
 ### Q-081 · 2026-10-12 · kirjaaja: Jerry (kirjannut koordinaattori) · virstanpylväs 5
 **Kysymys:** onko simulaation tapahtumatiheys (tapahtumia minuutissa) realistinen verrattuna Wisehockeyn aikajanaan?
