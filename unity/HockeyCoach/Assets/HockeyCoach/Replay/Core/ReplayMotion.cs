@@ -34,10 +34,11 @@ namespace HockeyCoach.Replay.Core
     /// </summary>
     public sealed class ReplayMotion
     {
-        private ReplayMotion(PresentationTimeline presentation, SkaterMotion skaters)
+        private ReplayMotion(PresentationTimeline presentation, SkaterMotion skaters, PuckMotion puck)
         {
             Presentation = presentation;
             Skaters = skaters;
+            Puck = puck;
         }
 
         /// <summary>The presentation timeline.</summary>
@@ -45,6 +46,9 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>The skater motion.</summary>
         public SkaterMotion Skaters { get; }
+
+        /// <summary>The puck motion.</summary>
+        public PuckMotion Puck { get; }
 
         /// <summary>Builds the motion.</summary>
         public static ReplayMotion Build(PresentationTimeline presentation)
@@ -54,18 +58,18 @@ namespace HockeyCoach.Replay.Core
                 throw new ArgumentNullException(nameof(presentation));
             }
 
-            return new ReplayMotion(presentation, SkaterMotion.Build(presentation));
+            SkaterMotion skaters = SkaterMotion.Build(presentation);
+            return new ReplayMotion(presentation, skaters, PuckMotion.Build(presentation, skaters));
         }
 
         /// <summary>The drawn state of segment <paramref name="segmentIndex"/> at presentation time <paramref name="t"/>.</summary>
         public MotionSample Sample(int segmentIndex, double t)
         {
             TimelineSegment segment = Presentation.Timeline.Segments[segmentIndex];
-            SegmentTiming timing = Presentation.Segments[segmentIndex];
-            double fraction = timing.MotionFraction(t);
-            RinkPoint puck = segment.Puck.PositionAt(fraction);
-            int? carrier = fraction >= 1 || !segment.Puck.Moves ? segment.Puck.CarrierId : null;
-            return Compose(segment, segmentIndex, t, puck, carrier);
+            SkaterPose[] poses = Skaters.Sample(segmentIndex, t);
+            int? carrier;
+            RinkPoint puck = Puck.PositionAt(segmentIndex, t, poses, out carrier);
+            return Compose(segment, poses, puck, carrier);
         }
 
         /// <summary>
@@ -90,9 +94,8 @@ namespace HockeyCoach.Replay.Core
             return new RinkPoint(x, net.Y + lateral);
         }
 
-        private MotionSample Compose(TimelineSegment segment, int segmentIndex, double t, RinkPoint puck, int? carrier)
+        private MotionSample Compose(TimelineSegment segment, SkaterPose[] poses, RinkPoint puck, int? carrier)
         {
-            SkaterPose[] poses = Skaters.Sample(segmentIndex, t);
             var skaterAt = new Dictionary<int, RinkPoint>();
             var leaving = new List<PlayerSample>();
             foreach (SkaterPose pose in poses)

@@ -95,7 +95,7 @@ public sealed class ReplayCursorTests
         ReplaySample after = c.Sample();
         Assert.Equal(4, after.SegmentIndex);
         Assert.Equal((0, 1), (after.HomeScore, after.AwayScore));
-        Assert.Equal(p.Timeline.Mapping.NodePosition(12), after.Puck);
+        Assert.Equal(PuckGeometry.NetInside(p.Timeline.Mapping, ReplayTeam.Home, p.Config.Goal.NetInsideMetres), after.Puck);
     }
 
     [Fact]

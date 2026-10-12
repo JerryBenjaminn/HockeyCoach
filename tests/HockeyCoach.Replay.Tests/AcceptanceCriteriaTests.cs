@@ -130,8 +130,11 @@ public sealed class AcceptanceCriteriaTests
     }
 
     [Fact]
-    public void Criterion3_PassesAndShots_StartAtTheActorAndEndAtThePlacementPuckNode()
+    public void Criterion3_PassesAndShots_StartAtTheActorAndEndAtThePlacementPuckNode_ExceptGoalsInTheNet()
     {
+        // D-088 E, Q-079: passes and shots end at the placement, goals in the net. The grid path still names the
+        // placement node; the drawn flight of a goal ends inside the net (PuckMotionTests, Criterion3).
+        RinkMapping map = Timeline.Mapping;
         int checkedSegments = 0;
         for (int i = 1; i < Segments.Count; i++)
         {
@@ -149,6 +152,22 @@ public sealed class AcceptanceCriteriaTests
             Assert.Equal(Timeline.Mapping.NodePosition(s.Event.Placement.PuckNodeId), s.Puck.End);
             Assert.Equal(s.Puck.Start, s.Puck.PositionAt(0));
             Assert.Equal(s.Puck.End, s.Puck.PositionAt(1));
+            PuckPlan flight = Presentation.Motion.Puck.Plans[i];
+            if (s.Event.Outcome == "Goal" && s.Type == ReplayEventType.Shot)
+            {
+                ReplayTeam conceding = s.ScoringTeam == ReplayTeam.Home ? ReplayTeam.Away : ReplayTeam.Home;
+                Assert.Equal(PuckGeometry.NetInside(map, conceding, _m.Config.Goal.NetInsideMetres), flight.EndPoint);
+                Assert.True(flight.InNet);
+            }
+            else if (s.Event.Placement.PuckCarrierId == null)
+            {
+                Assert.Equal(map.NodePosition(s.Event.Placement.PuckNodeId), flight.EndPoint);
+            }
+            else
+            {
+                Assert.Equal(s.Event.Placement.PuckCarrierId, flight.EndCarrierId);
+            }
+
             checkedSegments++;
         }
 
