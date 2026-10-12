@@ -41,6 +41,7 @@ namespace HockeyCoach.Replay.Core
             int homeScore,
             int awayScore,
             IReadOnlyList<PlayerSample> players,
+            IReadOnlyList<PlayerSample> leavingPlayers,
             RinkPoint puck,
             int? puckCarrierId)
         {
@@ -53,6 +54,7 @@ namespace HockeyCoach.Replay.Core
             HomeScore = homeScore;
             AwayScore = awayScore;
             Players = players;
+            LeavingPlayers = leavingPlayers;
             Puck = puck;
             PuckCarrierId = puckCarrierId;
         }
@@ -84,8 +86,11 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Away score shown.</summary>
         public int AwayScore { get; }
 
-        /// <summary>On-ice players ordered by id.</summary>
+        /// <summary>On-ice players (the twelve of the segment) ordered by id, at their drawn positions.</summary>
         public IReadOnlyList<PlayerSample> Players { get; }
+
+        /// <summary>Players skating off to the bench gate (not on the ice any more), ordered by id.</summary>
+        public IReadOnlyList<PlayerSample> LeavingPlayers { get; }
 
         /// <summary>Puck position in metres.</summary>
         public RinkPoint Puck { get; }

@@ -180,15 +180,8 @@ namespace HockeyCoach.Replay.Core
             TimelineSegment segment = Segment;
             SegmentTiming timing = Timing;
             double fraction = timing.MotionFraction(Time);
-            var players = new PlayerSample[segment.Players.Count];
-            for (int i = 0; i < players.Length; i++)
-            {
-                SegmentPlayer p = segment.Players[i];
-                players[i] = new PlayerSample(p.Id, p.Team, p.IsGoalie, RinkPoint.Lerp(p.From, p.To, fraction));
-            }
-
+            MotionSample motion = Presentation.Motion.Sample(SegmentIndex, Time);
             bool done = fraction >= 1;
-            int? carrier = done || !segment.Puck.Moves ? segment.Puck.CarrierId : null;
             double clock = Clock;
             double periodTime = Math.Max(0, clock - ((double)(segment.Period - 1) * Timeline.PeriodSeconds));
             return new ReplaySample(
@@ -200,9 +193,10 @@ namespace HockeyCoach.Replay.Core
                 periodTime,
                 done ? segment.HomeScore : segment.HomeScoreBefore,
                 done ? segment.AwayScore : segment.AwayScoreBefore,
-                players,
-                segment.Puck.PositionAt(fraction),
-                carrier);
+                motion.Players,
+                motion.Leaving,
+                motion.Puck,
+                motion.PuckCarrierId);
         }
 
         private void StopAtEnd()

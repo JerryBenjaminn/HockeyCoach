@@ -4,10 +4,9 @@ using UnityEngine;
 namespace HockeyCoach.Replay.View
 {
     /// <summary>
-    /// One roster player: a team-coloured disc (goalies in a darker shade) with a label of position and id. The
-    /// GameObject sits exactly on the sampled rink position; the drawn disc and label are shifted by
-    /// <see cref="ReplayViewStyle.teamShift"/> towards the team's own end so opponents on one node stay visible. The
-    /// GameObject is inactive while the player is off the ice.
+    /// One roster player: a team-coloured disc (goalies in a darker shade) with a label of position and id, centred on
+    /// the sampled rink position (the Core's own offsets and separation keep players on one node apart, Q-080, D-088).
+    /// The GameObject is inactive while the player is off the ice.
     /// </summary>
     public sealed class PlayerDiscView : MonoBehaviour
     {
@@ -36,11 +35,10 @@ namespace HockeyCoach.Replay.View
             Team = team;
             IsGoalie = isGoalie;
             Label = label;
-            float shift = team == ReplayTeam.Home ? -style.teamShift : style.teamShift;
 
             var body = new GameObject("Disc");
             body.transform.SetParent(transform, false);
-            body.transform.localPosition = new Vector3(shift, 0, 0);
+            body.transform.localPosition = Vector3.zero;
             Color color = team == ReplayTeam.Home ? (isGoalie ? style.homeGoalie : style.home) : (isGoalie ? style.awayGoalie : style.away);
             Mesh mesh = graphics.Mesh(new MeshBuilder().Disc(Vector2.zero, style.discRadius, style.circleSegments, color), "ReplayDisc" + id);
             graphics.Attach(body, mesh, ReplayLayers.DiscOrder);
@@ -49,7 +47,7 @@ namespace HockeyCoach.Replay.View
             {
                 var text = new GameObject("Label");
                 text.transform.SetParent(transform, false);
-                text.transform.localPosition = new Vector3(shift, 0, ReplayLayers.LabelZ);
+                text.transform.localPosition = new Vector3(0, 0, ReplayLayers.LabelZ);
                 LabelMesh = text.AddComponent<TextMesh>();
                 LabelMesh.font = graphics.Font;
                 LabelMesh.text = label;

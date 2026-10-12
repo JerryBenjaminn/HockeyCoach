@@ -13,6 +13,7 @@ namespace HockeyCoach.Replay.Core
     {
         private readonly SegmentTiming[] _segments;
         private readonly double[] _ends;
+        private ReplayMotion _motion;
 
         private PresentationTimeline(ReplayTimeline timeline, PresentationConfig config, SegmentTiming[] segments)
         {
@@ -31,6 +32,9 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>The presentation config.</summary>
         public PresentationConfig Config { get; }
+
+        /// <summary>The motion layer (skaters, puck, goalies), built on first use.</summary>
+        public ReplayMotion Motion => _motion ?? (_motion = ReplayMotion.Build(this));
 
         /// <summary>Timing of every segment, in segment order.</summary>
         public IReadOnlyList<SegmentTiming> Segments => _segments;

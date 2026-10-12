@@ -61,8 +61,8 @@ public sealed class ReplayCursorTests
         ReplaySample s = c.Sample();
         Assert.Equal(1, s.SegmentIndex);
         Assert.Equal(0.5, s.Fraction, 12);
-        RinkMapping m = p.Timeline.Mapping;
-        Assert.Equal(RinkPoint.Lerp(m.NodePosition(27), m.NodePosition(31), s.Fraction), s.Players.Single(x => x.Id == 1).Position);
+        MotionSample motion = p.Motion.Sample(1, c.Time);
+        Assert.Equal(motion.Players.Select(x => (x.Id, x.Position)), s.Players.Select(x => (x.Id, x.Position)));
         Assert.Null(s.PuckCarrierId);
         Assert.InRange(s.Clock, 0, 4);
         Assert.Equal(pass.ClockAt(c.Time), s.Clock);

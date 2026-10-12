@@ -58,9 +58,6 @@ namespace HockeyCoach.Replay.View
         [Tooltip("Player disc radius in metres.")]
         public float discRadius = 1.1f;
 
-        [Tooltip("Sideways shift in metres of the drawn disc along the rink: home towards its own end, away towards its own end, so opponents on one node stay visible (Q-080). 0 draws both exactly on the node.")]
-        public float teamShift = 0.9f;
-
         [Tooltip("TextMesh character size of the disc labels.")]
         public float labelCharacterSize = 0.12f;
 
