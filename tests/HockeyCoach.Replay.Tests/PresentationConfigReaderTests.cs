@@ -62,7 +62,7 @@ public sealed class PresentationConfigReaderTests
         JObject root = Real();
         foreach (string section in Sections)
         {
-            foreach (JProperty p in ((JObject)root[section]!).Properties().Where(p => !p.Name.StartsWith('_')))
+            foreach (JProperty p in ((JObject)root[section]!).Properties().Where(p => !p.Name.StartsWith('_') && p.Value.Type != JTokenType.String))
             {
                 string name = char.ToUpperInvariant(p.Name[0]) + p.Name[1..];
                 var property = objects[section].GetType().GetProperty(name);
@@ -70,6 +70,34 @@ public sealed class PresentationConfigReaderTests
                 Assert.Equal((double)p.Value, Convert.ToDouble(property!.GetValue(objects[section])));
             }
         }
+    }
+
+    [Theory]
+    [InlineData("allLegs", PuckFloorMode.AllLegs)]
+    [InlineData("firstLeg", PuckFloorMode.FirstLeg)]
+    public void Read_FloorMode_IsAllLegsOrFirstLeg(string value, PuckFloorMode expected)
+    {
+        JObject root = Real();
+        root["puck"]!["floorMode"] = value;
+        Assert.Equal(expected, PresentationConfigReader.Read(root.ToString()).Puck.FloorMode);
+    }
+
+    [Fact]
+    public void Read_TheRealFile_UsesAllLegs()
+    {
+        Assert.Equal(PuckFloorMode.AllLegs, PresentationConfigReader.Read(ReplayConfigFile.Text).Puck.FloorMode);
+    }
+
+    [Theory]
+    [InlineData("\"both\"")]
+    [InlineData("\"AllLegs\"")]
+    [InlineData("1")]
+    [InlineData("true")]
+    public void Read_RejectsAnUnknownFloorMode_NamingTheKey(string raw)
+    {
+        PresentationConfigException e = Fails(r => r["puck"]!["floorMode"] = JToken.Parse(raw));
+        Assert.Contains("puck.floorMode", e.Message);
+        Assert.Contains("allLegs", e.Message);
     }
 
     [Fact]

@@ -4,7 +4,8 @@ namespace HockeyCoach.Replay.Core
 {
     /// <summary>
     /// The puck floor of an action window (data-schema.md, replay.json, Esitysaika 5 and Kiekko): the duration of the
-    /// event's puck path, all its legs over their speeds (+ <c>faceoffDrawDelaySeconds</c> for a faceoff). The path
+    /// event's puck path, all its legs (or only the first one with <c>puck.floorMode</c> <c>firstLeg</c>, Q-082) over
+    /// their speeds (+ <c>faceoffDrawDelaySeconds</c> for a faceoff). The path
     /// ends are the players' presentation positions at the start of the window, which are not known before the timing
     /// is fixed; they are approximated by grid node positions without offsets. The puck starts from the actor's node in
     /// this event's placement (passer, shooter, or the previous carrier for loose-puck events; the actor is near it at
@@ -92,16 +93,22 @@ namespace HockeyCoach.Replay.Core
             {
                 ReplayTeam shooter = TeamOf(timeline, e.ShooterId.Value);
                 RinkPoint miss = PuckGeometry.MissPoint(map, ReplayTeams.Opponent(shooter), path.EndNodeId, path.StartNodeId, p.MissWideMetres);
-                return (RinkPoint.Distance(start, miss) / p.ShotSpeed) + (RinkPoint.Distance(miss, path.End) / p.ReboundSpeed);
+                return (RinkPoint.Distance(start, miss) / p.ShotSpeed) + SecondLeg(config, RinkPoint.Distance(miss, path.End) / p.ReboundSpeed);
             }
 
             if (path.Via.HasValue)
             {
                 double second = e.Outcome == "Blocked" ? p.BlockDeflectSpeed : p.ReboundSpeed;
-                return (RinkPoint.Distance(start, path.Via.Value) / p.ShotSpeed) + (RinkPoint.Distance(path.Via.Value, path.End) / second);
+                return (RinkPoint.Distance(start, path.Via.Value) / p.ShotSpeed) + SecondLeg(config, RinkPoint.Distance(path.Via.Value, path.End) / second);
             }
 
             return RinkPoint.Distance(start, path.End) / p.ShotSpeed;
+        }
+
+        /// <summary>The second leg's duration, or 0 when <c>puck.floorMode</c> is <c>firstLeg</c> (Q-082, D-089 A3).</summary>
+        private static double SecondLeg(PresentationConfig config, double seconds)
+        {
+            return config.Puck.FloorMode == PuckFloorMode.FirstLeg ? 0 : seconds;
         }
 
         private static bool CarrierChanged(TimelineSegment segment, TimelineSegment previous)

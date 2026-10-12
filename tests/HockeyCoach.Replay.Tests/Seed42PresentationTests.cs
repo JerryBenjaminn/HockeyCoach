@@ -1,5 +1,6 @@
 using HockeyCoach.Replay.Core;
 using HockeyCoach.Replay.Tests.Support;
+using Newtonsoft.Json.Linq;
 
 namespace HockeyCoach.Replay.Tests;
 
@@ -201,6 +202,17 @@ public sealed class Seed42PresentationTests
     public void A45SecondShift_LastsWithinTheTarget_At1x()
     {
         double shift = P.Duration * ShiftGameSeconds / _m.Timeline.EndClock;
+        Assert.InRange(shift, PresentationTimelineTests.ShiftTargetMin, PresentationTimelineTests.ShiftTargetMax);
+    }
+
+    [Fact]
+    public void A45SecondShift_WithFirstLegPuckFloor_IsShorter_AndStillWithinTheTarget()
+    {
+        JObject root = JObject.Parse(ReplayConfigFile.Text);
+        root["puck"]!["floorMode"] = "firstLeg";
+        PresentationTimeline first = PresentationTimeline.Build(_m.Timeline, PresentationConfigReader.Read(root.ToString()));
+        double shift = first.Duration * ShiftGameSeconds / _m.Timeline.EndClock;
+        Assert.True(first.Duration < P.Duration);
         Assert.InRange(shift, PresentationTimelineTests.ShiftTargetMin, PresentationTimelineTests.ShiftTargetMax);
     }
 

@@ -127,6 +127,19 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>Below this carrier speed the carried puck points at the opponent goal (m/s).</summary>
         public double CarriedHeadingMinSpeed { get; internal set; }
+
+        /// <summary>How the puck floor of the action window counts the puck path (Q-082, D-089 A3).</summary>
+        public PuckFloorMode FloorMode { get; internal set; }
+    }
+
+    /// <summary><c>puck.floorMode</c>: which legs of the puck path the puck floor counts (Q-082, D-089 A3).</summary>
+    public enum PuckFloorMode
+    {
+        /// <summary><c>allLegs</c>: the whole path (shot and rebound or deflection).</summary>
+        AllLegs,
+
+        /// <summary><c>firstLeg</c>: only the first leg (the shot up to the stopper, the net or the miss point).</summary>
+        FirstLeg,
     }
 
     /// <summary><c>replay.json</c> <c>skaters</c>.</summary>

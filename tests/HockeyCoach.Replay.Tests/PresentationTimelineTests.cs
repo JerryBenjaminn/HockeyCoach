@@ -112,6 +112,29 @@ public sealed class PresentationTimelineTests
         Assert.Equal(plain.Other * ratio, s.Durations.Other, 12);
     }
 
+    [Theory]
+    [InlineData("allLegs")]
+    [InlineData("firstLeg")]
+    public void PuckFloor_OfASavedShot_CountsTheReboundOnlyInAllLegsMode(string mode)
+    {
+        JObject root = JObject.Parse(ReplayConfigFile.Text);
+        root["puck"]!["floorMode"] = mode;
+        PresentationConfig config = PresentationConfigReader.Read(root.ToString());
+
+        // Shooter 2 on node 42 (row 8) shoots at the away net (node 47, goalie 103); the rebound goes to node 32.
+        Dictionary<int, int> shooting = With(Still(), 2, 42);
+        ReplayTimeline t = Start(shooting)
+            .Add("Shot", 1, 10, 32, null, shooting, new JObject { ["shooterId"] = 2, ["stoppedById"] = 103, ["outcome"] = "Saved" })
+            .Build();
+        PresentationTimeline p = PresentationTimeline.Build(t, config);
+        RinkMapping map = t.Mapping;
+        double shot = RinkPoint.Distance(map.NodePosition(42), map.NodePosition(47)) / config.Puck.ShotSpeed;
+        double rebound = RinkPoint.Distance(map.NodePosition(47), map.NodePosition(32)) / config.Puck.ReboundSpeed;
+        double expected = mode == "allLegs" ? shot + rebound : shot;
+        Assert.Equal(expected, p.Segments[1].PuckFloorSeconds, 12);
+        Assert.Equal(expected, PuckFloor.Seconds(t.Segments[1], t.Segments[0], t, config), 12);
+    }
+
     [Fact]
     public void SkaterFloor_StretchesTheGap_ToTheFarthestActorOverTopSpeed()
     {

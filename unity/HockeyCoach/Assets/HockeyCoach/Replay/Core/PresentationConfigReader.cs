@@ -27,6 +27,8 @@ namespace HockeyCoach.Replay.Core
         /// </summary>
         public const double GateYMarginMetres = 3.0;
 
+        private static readonly string[] FloorModes = { "allLegs", "firstLeg" };
+
         private static readonly string[] TopLevelKeys = { "schemaVersion", "timing", "goal", "puck", "skaters", "goalies", "bench" };
 
         /// <summary>Parses and validates the text of <c>replay.json</c>.</summary>
@@ -88,6 +90,7 @@ namespace HockeyCoach.Replay.Core
             puck.MissWideMetres = s.Number("missWideMetres", 0, false, 5);
             puck.CarriedLeadMetres = s.Number("carriedLeadMetres", 0, false, 2);
             puck.CarriedHeadingMinSpeed = s.Number("carriedHeadingMinSpeed", 0, false, double.PositiveInfinity);
+            puck.FloorMode = s.Choice("floorMode", FloorModes) == "firstLeg" ? PuckFloorMode.FirstLeg : PuckFloorMode.AllLegs;
             s.CheckUnknown();
 
             var skaters = new SkaterSettings();
@@ -256,6 +259,26 @@ namespace HockeyCoach.Replay.Core
                     string upper = double.IsPositiveInfinity(max) ? null : "≤ " + Format(max);
                     string rule = lower != null && upper != null ? lower + " and " + upper : lower ?? upper;
                     throw new PresentationConfigException("replay.json: " + path + " is " + Format(value) + ", must be " + rule + ".");
+                }
+
+                return value;
+            }
+
+            /// <summary>Reads a string that must be one of <paramref name="allowed"/>.</summary>
+            public string Choice(string key, string[] allowed)
+            {
+                string path = Path(_name, key);
+                _read.Add(key);
+                JToken token = _obj[key];
+                if (token == null || token.Type == JTokenType.Null)
+                {
+                    throw new PresentationConfigException("replay.json: missing key " + path + ".");
+                }
+
+                string value = token.Type == JTokenType.String ? token.Value<string>() : null;
+                if (value == null || Array.IndexOf(allowed, value) < 0)
+                {
+                    throw new PresentationConfigException("replay.json: " + path + " is " + token.ToString(Formatting.None) + ", must be one of \"" + string.Join("\", \"", allowed) + "\".");
                 }
 
                 return value;

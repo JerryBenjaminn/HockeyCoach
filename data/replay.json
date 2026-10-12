@@ -32,7 +32,8 @@
     "faceoffDrawDelaySeconds": 0.3,
     "missWideMetres": 1.5,
     "carriedLeadMetres": 0.6,
-    "carriedHeadingMinSpeed": 0.5
+    "carriedHeadingMinSpeed": 0.5,
+    "floorMode": "allLegs"
   },
   "skaters": {
     "topSpeed": 8.5,

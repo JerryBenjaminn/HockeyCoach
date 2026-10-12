@@ -1501,7 +1501,7 @@ Tapahtuman `time` on hetki, jolloin sen toiminto päättyy. Väli g = edellisen 
 
    Kiekko lähtee toimintaikkunan alussa, eli kohdassa, jossa pelikello on `time` − a.
 5. **Alarajat.** Jokainen alaraja venyttää välin kaikkia vaiheita samassa suhteessa:
-   - **Kiekon alaraja:** toimintaikkuna ≥ kiekon reitin kesto (ks. Kiekko). Venytys tehdään ennen hidastusta.
+   - **Kiekon alaraja:** toimintaikkuna ≥ kiekon reitin kesto (ks. Kiekko). Venytys tehdään ennen hidastusta. `puck.floorMode` valitsee laskutavan (Q-082, D-089 A3): `allLegs` laskee koko reitin, `firstLeg` vain ensimmäisen osuuden (laukaus torjujaan, verkkoon tai ohipisteeseen; jälkimmäinen osuus jää pois).
    - **Luistelijan alaraja:** välin kesto ≥ suurin toimijan siirtymä / `skaters.topSpeed`. Siirtymä on edellisen ja tämän tapahtuman solmujen välinen matka metreinä ilman poikkeamia. Toimijat ovat tapahtuman kentissä nimetyt pelaajat (`passerId`, `receiverId`, `shooterId`, `loserId`, `takerId`, `carrierId`, `homeCentreId`, `awayCentreId`, `attackerIds`, `defenderIds`) sekä `placement.puckCarrierId` ennen ja jälkeen tapahtuman.
      - Muut pelaajat eivät venytä väliä, vaan voivat jäädä jälkeen (ks. Luistelijat).
      - Rajaa ei sovelleta katkon sarjan sisällä.
@@ -1550,7 +1550,7 @@ Kiekon reitti alkaa toimintaikkunan alussa ja kulkee alla olevilla nopeuksilla. 
 | `ControlledZoneEntry` (`Carry`) | kuljetettu kiekko | – |
 
 - **Ohipiste.** Ohipiste on maaliviivalla, maalin sivussa: maalin keskikohdasta mitattuna maalin puolikas leveys (1,83 m / 2) + `missWideMetres`. Puoli valitaan `placement.puckNodeId`:n puolelta keskikaistaan nähden. Jos solmu on keskikaistalla, valitaan ampujan puoli. Jos ampujakin on keskikaistalla, valitaan vasen eli y = 0 -puoli.
-- **Kiekon reitin kesto** on osuuksien pituudet jaettuna kunkin osuuden nopeudella. `Faceoff`-tapahtumassa lisätään `faceoffDrawDelaySeconds`. Kiekon alaraja käyttää tätä kestoa.
+- **Kiekon reitin kesto** on osuuksien pituudet jaettuna kunkin osuuden nopeudella. `Faceoff`-tapahtumassa lisätään `faceoffDrawDelaySeconds`. Kiekon alaraja käyttää tätä kestoa (`puck.floorMode` `firstLeg`: vain ensimmäinen osuus). Reitin päät ovat alarajassa solmusijainteja ilman poikkeamia: syöttäjän, ampujan tai edellisen haltijan solmu tämän tapahtuman placementista (Q-082, Q-083).
 - **Kuljetettu kiekko** on haltijan esityssijainnissa + `carriedLeadMetres` liikesuuntaan. Jos haltijan nopeus on alle `carriedHeadingMinSpeed`, kiekko on kohti vastustajan maalia (kotijoukkue hyökkää +x).
 - **Maalin kiekko (Q-079).** Maalin jälkeen kiekko pysyy verkossa maalin pidon, katkon sarjan ja lähestymisen ajan. Se siirtyy aloituspisteeseen vasta `Faceoff`-välin toimintaikkunan alussa. Hyväksymiskriteeri 3: syötöt ja laukaukset päättyvät `placement`-sijaintiin, paitsi maalit, jotka päättyvät verkkoon.
 
@@ -1639,6 +1639,7 @@ Maalivahdin sijainti määräytyy kiekon mukaan.
 | `puck.missWideMetres` | 1,5 | m | < 0 tai > 5 |
 | `puck.carriedLeadMetres` | 0,6 | m | < 0 tai > 2 |
 | `puck.carriedHeadingMinSpeed` | 0,5 | m/s | < 0 |
+| `puck.floorMode` | `"allLegs"` | merkkijono | muu kuin `"allLegs"` tai `"firstLeg"` |
 | `skaters.topSpeed` | 8,5 | m/s | < 3 tai > 12 |
 | `skaters.acceleration` | 4,0 | m/s² | ≤ 0 tai > 20 |
 | `skaters.deceleration` | 6,0 | m/s² | ≤ 0 tai > 20 |
