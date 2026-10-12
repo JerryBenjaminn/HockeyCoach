@@ -28,6 +28,9 @@ public class BackcheckTests
 
     private static readonly Lazy<GameData> Zero = new(() => DataWith(0));
 
+    /// <summary>Back-check on with k = 2 (D-086); the repository value is 0 since D-087.</summary>
+    private static readonly Lazy<GameData> Two = new(() => DataWith(2));
+
     private static List<(ShiftSetup Setup, DefenceMoveSample Sample)> RushMoves(GameData data, ulong seeds)
     {
         var moves = new List<(ShiftSetup, DefenceMoveSample)>();
@@ -84,10 +87,10 @@ public class BackcheckTests
     [Fact]
     public void RushMoves_BackCheckersMoveStraightTowardTheOwnGoal_AndNeverPastThePuckRow()
     {
-        int k = ShiftTestData.Data.Tuning.Transitions.BackcheckNodesPerBeat;
+        int k = Two.Value.Tuning.Transitions.BackcheckNodesPerBeat;
         Assert.Equal(2, k);
         int backCheckers = 0;
-        foreach ((ShiftSetup setup, DefenceMoveSample s) in RushMoves(ShiftTestData.Data, 60))
+        foreach ((ShiftSetup setup, DefenceMoveSample s) in RushMoves(Two.Value, 60))
         {
             foreach (KeyValuePair<Position, GridPoint> before in s.Before.Where(e => Backcheck.IsBehindPuck(e.Value, s.Puck)))
             {
@@ -126,7 +129,7 @@ public class BackcheckTests
     [Fact]
     public void BackCheck_ChangesSomeRushMoves()
     {
-        Assert.Contains(RushMoves(ShiftTestData.Data, 60), m => !SystemOnly(m.Setup, m.Sample).SequenceEqual(m.Sample.After));
+        Assert.Contains(RushMoves(Two.Value, 60), m => !SystemOnly(m.Setup, m.Sample).SequenceEqual(m.Sample.After));
     }
 
     /// <summary>
@@ -149,7 +152,7 @@ public class BackcheckTests
             return MatchJson.Write(result, setup, seed);
         }
 
-        string two = Run(ShiftTestData.Data);
+        string two = Run(Two.Value);
         Assert.Equal(Run(Zero.Value), two);
         Assert.Equal(Run(DataWith(4)), two);
     }
@@ -159,8 +162,8 @@ public class BackcheckTests
     {
         string Run(GameData data) => MatchJson.Write(MatchCommand.Play(data, MatchCommand.Setup(data), "forecheck212", "trap122", 11UL), MatchCommand.Setup(data), 11UL);
 
-        string two = Run(ShiftTestData.Data);
-        Assert.Equal(two, Run(ShiftTestData.Data));
+        string two = Run(Two.Value);
+        Assert.Equal(two, Run(Two.Value));
         Assert.Equal(Run(Zero.Value), Run(Zero.Value));
         Assert.NotEqual(Run(Zero.Value), two);
     }

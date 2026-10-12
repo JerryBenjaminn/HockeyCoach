@@ -903,8 +903,9 @@ Ei satunnaisuutta, ei uutta tapahtumaa eikä uutta tapahtumakenttää.
 
 | Polku | Arvo | Hylätään, jos |
 | --- | --- | --- |
-| `transitions.backcheckNodesPerBeat` | 2 | ei kokonaisluku, < 0 tai > 2 × `plays.maxNodesPerBeat` |
+| `transitions.backcheckNodesPerBeat` | 0 (D-087; aiemmin 2) | ei kokonaisluku, < 0 tai > 2 × `plays.maxNodesPerBeat` |
 
+- **D-087:** arvo on 0, koska kohderivillä kiekon tasa (k = 2) voimasuhdejakauma oli 54,2 / 13,0 / 32,8 % (tavoite 50–75 / 20–40 / 0–15). Arvolla 0 batch 1000 antaa 66,5 / 33,5 / 0,0 %, `rulebased` vs `random` 78,3 % ja 6,46 maalia. Paluukarvaukseen palataan Q-071:n yhteydessä.
 - Arvo 0 poistaa säännön kokonaan: väärällä puolella oleva liikkuu järjestelmän mukaan kuten ennen, eikä seiso paikallaan. Näin muutoksen voi mitata samalla koodilla ilman sääntöä.
 - Arvo 2 on sama nopeus kuin kiekollisella. Paluukarvaaja on silloin yhtä nopea kuin kiekollinen, ja vain suunta muuttuu.
 - Arvo, joka on suurempi kuin `plays.maxNodesPerBeat`, tarkoittaa "kiekoton on nopeampi kuin kiekollinen". Se on oma päätöksensä, ja sen päättää Jerry (alla).

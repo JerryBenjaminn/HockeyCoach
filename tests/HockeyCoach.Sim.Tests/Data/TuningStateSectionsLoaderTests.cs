@@ -165,9 +165,9 @@ public class TuningStateSectionsLoaderTests
     }
 
     [Fact]
-    public void BackcheckNodesPerBeat_IsAPlaceholder_WithTheRepositoryValue()
+    public void BackcheckNodesPerBeat_IsAPlaceholder_OffInTheRepository()
     {
-        Assert.Equal(2, GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning.Transitions.BackcheckNodesPerBeat);
+        Assert.Equal(0, GameData.Load(Path.Combine(Fixtures.RepoRoot(), "data")).Tuning.Transitions.BackcheckNodesPerBeat);
         Assert.Contains(RepositoryTuning.Read()["_placeholders"]!.AsArray(), n => n!.GetValue<string>() == "transitions.backcheckNodesPerBeat");
     }
 
