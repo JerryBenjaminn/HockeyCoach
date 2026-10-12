@@ -24,6 +24,8 @@ public sealed class Seed42Match
         Json = MatchJson.Write(Result, Setup, Options.Seed);
         Match = ReplayJsonReader.Read(Json);
         Timeline = TimelineBuilder.Build(Match);
+        Config = ReplayConfigFile.Read();
+        Presentation = PresentationTimeline.Build(Timeline, Config);
     }
 
     public GameData Data { get; }
@@ -40,6 +42,12 @@ public sealed class Seed42Match
     public ReplayMatch Match { get; }
 
     public ReplayTimeline Timeline { get; }
+
+    /// <summary>The real <c>data/replay.json</c>.</summary>
+    public PresentationConfig Config { get; }
+
+    /// <summary>The presentation warp of <see cref="Timeline"/> with <see cref="Config"/> (D-088).</summary>
+    public PresentationTimeline Presentation { get; }
 
     public static string RepoRoot()
     {

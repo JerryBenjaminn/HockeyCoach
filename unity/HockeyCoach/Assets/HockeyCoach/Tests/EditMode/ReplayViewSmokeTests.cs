@@ -67,9 +67,11 @@ namespace HockeyCoach.Replay.Tests.EditMode
         [Test]
         public void Advance_InterpolatesDiscsBetweenPlacements()
         {
+            SegmentTiming pass = _bootstrap.Presentation.Segments[1];
             _bootstrap.Cursor.Play();
-            _bootstrap.Cursor.Advance(2.5);
+            _bootstrap.Cursor.Advance((pass.Start + pass.EventEnd) / 2);
             _bootstrap.Refresh();
+            Assert.AreEqual(1, _bootstrap.Cursor.SegmentIndex);
             RinkMapping m = _bootstrap.Timeline.Mapping;
             RinkPoint from = m.NodePosition(SyntheticReplayJson.FaceoffPlacement[2]);
             RinkPoint to = m.NodePosition(SyntheticReplayJson.PassPlacement[2]);

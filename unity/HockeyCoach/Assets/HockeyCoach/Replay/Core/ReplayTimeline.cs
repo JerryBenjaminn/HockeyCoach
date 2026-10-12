@@ -5,8 +5,8 @@ namespace HockeyCoach.Replay.Core
 {
     /// <summary>
     /// The whole match as an ordered list of <see cref="TimelineSegment"/>s on the match clock (seconds from the start
-    /// of the match: (period − 1) × periodSeconds + time). Built by <see cref="TimelineBuilder"/>; played by
-    /// <see cref="ReplayCursor"/>.
+    /// of the match: (period − 1) × periodSeconds + time). Built by <see cref="TimelineBuilder"/>; warped to presentation time by
+    /// <see cref="PresentationTimeline"/> and played by <see cref="ReplayCursor"/>.
     /// </summary>
     public sealed class ReplayTimeline
     {
@@ -60,17 +60,6 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>Final away score (from the events).</summary>
         public int AwayScore => Segments[Segments.Count - 1].AwayScore;
-
-        /// <summary>Wall-clock seconds to play the whole timeline at <paramref name="speed"/> × match clock.</summary>
-        public double WallSecondsAt(double speed)
-        {
-            if (!(speed > 0))
-            {
-                throw new ArgumentOutOfRangeException(nameof(speed), speed, "Speed must be positive.");
-            }
-
-            return Duration / speed;
-        }
 
         /// <summary>The roster entry of a player, or null when the id is not in the roster.</summary>
         public RosterEntry FindPlayer(int id)

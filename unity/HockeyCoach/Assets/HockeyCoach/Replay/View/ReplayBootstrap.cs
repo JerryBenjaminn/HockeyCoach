@@ -8,8 +8,11 @@ namespace HockeyCoach.Replay.View
 {
     /// <summary>
     /// Entry point of the 2D replay (D-087). Add it to an empty GameObject at the origin and set either
-    /// <see cref="matchJson"/> or <see cref="matchJsonPath"/> (a <c>match --json</c> export). On Start it reads the JSON
-    /// with the Core (<see cref="ReplayJsonReader"/>, <see cref="TimelineBuilder"/>, <see cref="ReplayCursor"/>) and
+    /// <see cref="matchJson"/> or <see cref="matchJsonPath"/> (a <c>match --json</c> export). The presentation values come
+    /// from <c>data/replay.json</c> (D-088 B: <see cref="replayConfig"/> or <see cref="replayConfigPath"/>); a missing or
+    /// invalid file is a load error, never a silent default. On Start it reads the JSON with the Core
+    /// (<see cref="ReplayJsonReader"/>, <see cref="TimelineBuilder"/>, <see cref="PresentationTimeline"/>,
+    /// <see cref="ReplayCursor"/>) and
     /// builds everything at runtime: camera, <see cref="RinkView"/>, one <see cref="PlayerDiscView"/> per roster player,
     /// <see cref="PuckView"/>, <see cref="HudView"/> and <see cref="ReplayInput"/>. All playback state lives in the
     /// cursor; this class only advances it by the frame time and draws its sample.
@@ -24,11 +27,19 @@ namespace HockeyCoach.Replay.View
         [SerializeField]
         private string matchJsonPath = string.Empty;
 
+        [Tooltip("data/replay.json (D-088) as a TextAsset. Used when set; otherwise replayConfigPath is read.")]
+        [SerializeField]
+        private TextAsset replayConfig;
+
+        [Tooltip("Path of data/replay.json (absolute, or relative to the Unity project folder).")]
+        [SerializeField]
+        private string replayConfigPath = "../../data/replay.json";
+
         [Tooltip("Start playing as soon as the match is loaded.")]
         [SerializeField]
         private bool playOnStart = true;
 
-        [Tooltip("Selectable speeds (match seconds per real second), strictly ascending.")]
+        [Tooltip("Selectable speeds (multipliers of the presentation time), strictly ascending.")]
         [SerializeField]
         private float[] speeds = { 1, 2, 4, 8, 16 };
 
@@ -52,6 +63,9 @@ namespace HockeyCoach.Replay.View
 
         /// <summary>The loaded timeline, null before <see cref="Load"/>.</summary>
         public ReplayTimeline Timeline { get; private set; }
+
+        /// <summary>The presentation time warp, null before <see cref="Load"/>.</summary>
+        public PresentationTimeline Presentation { get; private set; }
 
         /// <summary>The playback cursor, null before <see cref="Load"/>.</summary>
         public ReplayCursor Cursor { get; private set; }
@@ -81,19 +95,35 @@ namespace HockeyCoach.Replay.View
         public string LoadError { get; private set; }
 
         /// <summary>
-        /// Reads <paramref name="json"/>, replaces any loaded replay and builds the view at the start of the match,
-        /// paused, at the configured initial speed.
+        /// Reads <paramref name="json"/> with the presentation config from <see cref="replayConfig"/> or
+        /// <see cref="replayConfigPath"/>; see <see cref="Load(string, string)"/>.
         /// </summary>
         /// <exception cref="ReplayFormatException">The JSON is not a replayable match export.</exception>
+        /// <exception cref="PresentationConfigException">replay.json is missing or invalid.</exception>
         public void Load(string json)
         {
+            ReplayJsonReader.Read(json);
+            Load(json, ReadPresentationConfig());
+        }
+
+        /// <summary>
+        /// Reads <paramref name="json"/> and the <c>replay.json</c> text <paramref name="presentationJson"/>, replaces any
+        /// loaded replay and builds the view at the start of the match, paused, at the configured initial speed.
+        /// </summary>
+        /// <exception cref="ReplayFormatException">The JSON is not a replayable match export.</exception>
+        /// <exception cref="PresentationConfigException">The presentation config is invalid.</exception>
+        public void Load(string json, string presentationJson)
+        {
             ReplayMatch match = ReplayJsonReader.Read(json);
+            PresentationConfig config = PresentationConfigReader.Read(presentationJson);
             ReplayTimeline timeline = TimelineBuilder.Build(match);
+            PresentationTimeline presentation = PresentationTimeline.Build(timeline, config);
             var ladder = new SpeedLadder(ToDoubles(speeds), initialSpeedIndex);
 
             Unload();
             Timeline = timeline;
-            Cursor = new ReplayCursor(timeline);
+            Presentation = presentation;
+            Cursor = new ReplayCursor(presentation);
             _graphics = new ReplayGraphics();
             _root = new GameObject("Replay");
             _root.transform.SetParent(transform, false);
@@ -143,6 +173,7 @@ namespace HockeyCoach.Replay.View
             Hud = null;
             Controls = null;
             Timeline = null;
+            Presentation = null;
             Cursor = null;
         }
 
@@ -262,11 +293,37 @@ namespace HockeyCoach.Replay.View
 
                 Load(json);
             }
-            catch (Exception e) when (e is ReplayFormatException || e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
+            catch (Exception e) when (e is ReplayFormatException || e is PresentationConfigException || e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
             {
                 LoadError = e.Message;
                 Debug.LogError("Replay: " + e.Message, this);
             }
+        }
+
+        private string ReadPresentationConfig()
+        {
+            if (replayConfig != null)
+            {
+                return replayConfig.text;
+            }
+
+            if (string.IsNullOrWhiteSpace(replayConfigPath))
+            {
+                throw new PresentationConfigException("Set 'Replay Config' (TextAsset) or 'Replay Config Path' (data/replay.json) on ReplayBootstrap.");
+            }
+
+            string path = replayConfigPath.Trim().Trim('"');
+            if (!Path.IsPathRooted(path))
+            {
+                path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Application.dataPath), path));
+            }
+
+            if (!File.Exists(path))
+            {
+                throw new PresentationConfigException("replay.json not found at " + path + " (D-088 B). Set 'Replay Config' or 'Replay Config Path' on ReplayBootstrap.");
+            }
+
+            return File.ReadAllText(path);
         }
 
         private void SetUpCamera()

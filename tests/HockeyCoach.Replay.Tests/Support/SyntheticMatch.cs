@@ -91,6 +91,9 @@ public sealed class SyntheticMatch
 
     public Core.ReplayTimeline Build() => Core.TimelineBuilder.Build(Core.ReplayJsonReader.Read(Json));
 
+    /// <summary>The presentation warp with the real <c>data/replay.json</c>.</summary>
+    public Core.PresentationTimeline Present() => Core.PresentationTimeline.Build(Build(), ReplayConfigFile.Read());
+
     private static JObject Player(int id, string team, string position) => new()
     {
         ["id"] = id,

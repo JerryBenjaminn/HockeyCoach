@@ -34,6 +34,7 @@ namespace HockeyCoach.Replay.Core
         public ReplaySample(
             int segmentIndex,
             double fraction,
+            double time,
             double clock,
             int period,
             double periodTime,
@@ -45,6 +46,7 @@ namespace HockeyCoach.Replay.Core
         {
             SegmentIndex = segmentIndex;
             Fraction = fraction;
+            Time = time;
             Clock = clock;
             Period = period;
             PeriodTime = periodTime;
@@ -58,10 +60,16 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Index of the current segment (event).</summary>
         public int SegmentIndex { get; }
 
-        /// <summary>Progress through the current segment, 0–1 (1 for zero-length segments).</summary>
+        /// <summary>
+        /// Progress of the current segment's motion, 0–1, from its start to the end of its action window on the
+        /// presentation time axis (1 during holds and for empty segments).
+        /// </summary>
         public double Fraction { get; }
 
-        /// <summary>Match clock in seconds from the start of the match.</summary>
+        /// <summary>Presentation time (seconds on screen at 1×).</summary>
+        public double Time { get; }
+
+        /// <summary>True match clock in seconds from the start of the match (what the HUD shows).</summary>
         public double Clock { get; }
 
         /// <summary>Period shown on the clock.</summary>

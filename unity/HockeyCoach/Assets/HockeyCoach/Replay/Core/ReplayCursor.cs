@@ -3,31 +3,36 @@ using System;
 namespace HockeyCoach.Replay.Core
 {
     /// <summary>
-    /// Deterministic playback controller over a <see cref="ReplayTimeline"/>. Its position is a match clock and the
-    /// index of the current segment (needed because several events can share one second). While playing,
-    /// <see cref="Advance"/> moves the clock by real seconds × <see cref="Speed"/>; nothing reads the wall clock or a
-    /// random source, so the same calls always give the same states. When the clock reaches the end of a segment the
-    /// cursor moves on through any zero-length segments at that second, so the sample shows the state after all events
-    /// up to the clock.
+    /// Deterministic playback controller over a <see cref="PresentationTimeline"/> (D-088 A). Its position is a
+    /// presentation time (seconds on screen at 1×) and the index of the current segment (needed because several events
+    /// can share one instant). While playing, <see cref="Advance"/> moves the presentation time by real seconds ×
+    /// <see cref="Speed"/>; the match <see cref="Clock"/> is derived from it through the warp, shows the true match time
+    /// and never runs backwards. Nothing reads the wall clock or a random source, so the same calls always give the same
+    /// states, and seeking to a time gives the same sample as playing to it.
     /// </summary>
     public sealed class ReplayCursor
     {
         private double _speed = 1;
 
-        /// <summary>Creates a paused cursor at the start of the timeline, speed 1×.</summary>
-        public ReplayCursor(ReplayTimeline timeline)
+        /// <summary>Creates a paused cursor at the start of the match, speed 1×.</summary>
+        public ReplayCursor(PresentationTimeline presentation)
         {
-            Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
-            Clock = timeline.StartClock;
-            SegmentIndex = 0;
-            Normalize();
+            Presentation = presentation ?? throw new ArgumentNullException(nameof(presentation));
+            Time = 0;
+            SegmentIndex = presentation.Normalize(0, 0);
         }
 
-        /// <summary>The timeline played.</summary>
-        public ReplayTimeline Timeline { get; }
+        /// <summary>The presentation warp played.</summary>
+        public PresentationTimeline Presentation { get; }
 
-        /// <summary>Match clock of the cursor.</summary>
-        public double Clock { get; private set; }
+        /// <summary>The timeline on the match clock.</summary>
+        public ReplayTimeline Timeline => Presentation.Timeline;
+
+        /// <summary>Presentation time of the cursor (seconds on screen at 1×).</summary>
+        public double Time { get; private set; }
+
+        /// <summary>Match clock (seconds from the start of the match) at the cursor.</summary>
+        public double Clock => Presentation.ClockAt(SegmentIndex, Time);
 
         /// <summary>Index of the current segment.</summary>
         public int SegmentIndex { get; private set; }
@@ -35,13 +40,16 @@ namespace HockeyCoach.Replay.Core
         /// <summary>The current segment.</summary>
         public TimelineSegment Segment => Timeline.Segments[SegmentIndex];
 
+        /// <summary>Timing of the current segment.</summary>
+        public SegmentTiming Timing => Presentation.Segments[SegmentIndex];
+
         /// <summary>True while playing.</summary>
         public bool IsPlaying { get; private set; }
 
         /// <summary>True when the cursor is at the end of the last segment.</summary>
-        public bool IsAtEnd => SegmentIndex == Timeline.Segments.Count - 1 && Clock >= Timeline.EndClock;
+        public bool IsAtEnd => SegmentIndex == Timeline.Segments.Count - 1 && Time >= Presentation.Duration;
 
-        /// <summary>Match seconds per real second (1×, 2×, 4×, 8×, ...); must be positive.</summary>
+        /// <summary>Speed multiplier of the presentation time (1×, 2×, 4×, 8×, ...); must be positive.</summary>
         public double Speed
         {
             get => _speed;
@@ -57,7 +65,7 @@ namespace HockeyCoach.Replay.Core
         }
 
         /// <summary>Wall-clock seconds left to the end at the current <see cref="Speed"/>.</summary>
-        public double RemainingWallSeconds => (Timeline.EndClock - Clock) / _speed;
+        public double RemainingWallSeconds => (Presentation.Duration - Time) / _speed;
 
         /// <summary>Starts playing (no effect at the end).</summary>
         public void Play()
@@ -85,8 +93,8 @@ namespace HockeyCoach.Replay.Core
         }
 
         /// <summary>
-        /// Moves the clock by <paramref name="realSeconds"/> × <see cref="Speed"/> while playing (no effect when paused).
-        /// Stops at the end of the timeline and pauses there.
+        /// Moves the presentation time by <paramref name="realSeconds"/> × <see cref="Speed"/> while playing (no effect
+        /// when paused). Stops at the end of the match and pauses there.
         /// </summary>
         public void Advance(double realSeconds)
         {
@@ -100,27 +108,30 @@ namespace HockeyCoach.Replay.Core
                 return;
             }
 
-            Clock = Math.Min(Clock + (realSeconds * _speed), Timeline.EndClock);
-            Normalize();
+            Time = Math.Min(Time + (realSeconds * _speed), Presentation.Duration);
+            SegmentIndex = Presentation.Normalize(SegmentIndex, Time);
             if (IsAtEnd)
             {
                 IsPlaying = false;
             }
         }
 
-        /// <summary>Jumps to the end of the next segment (the state after the next event). Play state is kept.</summary>
+        /// <summary>Jumps to the end of the next event's action window (the state after the next event). Play state is kept.</summary>
         public void StepNext()
         {
             SeekEvent(Math.Min(SegmentIndex + 1, Timeline.Segments.Count - 1));
         }
 
-        /// <summary>Jumps to the end of the previous segment (the state after the previous event). Play state is kept.</summary>
+        /// <summary>Jumps to the end of the previous event's action window. Play state is kept.</summary>
         public void StepPrevious()
         {
             SeekEvent(Math.Max(SegmentIndex - 1, 0));
         }
 
-        /// <summary>Jumps to the end of segment <paramref name="index"/> (the state right after that event). Play state is kept.</summary>
+        /// <summary>
+        /// Jumps to the end of the action window of segment <paramref name="index"/>, where the clock shows that event's
+        /// clock and the state is right after it. Play state is kept.
+        /// </summary>
         public void SeekEvent(int index)
         {
             if (index < 0 || index >= Timeline.Segments.Count)
@@ -129,14 +140,14 @@ namespace HockeyCoach.Replay.Core
             }
 
             SegmentIndex = index;
-            Clock = Timeline.Segments[index].EndClock;
-            if (IsAtEnd)
-            {
-                IsPlaying = false;
-            }
+            Time = Presentation.Segments[index].EventEnd;
+            StopAtEnd();
         }
 
-        /// <summary>Jumps to match clock <paramref name="clock"/> (clamped to the timeline). Play state is kept.</summary>
+        /// <summary>
+        /// Jumps to the earliest presentation time that shows the state after every event up to match clock
+        /// <paramref name="clock"/> (clamped to the match). Play state is kept.
+        /// </summary>
         public void SeekClock(double clock)
         {
             if (double.IsNaN(clock))
@@ -144,21 +155,31 @@ namespace HockeyCoach.Replay.Core
                 throw new ArgumentOutOfRangeException(nameof(clock), clock, "Clock must be a number.");
             }
 
-            Clock = Math.Max(Timeline.StartClock, Math.Min(clock, Timeline.EndClock));
-            SegmentIndex = 0;
-            Normalize();
-            if (IsAtEnd)
-            {
-                IsPlaying = false;
-            }
+            int index;
+            Time = Presentation.TimeAtClock(clock, out index);
+            SegmentIndex = index;
+            StopAtEnd();
         }
 
-        /// <summary>The interpolated state at the cursor.</summary>
+        /// <summary>Jumps to presentation time <paramref name="time"/> (clamped to the match). Play state is kept.</summary>
+        public void SeekTime(double time)
+        {
+            if (double.IsNaN(time))
+            {
+                throw new ArgumentOutOfRangeException(nameof(time), time, "Time must be a number.");
+            }
+
+            Time = Math.Max(0, Math.Min(time, Presentation.Duration));
+            SegmentIndex = Presentation.SegmentIndexAt(Time);
+            StopAtEnd();
+        }
+
+        /// <summary>The state at the cursor.</summary>
         public ReplaySample Sample()
         {
             TimelineSegment segment = Segment;
-            double fraction = segment.Duration > 0 ? (Clock - segment.StartClock) / segment.Duration : 1;
-            fraction = Math.Max(0, Math.Min(1, fraction));
+            SegmentTiming timing = Timing;
+            double fraction = timing.MotionFraction(Time);
             var players = new PlayerSample[segment.Players.Count];
             for (int i = 0; i < players.Length; i++)
             {
@@ -168,11 +189,13 @@ namespace HockeyCoach.Replay.Core
 
             bool done = fraction >= 1;
             int? carrier = done || !segment.Puck.Moves ? segment.Puck.CarrierId : null;
-            double periodTime = Math.Max(0, Clock - ((double)(segment.Period - 1) * Timeline.PeriodSeconds));
+            double clock = Clock;
+            double periodTime = Math.Max(0, clock - ((double)(segment.Period - 1) * Timeline.PeriodSeconds));
             return new ReplaySample(
                 SegmentIndex,
                 fraction,
-                Clock,
+                Time,
+                clock,
                 segment.Period,
                 periodTime,
                 done ? segment.HomeScore : segment.HomeScoreBefore,
@@ -182,14 +205,11 @@ namespace HockeyCoach.Replay.Core
                 carrier);
         }
 
-        private void Normalize()
+        private void StopAtEnd()
         {
-            var segments = Timeline.Segments;
-            while (SegmentIndex < segments.Count - 1
-                && (Clock > segments[SegmentIndex].EndClock
-                    || (Clock >= segments[SegmentIndex].EndClock && segments[SegmentIndex + 1].Duration <= 0)))
+            if (IsAtEnd)
             {
-                SegmentIndex++;
+                IsPlaying = false;
             }
         }
     }

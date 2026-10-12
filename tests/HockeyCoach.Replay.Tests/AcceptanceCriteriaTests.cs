@@ -5,7 +5,10 @@ using HockeyCoach.Sim.State;
 
 namespace HockeyCoach.Replay.Tests;
 
-/// <summary>The acceptance criteria 1–9 of the Unity replay, stage 1 (D-087, <c>docs/handoff.md</c>), on the seed 42 match.</summary>
+/// <summary>
+/// The acceptance criteria 1–9 of the Unity replay, stage 1 (D-087, <c>docs/handoff.md</c>), on the seed 42 match. Since
+/// D-088 the cursor plays presentation time (<see cref="PresentationTimeline"/>) and the clock shows the true match time.
+/// </summary>
 [Collection(Seed42Collection.Name)]
 public sealed class AcceptanceCriteriaTests
 {
@@ -18,6 +21,8 @@ public sealed class AcceptanceCriteriaTests
     }
 
     private ReplayTimeline Timeline => _m.Timeline;
+
+    private PresentationTimeline Presentation => _m.Presentation;
 
     private IReadOnlyList<TimelineSegment> Segments => _m.Timeline.Segments;
 
@@ -59,7 +64,7 @@ public sealed class AcceptanceCriteriaTests
     [Fact]
     public void Criterion1_EverySampleOfTheWholeMatchShows12Players()
     {
-        var cursor = new ReplayCursor(Timeline) { Speed = 8 };
+        var cursor = new ReplayCursor(Presentation) { Speed = 8 };
         cursor.Play();
         int samples = 0;
         while (cursor.IsPlaying)
@@ -99,7 +104,7 @@ public sealed class AcceptanceCriteriaTests
     [Fact]
     public void Criterion2_CursorShowsTheScoreChange_AtTheGoalTime()
     {
-        var cursor = new ReplayCursor(Timeline);
+        var cursor = new ReplayCursor(Presentation);
         int home = 0;
         int away = 0;
         foreach (TimelineGoal goal in Timeline.Goals)
@@ -260,13 +265,14 @@ public sealed class AcceptanceCriteriaTests
     [Fact]
     public void Criterion7_ClockNeverGoesBackwards_WhilePlaying()
     {
-        var cursor = new ReplayCursor(Timeline) { Speed = 4 };
+        var cursor = new ReplayCursor(Presentation) { Speed = 4 };
         cursor.Play();
         ReplaySample last = cursor.Sample();
         while (cursor.IsPlaying)
         {
             cursor.Advance(1.0 / 30);
             ReplaySample now = cursor.Sample();
+            Assert.True(now.Time >= last.Time);
             Assert.True(now.Clock >= last.Clock);
             Assert.True(now.SegmentIndex >= last.SegmentIndex);
             Assert.True(now.Period > last.Period || (now.Period == last.Period && now.PeriodTime >= last.PeriodTime));
@@ -281,8 +287,8 @@ public sealed class AcceptanceCriteriaTests
     [Fact]
     public void Criterion8_SameCalls_GiveIdenticalSamples()
     {
-        ReplayTimeline second = TimelineBuilder.Build(ReplayJsonReader.Read(_m.Json));
-        var a = new ReplayCursor(Timeline);
+        PresentationTimeline second = PresentationTimeline.Build(TimelineBuilder.Build(ReplayJsonReader.Read(_m.Json)), ReplayConfigFile.Read());
+        var a = new ReplayCursor(Presentation);
         var b = new ReplayCursor(second);
         var script = new Action<ReplayCursor>[]
         {
@@ -302,6 +308,7 @@ public sealed class AcceptanceCriteriaTests
             c => c.TogglePlay(),
             c => c.Advance(3.3),
             c => c.SeekClock(1999.25),
+            c => c.SeekTime(812.3),
             c => c.Advance(0.75),
             c => c.SeekEvent(Segments.Count - 2),
             c => c.Speed = 64,
@@ -324,16 +331,16 @@ public sealed class AcceptanceCriteriaTests
     }
 
     [Fact]
-    public void Criterion9_WholeMatchAt8x_TakesTheMatchClockOverEight()
+    public void Criterion9_WholeMatchAt8x_TakesTheShiftTargetTimesTheMatchOverEight()
     {
         const double speed = 8;
         const double frame = 1.0 / 60;
         double matchSeconds = _m.Match.PeriodCount * _m.Match.PeriodSeconds;
         Assert.Equal(matchSeconds, Timeline.EndClock);
-        Assert.Equal(matchSeconds / speed, Timeline.WallSecondsAt(speed), 9);
+        Assert.Equal(Presentation.Duration / speed, Presentation.WallSecondsAt(speed), 9);
 
-        var cursor = new ReplayCursor(Timeline) { Speed = speed };
-        Assert.Equal(matchSeconds / speed, cursor.RemainingWallSeconds, 9);
+        var cursor = new ReplayCursor(Presentation) { Speed = speed };
+        Assert.Equal(Presentation.Duration / speed, cursor.RemainingWallSeconds, 9);
         cursor.Play();
         int frames = 0;
         while (cursor.IsPlaying)
@@ -344,10 +351,12 @@ public sealed class AcceptanceCriteriaTests
 
         double wall = frames * frame;
         Assert.True(cursor.IsAtEnd);
-        Assert.InRange(wall, matchSeconds / speed, (matchSeconds / speed) + frame);
+        Assert.Equal(Timeline.EndClock, cursor.Clock);
+        Assert.InRange(wall, Presentation.Duration / speed, (Presentation.Duration / speed) + frame);
 
-        // 3 × 20 min at 8× = 450 s = 7.5 min of wall time (reported to the coordinator, see Q-078).
-        Assert.Equal(450, Timeline.WallSecondsAt(speed), 9);
+        // D-088 A, Q-078: a 45 s shift lasts 15–20 s at 1×, so the whole match at 8× lasts
+        // matchSeconds / 45 × (15–20 s) / 8 = 2.5–3.3 min (data-schema.md, Mitoitus: 2.6 min on seed 42).
+        Assert.InRange(wall, matchSeconds / 45 * PresentationTimelineTests.ShiftTargetMin / speed, matchSeconds / 45 * PresentationTimelineTests.ShiftTargetMax / speed);
     }
 
     private static void AssertSame(ReplaySample a, ReplaySample b)

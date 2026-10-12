@@ -57,7 +57,7 @@ namespace HockeyCoach.Replay.View
         /// <summary>Back to the start of the match; the play state is kept.</summary>
         public void Restart()
         {
-            Do(c => c.SeekClock(c.Timeline.StartClock));
+            Do(c => c.SeekTime(0));
         }
 
         private void Update()

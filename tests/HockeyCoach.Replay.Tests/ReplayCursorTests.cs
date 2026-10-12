@@ -4,30 +4,31 @@ using Newtonsoft.Json.Linq;
 
 namespace HockeyCoach.Replay.Tests;
 
+/// <summary>The playback cursor on presentation time (D-088 A).</summary>
 public sealed class ReplayCursorTests
 {
     /// <summary>
-    /// 0: faceoff at 0 s (zero length); 1: pass 1 → 2, 0–4 s; 2: turnover at 4 s (zero length); 3: away goal, 4–10 s;
-    /// 4: stoppage at 10 s (zero length); 5: faceoff at 12 s.
+    /// 0: faceoff at 0 s; 1: pass 1 → 2, 0–4 s; 2: turnover at 4 s; 3: away goal, 4–10 s; 4: stoppage at 10 s;
+    /// 5: faceoff at 12 s.
     /// </summary>
-    private static ReplayTimeline Timeline() => new SyntheticMatch()
+    private static PresentationTimeline Timeline() => new SyntheticMatch()
         .Add("Faceoff", 1, 0, 27, 1, SyntheticMatch.OnIce(27, 16, 27, 38), new JObject { ["homeCentreId"] = 1, ["awayCentreId"] = 101, ["winner"] = "Home", ["location"] = "NeutralZone" })
         .Add("Pass", 1, 4, 37, 2, SyntheticMatch.OnIce(31, 37, 27, 38), new JObject { ["passerId"] = 1, ["receiverId"] = 2, ["underPressure"] = false, ["succeeded"] = true })
         .Add("Turnover", 1, 4, 37, 102, SyntheticMatch.OnIce(31, 37, 27, 37), new JObject { ["loserId"] = 2, ["takerId"] = 102, ["nodeId"] = 37 })
         .Add("Shot", 1, 10, 12, 101, SyntheticMatch.OnIce(31, 37, 12, 37), new JObject { ["shooterId"] = 101, ["stoppedById"] = null, ["outcome"] = "Goal" })
         .Add("Stoppage", 1, 10, 12, 101, SyntheticMatch.OnIce(31, 37, 12, 37), new JObject { ["reason"] = "Goal" })
         .Add("Faceoff", 1, 12, 27, 1, SyntheticMatch.OnIce(27, 16, 27, 38), new JObject { ["homeCentreId"] = 1, ["awayCentreId"] = 101, ["winner"] = "Home", ["location"] = "NeutralZone" })
-        .Build();
+        .Present();
 
     [Fact]
     public void NewCursor_IsPausedAtTheStart_At1x()
     {
         var c = new ReplayCursor(Timeline());
         Assert.False(c.IsPlaying);
+        Assert.Equal(0, c.Time);
         Assert.Equal(0, c.Clock);
         Assert.Equal(0, c.SegmentIndex);
         Assert.Equal(1, c.Speed);
-        Assert.Equal(1, c.Sample().Fraction);
     }
 
     [Fact]
@@ -35,77 +36,80 @@ public sealed class ReplayCursorTests
     {
         var c = new ReplayCursor(Timeline());
         c.Advance(3);
-        Assert.Equal(0, c.Clock);
+        Assert.Equal(0, c.Time);
     }
 
     [Fact]
-    public void Advance_MovesTheClockBySpeedTimesRealSeconds_AndInterpolates()
+    public void Advance_MovesThePresentationTimeBySpeedTimesRealSeconds()
     {
-        ReplayTimeline t = Timeline();
-        var c = new ReplayCursor(t) { Speed = 2 };
+        PresentationTimeline p = Timeline();
+        var c = new ReplayCursor(p) { Speed = 2 };
         c.Play();
-        c.Advance(1);
+        c.Advance(0.75);
+        Assert.Equal(1.5, c.Time);
+        Assert.Equal(p.ClockAt(1.5), c.Clock);
+        Assert.Equal(1.5, c.Sample().Time);
+    }
+
+    [Fact]
+    public void Sample_InterpolatesOverTheSegmentsMotion_AndTheClockFollowsTheWarp()
+    {
+        PresentationTimeline p = Timeline();
+        SegmentTiming pass = p.Segments[1];
+        var c = new ReplayCursor(p);
+        c.SeekTime((pass.Start + pass.EventEnd) / 2);
         ReplaySample s = c.Sample();
-        Assert.Equal(2, s.Clock);
         Assert.Equal(1, s.SegmentIndex);
-        Assert.Equal(0.5, s.Fraction);
-        RinkPoint passer = s.Players.Single(p => p.Id == 1).Position;
-        Assert.Equal(RinkPoint.Lerp(t.Mapping.NodePosition(27), t.Mapping.NodePosition(31), 0.5), passer);
-        Assert.Equal(RinkPoint.Lerp(t.Mapping.NodePosition(27), t.Mapping.NodePosition(37), 0.5), s.Puck);
+        Assert.Equal(0.5, s.Fraction, 12);
+        RinkMapping m = p.Timeline.Mapping;
+        Assert.Equal(RinkPoint.Lerp(m.NodePosition(27), m.NodePosition(31), s.Fraction), s.Players.Single(x => x.Id == 1).Position);
         Assert.Null(s.PuckCarrierId);
+        Assert.InRange(s.Clock, 0, 4);
+        Assert.Equal(pass.ClockAt(c.Time), s.Clock);
     }
 
     [Fact]
-    public void ReachingAnEventTime_PassesThroughZeroLengthSegmentsAtThatSecond()
+    public void ReachingTheEndOfAWindow_ShowsTheEventsClockAndState()
     {
-        var c = new ReplayCursor(Timeline());
+        PresentationTimeline p = Timeline();
+        var c = new ReplayCursor(p);
         c.Play();
-        c.Advance(4);
+        c.Advance(p.Segments[2].EventEnd);
         ReplaySample s = c.Sample();
         Assert.Equal(2, s.SegmentIndex);
+        Assert.Equal(4, s.Clock);
         Assert.Equal(102, s.PuckCarrierId);
     }
 
     [Fact]
-    public void Score_ChangesWhenTheGoalSegmentCompletes()
+    public void Score_ChangesWhenTheGoalWindowEnds()
     {
-        ReplayTimeline t = Timeline();
-        var c = new ReplayCursor(t);
+        PresentationTimeline p = Timeline();
+        var c = new ReplayCursor(p);
         c.SeekClock(7);
         ReplaySample mid = c.Sample();
         Assert.Equal(3, mid.SegmentIndex);
+        Assert.Equal(7, mid.Clock, 9);
         Assert.Equal((0, 0), (mid.HomeScore, mid.AwayScore));
         c.SeekClock(10);
         ReplaySample after = c.Sample();
         Assert.Equal(4, after.SegmentIndex);
         Assert.Equal((0, 1), (after.HomeScore, after.AwayScore));
-        Assert.Equal(t.Mapping.NodePosition(12), after.Puck);
+        Assert.Equal(p.Timeline.Mapping.NodePosition(12), after.Puck);
     }
 
     [Fact]
-    public void GoalPuck_ReachesTheNetBeforeTheEnd()
+    public void StepNext_AndStepPrevious_LandAtTheEndOfEachEventsWindow()
     {
-        ReplayTimeline t = Timeline();
-        TimelineSegment goal = t.Segments[3];
-        double toNet = RinkPoint.Distance(goal.Puck.Start, t.Mapping.HomeNet) / goal.Puck.Length;
-        var c = new ReplayCursor(t);
-        c.SeekClock(goal.StartClock + (toNet * goal.Duration));
-        ReplaySample s = c.Sample();
-        Assert.Equal(t.Mapping.HomeNet.X, s.Puck.X, 9);
-        Assert.Equal(t.Mapping.HomeNet.Y, s.Puck.Y, 9);
-    }
-
-    [Fact]
-    public void StepNext_AndStepPrevious_LandAtTheEndOfEachEvent()
-    {
-        ReplayTimeline t = Timeline();
-        var c = new ReplayCursor(t);
+        PresentationTimeline p = Timeline();
+        var c = new ReplayCursor(p);
         c.StepNext();
-        Assert.Equal((1, 4.0), (c.SegmentIndex, c.Clock));
+        Assert.Equal((1, 4.0, p.Segments[1].EventEnd), (c.SegmentIndex, c.Clock, c.Time));
         c.StepNext();
         Assert.Equal((2, 4.0), (c.SegmentIndex, c.Clock));
         c.StepNext();
         Assert.Equal((3, 10.0), (c.SegmentIndex, c.Clock));
+        Assert.True(c.Time < p.Segments[3].End, "the goal hold follows the end of the window");
         c.StepPrevious();
         Assert.Equal((2, 4.0), (c.SegmentIndex, c.Clock));
         Assert.Equal(1, c.Sample().Fraction);
@@ -127,15 +131,22 @@ public sealed class ReplayCursorTests
     }
 
     [Fact]
-    public void SeekClock_ClampsToTheTimeline()
+    public void SeekClockAndSeekTime_ClampToTheMatch()
     {
-        var c = new ReplayCursor(Timeline());
+        PresentationTimeline p = Timeline();
+        var c = new ReplayCursor(p);
         c.SeekClock(100);
         Assert.Equal(12, c.Clock);
         Assert.True(c.IsAtEnd);
         c.SeekClock(-5);
         Assert.Equal(0, c.Clock);
         Assert.Equal(0, c.SegmentIndex);
+        c.SeekTime(1e9);
+        Assert.Equal(p.Duration, c.Time);
+        Assert.True(c.IsAtEnd);
+        c.SeekTime(-1);
+        Assert.Equal(0, c.Time);
+        Assert.Throws<ArgumentOutOfRangeException>(() => c.SeekTime(double.NaN));
     }
 
     [Fact]
@@ -161,20 +172,36 @@ public sealed class ReplayCursorTests
         c.Advance(1);
         c.Pause();
         c.Advance(1);
-        Assert.Equal(1, c.Clock);
+        Assert.Equal(1, c.Time);
         c.TogglePlay();
         c.Advance(1);
-        Assert.Equal(2, c.Clock);
+        Assert.Equal(2, c.Time);
     }
 
     [Fact]
-    public void WallSeconds_IsDurationOverSpeed()
+    public void WallSeconds_IsThePresentationDurationOverSpeed()
     {
-        ReplayTimeline t = Timeline();
-        Assert.Equal(12, t.WallSecondsAt(1));
-        Assert.Equal(1.5, t.WallSecondsAt(8));
-        var c = new ReplayCursor(t) { Speed = 4 };
-        Assert.Equal(3, c.RemainingWallSeconds);
+        PresentationTimeline p = Timeline();
+        Assert.Equal(p.Duration / 8, p.WallSecondsAt(8));
+        var c = new ReplayCursor(p) { Speed = 4 };
+        Assert.Equal(p.Duration / 4, c.RemainingWallSeconds);
+        Assert.Throws<ArgumentOutOfRangeException>(() => p.WallSecondsAt(0));
+    }
+
+    [Fact]
+    public void Clock_NeverGoesBackwards_AndShowsTheTrueMatchTime()
+    {
+        var c = new ReplayCursor(Timeline());
+        c.Play();
+        double last = 0;
+        while (c.IsPlaying)
+        {
+            c.Advance(1.0 / 60);
+            Assert.True(c.Clock >= last);
+            last = c.Clock;
+        }
+
+        Assert.Equal(12, last);
     }
 
     [Theory]
