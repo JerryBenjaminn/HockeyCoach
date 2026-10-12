@@ -241,6 +241,17 @@ namespace HockeyCoach.Replay.Core
                 phases.Clear();
                 if (closing)
                 {
+                    bool changes;
+                    double outgoing = ChangeDisplacement(segs[stoppageIndex], s, timeline.Mapping, config.Bench, out changes);
+                    if (changes)
+                    {
+                        now = Add(phases, PresentationPhaseKind.StoppageChange, i, now, PresentationTiming.ChangeSeconds(outgoing, config.Timing), clockStart, clockStart);
+                    }
+                }
+
+                double approachStart = now;
+                if (closing)
+                {
                     double approach = PresentationTiming.ApproachSeconds(ApproachDisplacement(segs[stoppageIndex], s, timeline.Mapping, config.Bench), config.Timing);
                     now = Add(phases, PresentationPhaseKind.FaceoffApproach, i, now, approach, clockStart, clockStart);
                 }
@@ -276,7 +287,7 @@ namespace HockeyCoach.Replay.Core
                     now = Add(phases, PresentationPhaseKind.TimeoutHold, i, now, config.Timing.TimeoutHoldSeconds, s.EndClock, s.EndClock);
                 }
 
-                result[i] = new SegmentTiming(i, start, gapStart, windowStart, eventEnd, now, clockStart, s.EndClock, split, d, puckFloor, skaterFloor, flags, phases);
+                result[i] = new SegmentTiming(i, start, approachStart, gapStart, windowStart, eventEnd, now, clockStart, s.EndClock, split, d, puckFloor, skaterFloor, flags, phases);
             }
 
             return new PresentationTimeline(timeline, config, result);
@@ -389,49 +400,82 @@ namespace HockeyCoach.Replay.Core
         }
 
         /// <summary>
-        /// Largest skater displacement of the faceoff approach: players on the ice at the stoppage and at the faceoff skate
-        /// from their stoppage nodes to their faceoff nodes, incoming players from their bench gate, outgoing players to
-        /// it. Goalies do not count.
+        /// Largest skater displacement of the faceoff approach (D-089 A1: after the changes): players on the ice at the
+        /// stoppage and at the faceoff skate from their stoppage nodes to their faceoff nodes, incoming players from their
+        /// bench's entry point. Outgoing players have left in the change phase. Goalies do not count.
         /// </summary>
         internal static double ApproachDisplacement(TimelineSegment stoppage, TimelineSegment faceoff, RinkMapping mapping, BenchSettings bench)
         {
-            var before = new SortedDictionary<int, SegmentPlayer>();
-            foreach (SegmentPlayer p in stoppage.Players)
-            {
-                if (!p.IsGoalie)
-                {
-                    before[p.Id] = p;
-                }
-            }
-
+            SortedDictionary<int, SegmentPlayer> before = FieldPlayers(stoppage);
             double max = 0;
-            var seen = new HashSet<int>();
-            foreach (SegmentPlayer p in faceoff.Players)
+            foreach (SegmentPlayer p in FieldPlayers(faceoff).Values)
             {
-                if (p.IsGoalie)
-                {
-                    continue;
-                }
-
-                seen.Add(p.Id);
                 SegmentPlayer was;
-                RinkPoint from = before.TryGetValue(p.Id, out was) ? was.To : Gate(mapping, bench, p.Team);
+                RinkPoint from = before.TryGetValue(p.Id, out was) ? was.To : BenchEntry(mapping, bench, p.Team);
                 max = Math.Max(max, RinkPoint.Distance(from, p.To));
-            }
-
-            foreach (KeyValuePair<int, SegmentPlayer> pair in before)
-            {
-                if (!seen.Contains(pair.Key))
-                {
-                    max = Math.Max(max, RinkPoint.Distance(pair.Value.To, Gate(mapping, bench, pair.Value.Team)));
-                }
             }
 
             return max;
         }
 
-        /// <summary>The bench gate of <paramref name="team"/> in metres (data-schema.md, replay.json, Vaihtoaukot).</summary>
-        public static RinkPoint Gate(RinkMapping mapping, BenchSettings bench, ReplayTeam team)
+        /// <summary>
+        /// The change phase of a stoppage series (D-089 A1): the largest distance from an outgoing player's stoppage node to
+        /// his bench's exit point, and whether the series changes anyone at all.
+        /// </summary>
+        internal static double ChangeDisplacement(TimelineSegment stoppage, TimelineSegment faceoff, RinkMapping mapping, BenchSettings bench, out bool changes)
+        {
+            SortedDictionary<int, SegmentPlayer> before = FieldPlayers(stoppage);
+            SortedDictionary<int, SegmentPlayer> after = FieldPlayers(faceoff);
+            changes = false;
+            double max = 0;
+            foreach (SegmentPlayer p in before.Values)
+            {
+                if (!after.ContainsKey(p.Id))
+                {
+                    changes = true;
+                    max = Math.Max(max, RinkPoint.Distance(p.To, BenchExit(mapping, bench, p.Team)));
+                }
+            }
+
+            foreach (int id in after.Keys)
+            {
+                changes |= !before.ContainsKey(id);
+            }
+
+            return max;
+        }
+
+        private static SortedDictionary<int, SegmentPlayer> FieldPlayers(TimelineSegment s)
+        {
+            var players = new SortedDictionary<int, SegmentPlayer>();
+            foreach (SegmentPlayer p in s.Players)
+            {
+                if (!p.IsGoalie)
+                {
+                    players[p.Id] = p;
+                }
+            }
+
+            return players;
+        }
+
+        /// <summary>
+        /// The exit point of <paramref name="team"/>'s bench (data-schema.md, replay.json, Penkit): x = centre line +
+        /// <c>bench.homeFromCentreMetres</c> or <c>awayFromCentreMetres</c> - <c>doorSpacingMetres</c> / 2,
+        /// y = <c>bench.frontYMetres</c>. Outgoing players skate here and leave the ice.
+        /// </summary>
+        public static RinkPoint BenchExit(RinkMapping mapping, BenchSettings bench, ReplayTeam team)
+        {
+            return BenchDoor(mapping, bench, team, -0.5);
+        }
+
+        /// <summary>The entry point of <paramref name="team"/>'s bench: as <see cref="BenchExit"/> but + <c>doorSpacingMetres</c> / 2.</summary>
+        public static RinkPoint BenchEntry(RinkMapping mapping, BenchSettings bench, ReplayTeam team)
+        {
+            return BenchDoor(mapping, bench, team, 0.5);
+        }
+
+        private static RinkPoint BenchDoor(RinkMapping mapping, BenchSettings bench, ReplayTeam team, double side)
         {
             if (mapping == null)
             {
@@ -443,8 +487,8 @@ namespace HockeyCoach.Replay.Core
                 throw new ArgumentNullException(nameof(bench));
             }
 
-            double fromCentre = team == ReplayTeam.Home ? bench.HomeGateFromCentreMetres : bench.AwayGateFromCentreMetres;
-            return new RinkPoint(mapping.CentreLineX + fromCentre, bench.GateYMetres);
+            double fromCentre = team == ReplayTeam.Home ? bench.HomeFromCentreMetres : bench.AwayFromCentreMetres;
+            return new RinkPoint(mapping.CentreLineX + fromCentre + (side * bench.DoorSpacingMetres), bench.FrontYMetres);
         }
     }
 }

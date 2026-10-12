@@ -21,12 +21,6 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Goal depth that bounds <c>goal.netInsideMetres</c> (data-schema.md, replay.json, Avaimet).</summary>
         public const double NetDepthMetres = 1.12;
 
-        /// <summary>
-        /// Distance outside the boards that bounds <c>bench.gateYMetres</c> (data-schema.md: hylätään, jos &lt; −3 tai
-        /// &gt; kaukalon leveys + 3).
-        /// </summary>
-        public const double GateYMarginMetres = 3.0;
-
         private static readonly string[] FloorModes = { "allLegs", "firstLeg" };
 
         private static readonly string[] TopLevelKeys = { "schemaVersion", "timing", "goal", "puck", "skaters", "goalies", "bench" };
@@ -65,6 +59,9 @@ namespace HockeyCoach.Replay.Core
             timing.FaceoffApproachSpeed = s.Number("faceoffApproachSpeed", 0, true, 15);
             timing.FaceoffApproachMaxSeconds = s.Number("faceoffApproachMaxSeconds", 0, true, 10);
             timing.FaceoffApproachMinSeconds = s.Number("faceoffApproachMinSeconds", 0, false, timing.FaceoffApproachMaxSeconds);
+            timing.StoppageChangeSpeed = s.Number("stoppageChangeSpeed", 0, true, 15);
+            timing.StoppageChangeMaxSeconds = s.Number("stoppageChangeMaxSeconds", 0, true, 10);
+            timing.StoppageChangeMinSeconds = s.Number("stoppageChangeMinSeconds", 0, false, timing.StoppageChangeMaxSeconds);
             s.CheckUnknown();
 
             var goal = new GoalSettings();
@@ -119,18 +116,20 @@ namespace HockeyCoach.Replay.Core
 
             var bench = new BenchSettings();
             s = Section.Of(root, "bench");
-            bench.HomeGateFromCentreMetres = s.Number("homeGateFromCentreMetres", double.NegativeInfinity, false, double.PositiveInfinity);
-            bench.AwayGateFromCentreMetres = s.Number("awayGateFromCentreMetres", double.NegativeInfinity, false, double.PositiveInfinity);
-            bench.GateYMetres = s.Number("gateYMetres", double.NegativeInfinity, false, double.PositiveInfinity);
+            bench.HomeFromCentreMetres = s.Number("homeFromCentreMetres", double.NegativeInfinity, false, double.PositiveInfinity);
+            bench.AwayFromCentreMetres = s.Number("awayFromCentreMetres", double.NegativeInfinity, false, double.PositiveInfinity);
+            bench.FrontYMetres = s.Number("frontYMetres", double.NegativeInfinity, false, double.PositiveInfinity);
+            bench.DoorSpacingMetres = s.Number("doorSpacingMetres", 0, false, 10);
+            bench.EnterWithinMetres = s.Number("enterWithinMetres", 0, false, 20);
             s.CheckUnknown();
 
             return new PresentationConfig(timing, goal, puck, skaters, goalies, bench);
         }
 
         /// <summary>
-        /// Checks the ranges that depend on the rink: <c>bench.homeGateFromCentreMetres</c> and
-        /// <c>bench.awayGateFromCentreMetres</c> at most half the rink length from the centre line, <c>bench.gateYMetres</c>
-        /// within <see cref="GateYMarginMetres"/> of the boards.
+        /// Checks the ranges that depend on the rink: both doors of each bench (<c>bench.homeFromCentreMetres</c> and
+        /// <c>bench.awayFromCentreMetres</c> ± <c>doorSpacingMetres</c> / 2) at most half the rink length from the centre
+        /// line, <c>bench.frontYMetres</c> on the ice (0 to the rink width).
         /// </summary>
         /// <exception cref="PresentationConfigException">A bench value does not fit the rink.</exception>
         public static void CheckRink(PresentationConfig config, RinkMetresData rink)
@@ -146,21 +145,21 @@ namespace HockeyCoach.Replay.Core
             }
 
             double half = rink.Length / 2;
-            CheckGate("bench.homeGateFromCentreMetres", config.Bench.HomeGateFromCentreMetres, half);
-            CheckGate("bench.awayGateFromCentreMetres", config.Bench.AwayGateFromCentreMetres, half);
-            double y = config.Bench.GateYMetres;
-            if (y < -GateYMarginMetres || y > rink.Width + GateYMarginMetres)
+            double door = config.Bench.DoorSpacingMetres / 2;
+            CheckGate("bench.homeFromCentreMetres", config.Bench.HomeFromCentreMetres, door, half);
+            CheckGate("bench.awayFromCentreMetres", config.Bench.AwayFromCentreMetres, door, half);
+            double y = config.Bench.FrontYMetres;
+            if (y < 0 || y > rink.Width)
             {
-                throw new PresentationConfigException("replay.json: bench.gateYMetres is " + Format(y) + ", must be ≥ " + Format(-GateYMarginMetres)
-                    + " and ≤ rink width + " + Format(GateYMarginMetres) + " (" + Format(rink.Width + GateYMarginMetres) + ").");
+                throw new PresentationConfigException("replay.json: bench.frontYMetres is " + Format(y) + ", must be ≥ 0 and ≤ the rink width (" + Format(rink.Width) + ").");
             }
         }
 
-        private static void CheckGate(string path, double value, double half)
+        private static void CheckGate(string path, double value, double door, double half)
         {
-            if (Math.Abs(value) > half)
+            if (Math.Abs(value) + door > half)
             {
-                throw new PresentationConfigException("replay.json: " + path + " is " + Format(value) + ", its absolute value must be ≤ half the rink length (" + Format(half) + ").");
+                throw new PresentationConfigException("replay.json: " + path + " is " + Format(value) + ", its absolute value + bench.doorSpacingMetres / 2 must be ≤ half the rink length (" + Format(half) + ").");
             }
         }
 

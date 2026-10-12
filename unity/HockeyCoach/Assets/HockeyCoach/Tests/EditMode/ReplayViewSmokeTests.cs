@@ -204,6 +204,12 @@ namespace HockeyCoach.Replay.Tests.EditMode
             ReplaySample sample = _bootstrap.Cursor.Sample();
             foreach (PlayerSample p in sample.Players)
             {
+                if (p.IsWaiting)
+                {
+                    Assert.IsFalse(_bootstrap.Discs[p.Id].IsOnIce, "waiting player " + p.Id + " should not be drawn yet");
+                    continue;
+                }
+
                 Assert.IsTrue(_bootstrap.Discs[p.Id].IsOnIce, "player " + p.Id + " should be on the ice");
                 AssertNear(p.Position, _bootstrap.Discs[p.Id].transform.localPosition);
             }

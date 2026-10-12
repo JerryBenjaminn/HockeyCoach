@@ -68,6 +68,15 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>Longest faceoff approach.</summary>
         public double FaceoffApproachMaxSeconds { get; internal set; }
+
+        /// <summary>Skating speed of outgoing players to their bench in a stoppage change (m/s, D-089 A1).</summary>
+        public double StoppageChangeSpeed { get; internal set; }
+
+        /// <summary>Shortest stoppage change phase.</summary>
+        public double StoppageChangeMinSeconds { get; internal set; }
+
+        /// <summary>Longest stoppage change phase.</summary>
+        public double StoppageChangeMaxSeconds { get; internal set; }
     }
 
     /// <summary><c>replay.json</c> <c>goal</c>.</summary>
@@ -201,13 +210,19 @@ namespace HockeyCoach.Replay.Core
     /// <summary><c>replay.json</c> <c>bench</c>.</summary>
     public sealed class BenchSettings
     {
-        /// <summary>Home bench gate x, metres from the centre line towards +x.</summary>
-        public double HomeGateFromCentreMetres { get; internal set; }
+        /// <summary>Middle of the home bench front, metres from the centre line towards +x.</summary>
+        public double HomeFromCentreMetres { get; internal set; }
 
-        /// <summary>Away bench gate x, metres from the centre line towards +x.</summary>
-        public double AwayGateFromCentreMetres { get; internal set; }
+        /// <summary>Middle of the away bench front, metres from the centre line towards +x.</summary>
+        public double AwayFromCentreMetres { get; internal set; }
 
-        /// <summary>Gate y, metres from the y = 0 boards.</summary>
-        public double GateYMetres { get; internal set; }
+        /// <summary>y of the bench fronts (where players leave and enter the ice), metres from the y = 0 boards.</summary>
+        public double FrontYMetres { get; internal set; }
+
+        /// <summary>Distance along x between a bench's exit point and its entry point.</summary>
+        public double DoorSpacingMetres { get; internal set; }
+
+        /// <summary>An incoming player enters when his outgoing partner is this close to the exit point.</summary>
+        public double EnterWithinMetres { get; internal set; }
     }
 }

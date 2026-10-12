@@ -1513,13 +1513,17 @@ Tapahtuman `time` on hetki, jolloin sen toiminto päättyy. Väli g = edellisen 
 **Katkon sarja.** Sarja alkaa `Stoppage`-tapahtumasta. Siihen kuuluvat kaikki seuraavat tapahtumat, joilla on sama pelikello (`LineChange`, `Timeout`), ja sarja päättyy seuraavaan `Faceoff`-tapahtumaan.
 
 1. `Stoppage`-väli lasketaan tavalliseen tapaan. Perään tulee jäädytetty pito `timing.stoppageHoldSeconds`.
-2. `LineChange` sarjan sisällä kestää 0 s. Sen vaihdot näytetään lähestymisessä (kohta 4).
+2. `LineChange` sarjan sisällä kestää 0 s. Sen vaihdot näytetään vaihtovaiheessa (kohta 4).
 3. `Timeout` kestää `timing.timeoutHoldSeconds` jäädytettynä.
-4. **Aloitusta edeltävä lähestyminen** on jäädytetty vaihe ennen `Faceoff`-väliä.
-   - Kaikki kenttäpelaajat luistelevat nykyisistä esityssijainneistaan `Faceoff`-tapahtuman sijainteihin. Välissä olevat sijainnit eivät ole kohteita.
-   - Kesto = suurin siirtymä / `timing.faceoffApproachSpeed`, rajattuna välille [`faceoffApproachMinSeconds`, `faceoffApproachMaxSeconds`]. Kaikki pelaajat saapuvat samaan aikaan, ja nopeusprofiili alkaa ja päättyy lepoon.
-   - Lähtevät pelaajat luistelevat vaihtoaukolle ja poistuvat. Tulevat pelaajat ilmestyvät vaihtoaukolle ja luistelevat sijaintiinsa.
-5. Sitten `Faceoff`-väli lasketaan tavalliseen tapaan (a = `faceoff`).
+4. **Vaihtovaihe (D-089 A1)** on jäädytetty vaihe `Faceoff`-välin alussa, ennen lähestymistä. Se on mukana vain, jos sarja vaihtaa jonkun kenttäpelaajan (katkon ja `Faceoff`-tapahtuman kenttäpelaajat eroavat).
+   - Järjestys on pito → vaihdot (ulos penkille, sitten sisään) → asettuminen aloitukseen. Paikallaan pysyvät pelaajat seisovat vaihtovaiheen ajan.
+   - Lähtevät pelaajat luistelevat katkon sijainnistaan oman penkkinsä poistumiskohtaan (ks. Penkit), saapuvat sinne yhtä aikaa vaiheen lopussa ja poistuvat jäältä. Nopeusprofiili alkaa ja päättyy lepoon, kuten lähestymisessä.
+   - Kesto = suurin lähtevän pelaajan siirtymä (solmusta poistumiskohtaan) / `timing.stoppageChangeSpeed`, rajattuna välille [`stoppageChangeMinSeconds`, `stoppageChangeMaxSeconds`].
+   - Tuleva pelaaja ilmestyy oman penkkinsä sisääntulokohtaan, kun hänen lähtevä parinsa on enintään `bench.enterWithinMetres` päässä poistumiskohdasta, ja odottaa siinä lähestymisen alkuun. Parit muodostetaan saman `LineChange`-tapahtuman `outgoingIds`- ja `incomingIds`-listoista nousevassa id-järjestyksessä. Tuleva pelaaja ilman paria ilmestyy vaiheen alussa.
+5. **Aloitusta edeltävä lähestyminen** on jäädytetty vaihe vaihtovaiheen jälkeen, ennen `Faceoff`-väliä.
+   - Kaikki kenttäpelaajat luistelevat nykyisistä esityssijainneistaan `Faceoff`-tapahtuman sijainteihin. Välissä olevat sijainnit eivät ole kohteita. Tulevat pelaajat lähtevät penkin sisääntulokohdasta.
+   - Kesto = suurin siirtymä / `timing.faceoffApproachSpeed`, rajattuna välille [`faceoffApproachMinSeconds`, `faceoffApproachMaxSeconds`]. Siirtymä mitataan solmuista ilman poikkeamia (tulevilla sisääntulokohdasta). Lähteneet pelaajat eivät ole mukana. Kaikki pelaajat saapuvat samaan aikaan, ja nopeusprofiili alkaa ja päättyy lepoon (s = L(3x² − 2x³)).
+6. Sitten `Faceoff`-väli lasketaan tavalliseen tapaan (a = `faceoff`).
 
 **Erät.** Kun `Stoppage`-tapahtuman syy on `PeriodEnd`, pidon jälkeen tulee jäädytetty tauko `timing.periodBreakSeconds`. Erän alussa pelaajat ovat suoraan ensimmäisen tapahtuman sijainneissa, eikä lähestymistä ole. Erän alun `LineChange` (kello 0) kestää 0 s.
 
@@ -1594,10 +1598,13 @@ Kiekon reitti alkaa toimintaikkunan alussa ja kulkee alla olevilla nopeuksilla. 
 - Erottelu on tilaton: se riippuu vain saman näytteen sijainneista.
 - Kuljetettu kiekko lasketaan erottelun jälkeen. `ReplayViewStyle.teamShift` poistuu.
 
-**Vaihtoaukot.** Kotijoukkueen aukko on kohdassa x = keskiviiva + `bench.homeGateFromCentreMetres` ja vierasjoukkueen aukko kohdassa x = keskiviiva + `bench.awayGateFromCentreMetres`. Molemmissa y = `bench.gateYMetres`, mitattuna y = 0 -laidasta.
+**Penkit (D-089 A1).** Kummallakin joukkueella on oma penkki y = 0 -laidan puolella, oman puolustuspäänsä puoliskolla (koti hyökkää +x, joten kotipenkki on keskiviivasta −x-suuntaan). Penkin etureunan keskikohta on x = keskiviiva + `bench.homeFromCentreMetres` (koti) tai `bench.awayFromCentreMetres` (vieras), y = `bench.frontYMetres`.
 
-- **Lentävä vaihto.** Lähtevät pelaajat luistelevat aukolle tavallisella profiililla ja häviävät saavuttaessaan sen. Tulevat pelaajat ilmestyvät aukolle `LineChange`-välin alussa, ja niiden ensimmäinen kohde on oma `placement`-solmu. Lähtevät pelaajat eivät kuulu hyväksymiskriteerin 1 kahteentoista pelaajaan.
-- **Katkon vaihto:** ks. lähestyminen.
+- Poistumiskohta on penkin etureunan keskikohta − `bench.doorSpacingMetres` / 2 x-suunnassa, ja sisääntulokohta on keskikohta + `doorSpacingMetres` / 2. Lähtevät ja tulevat pelaajat eivät siksi käytä samaa pistettä.
+- **Lentävä vaihto.** Lähtevä pelaaja luistelee tavallisella profiililla oman penkkinsä poistumiskohtaan. Kohdeaika on `LineChange`-välin kohdeaika, ja myöhästyminen on sallittu. Pelaaja häviää saavuttaessaan kohdan. Tuleva pelaaja ilmestyy sisääntulokohtaan, kun lähtevä pari (kuten vaihtovaiheessa) on enintään `bench.enterWithinMetres` päässä poistumiskohdasta, ja ilman paria `LineChange`-välin alussa. Hänen ensimmäinen kohteensa on oma `placement`-solmu (myöhästyminen sallittu).
+- **Katkon vaihto:** ks. katkon sarjan vaihtovaihe.
+- **Hyväksymiskriteeri 1.** Lähtevät pelaajat eivät kuulu kahteentoista. Tuleva pelaaja, joka odottaa vielä penkillä, kuuluu tapahtuman kahteentoista, mutta sitä ei piirretä (näytteessä `IsWaiting`). Hänen lähtevä parinsa on silloin vielä jäällä, joten piirrettyjä pelaajia on aina vähintään 12.
+- **Erottelu ja vaihtuvat pelaajat.** Lähtevät, odottavat ja vielä sisään luistelevat pelaajat jäävät erottelun ulkopuolelle: niitä ei siirretä, eivätkä ne siirrä muita. Sisään luisteleva on pelaaja, joka ei ole vielä saapunut ensimmäiseen kohteeseensa penkin jälkeen. Näin erottelu ei työnnä vaihtuvia pelaajia toistensa läpi.
 
 ### Maalivahdit
 
@@ -1622,6 +1629,9 @@ Maalivahdin sijainti määräytyy kiekon mukaan.
 | `timing.faceoffApproachSpeed` | 6,0 | m/s | ≤ 0 tai > 15 |
 | `timing.faceoffApproachMinSeconds` | 1,0 | s | < 0 tai > `faceoffApproachMaxSeconds` |
 | `timing.faceoffApproachMaxSeconds` | 2,0 | s | ≤ 0 tai > 10 |
+| `timing.stoppageChangeSpeed` | 6,0 | m/s | ≤ 0 tai > 15 |
+| `timing.stoppageChangeMinSeconds` | 0,5 | s | < 0 tai > `stoppageChangeMaxSeconds` |
+| `timing.stoppageChangeMaxSeconds` | 2,5 | s | ≤ 0 tai > 10 |
 | `goal.slowMoRate` | 0,35 | esitysnopeuden kerroin | ≤ 0 tai > 1 |
 | `goal.slowMoMinSeconds` | 1,5 | s | < 0 tai > 10 |
 | `goal.holdSeconds` | 2,0 | s | < 0 tai > 10 |
@@ -1656,8 +1666,10 @@ Maalivahdin sijainti määräytyy kiekon mukaan.
 | `goalies.depthMetres` | 0,6 | m | < 0 tai > 3 |
 | `goalies.lateralTrackFactor` | 0,15 | – | < 0 tai > 1 |
 | `goalies.lateralMaxMetres` | 0,9 | m | < 0 tai > 2 |
-| `bench.homeGateFromCentreMetres` | −6,0 | m keskiviivasta +x-suuntaan | itseisarvo > kaukalon puolikas pituus |
-| `bench.awayGateFromCentreMetres` | 6,0 | m keskiviivasta +x-suuntaan | itseisarvo > kaukalon puolikas pituus |
-| `bench.gateYMetres` | 0,0 | m y = 0 -laidasta | < −3 tai > kaukalon leveys + 3 |
+| `bench.homeFromCentreMetres` | −6,0 | m keskiviivasta +x-suuntaan | itseisarvo + `doorSpacingMetres` / 2 > kaukalon puolikas pituus |
+| `bench.awayFromCentreMetres` | 6,0 | m keskiviivasta +x-suuntaan | itseisarvo + `doorSpacingMetres` / 2 > kaukalon puolikas pituus |
+| `bench.frontYMetres` | 1,0 | m y = 0 -laidasta | < 0 tai > kaukalon leveys |
+| `bench.doorSpacingMetres` | 3,0 | m | < 0 tai > 10 |
+| `bench.enterWithinMetres` | 3,0 | m | < 0 tai > 20 |
 
 Arvo 0 poistaa vaikutuksen niissä avaimissa, jotka sen sallivat. Esimerkiksi `anticipationSeconds` 0 poistaa ennakoinnin, `nodeOffsetRadiusMetres` 0 poikkeamat, `separationIterations` 0 erottelun ja `idleAmplitudeMetres` 0 joustoliikkeen. Levykkeiden koot ja värit eivät kuulu tähän tiedostoon, vaan ne ovat edelleen Viewn `ReplayViewStyle`-asetuksia Inspectorissa. Erottelu ei tarvitse niitä.

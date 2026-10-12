@@ -17,6 +17,7 @@ namespace HockeyCoach.Replay.Core
         public SegmentTiming(
             int index,
             double start,
+            double approachStart,
             double gapStart,
             double windowStart,
             double eventEnd,
@@ -37,6 +38,7 @@ namespace HockeyCoach.Replay.Core
 
             Index = index;
             Start = start;
+            ApproachStart = approachStart;
             GapStart = gapStart;
             WindowStart = windowStart;
             EventEnd = eventEnd;
@@ -61,6 +63,12 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Presentation time where the segment starts (= end of the previous segment).</summary>
         public double Start { get; }
 
+        /// <summary>
+        /// Presentation time where the faceoff approach starts: after the stoppage change phase (D-089 A1), = <see cref="Start"/>
+        /// without one.
+        /// </summary>
+        public double ApproachStart { get; }
+
         /// <summary>Presentation time where the gap starts (after the faceoff approach, = <see cref="Start"/> without one).</summary>
         public double GapStart { get; }
 
@@ -76,8 +84,11 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Presentation duration of the whole segment.</summary>
         public double Duration => End - Start;
 
+        /// <summary>Presentation duration of the stoppage change phase, 0 without one.</summary>
+        public double ChangeSeconds => ApproachStart - Start;
+
         /// <summary>Presentation duration of the faceoff approach, 0 without one.</summary>
-        public double ApproachSeconds => GapStart - Start;
+        public double ApproachSeconds => GapStart - ApproachStart;
 
         /// <summary>Match clock where the gap starts: event clock − g (the period start for a period's first event).</summary>
         public double ClockStart { get; }

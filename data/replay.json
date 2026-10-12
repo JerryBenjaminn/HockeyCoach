@@ -11,7 +11,10 @@
     "periodBreakSeconds": 2.0,
     "faceoffApproachSpeed": 6.0,
     "faceoffApproachMinSeconds": 1.0,
-    "faceoffApproachMaxSeconds": 2.0
+    "faceoffApproachMaxSeconds": 2.0,
+    "stoppageChangeSpeed": 6.0,
+    "stoppageChangeMinSeconds": 0.5,
+    "stoppageChangeMaxSeconds": 2.5
   },
   "goal": {
     "slowMoRate": 0.35,
@@ -56,8 +59,10 @@
     "lateralMaxMetres": 0.9
   },
   "bench": {
-    "homeGateFromCentreMetres": -6.0,
-    "awayGateFromCentreMetres": 6.0,
-    "gateYMetres": 0.0
+    "homeFromCentreMetres": -6.0,
+    "awayFromCentreMetres": 6.0,
+    "frontYMetres": 1.0,
+    "doorSpacingMetres": 3.0,
+    "enterWithinMetres": 3.0
   }
 }

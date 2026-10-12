@@ -3,8 +3,11 @@ namespace HockeyCoach.Replay.Core
     /// <summary>Kinds of presentation phases (data-schema.md, replay.json, Esitysaika).</summary>
     public enum PresentationPhaseKind
     {
-        /// <summary>Frozen approach of all skaters to the faceoff positions (after a stoppage series).</summary>
+        /// <summary>Frozen approach of all skaters to the faceoff positions (after a stoppage series and its changes).</summary>
         FaceoffApproach,
+
+        /// <summary>Frozen line changes of a stoppage series before the approach (D-089 A1): out to the bench, then in.</summary>
+        StoppageChange,
 
         /// <summary>Dead time of a gap (setup, regroup), compressed by <c>deadCompression</c>.</summary>
         DeadTime,

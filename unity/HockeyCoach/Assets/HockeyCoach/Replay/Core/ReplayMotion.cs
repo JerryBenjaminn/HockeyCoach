@@ -96,7 +96,7 @@ namespace HockeyCoach.Replay.Core
 
         private MotionSample Compose(TimelineSegment segment, SkaterPose[] poses, RinkPoint puck, int? carrier)
         {
-            var skaterAt = new Dictionary<int, RinkPoint>();
+            var skaterAt = new Dictionary<int, SkaterPose>();
             var leaving = new List<PlayerSample>();
             foreach (SkaterPose pose in poses)
             {
@@ -106,24 +106,27 @@ namespace HockeyCoach.Replay.Core
                 }
                 else
                 {
-                    skaterAt[pose.Id] = pose.Position;
+                    skaterAt[pose.Id] = pose;
                 }
             }
 
             var players = new List<PlayerSample>(segment.Players.Count);
             foreach (SegmentPlayer p in segment.Players)
             {
-                RinkPoint position;
+                RinkPoint position = p.To;
+                bool waiting = false;
+                SkaterPose pose;
                 if (p.IsGoalie)
                 {
                     position = GoaliePosition(Presentation.Timeline.Mapping, Presentation.Config.Goalies, p.Team, puck.Y);
                 }
-                else if (!skaterAt.TryGetValue(p.Id, out position))
+                else if (skaterAt.TryGetValue(p.Id, out pose))
                 {
-                    position = p.To;
+                    position = pose.Position;
+                    waiting = pose.IsWaiting;
                 }
 
-                players.Add(new PlayerSample(p.Id, p.Team, p.IsGoalie, position));
+                players.Add(new PlayerSample(p.Id, p.Team, p.IsGoalie, position, waiting));
             }
 
             return new MotionSample(players, leaving, puck, carrier);

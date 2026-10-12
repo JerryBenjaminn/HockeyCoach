@@ -155,14 +155,32 @@ public sealed class PresentationTimingTests
     }
 
     [Fact]
-    public void Gate_IsOnTheBenchSideOfTheCentreLine()
+    public void BenchDoors_AreOnTheOwnHalf_InFrontOfTheBench()
     {
         RinkMapping map = new SyntheticMatch().Add("Faceoff", 1, 0, 27, null, SyntheticMatch.OnIce(27, 16, 27, 38)).Build().Mapping;
-        RinkPoint home = PresentationTimeline.Gate(map, Config.Bench, ReplayTeam.Home);
-        RinkPoint away = PresentationTimeline.Gate(map, Config.Bench, ReplayTeam.Away);
-        Assert.Equal(map.CentreLineX + Config.Bench.HomeGateFromCentreMetres, home.X, 12);
-        Assert.Equal(map.CentreLineX + Config.Bench.AwayGateFromCentreMetres, away.X, 12);
-        Assert.Equal(Config.Bench.GateYMetres, home.Y);
+        BenchSettings b = Config.Bench;
+        RinkPoint homeExit = PresentationTimeline.BenchExit(map, b, ReplayTeam.Home);
+        RinkPoint homeEntry = PresentationTimeline.BenchEntry(map, b, ReplayTeam.Home);
+        RinkPoint awayExit = PresentationTimeline.BenchExit(map, b, ReplayTeam.Away);
+        Assert.Equal(map.CentreLineX + b.HomeFromCentreMetres - (b.DoorSpacingMetres / 2), homeExit.X, 12);
+        Assert.Equal(map.CentreLineX + b.HomeFromCentreMetres + (b.DoorSpacingMetres / 2), homeEntry.X, 12);
+        Assert.Equal(map.CentreLineX + b.AwayFromCentreMetres - (b.DoorSpacingMetres / 2), awayExit.X, 12);
+        Assert.Equal(b.FrontYMetres, homeExit.Y);
+        Assert.Equal(b.FrontYMetres, awayExit.Y);
+
+        // Home defends the x = 0 end, so its bench is on the home half; the away bench on the other half.
+        Assert.True(homeEntry.X < map.CentreLineX);
+        Assert.True(awayExit.X > map.CentreLineX);
+    }
+
+    [Fact]
+    public void ChangeSeconds_IsDisplacementOverSpeed_Clamped()
+    {
+        TimingSettings t = Config.Timing;
+        Assert.Equal(t.StoppageChangeMinSeconds, PresentationTiming.ChangeSeconds(0, t));
+        Assert.Equal(t.StoppageChangeMaxSeconds, PresentationTiming.ChangeSeconds(1000, t));
+        double inside = (t.StoppageChangeMinSeconds + t.StoppageChangeMaxSeconds) / 2;
+        Assert.Equal(inside, PresentationTiming.ChangeSeconds(inside * t.StoppageChangeSpeed, t), 12);
     }
 
     [Fact]

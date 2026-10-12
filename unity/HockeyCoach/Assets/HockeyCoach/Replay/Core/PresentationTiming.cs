@@ -198,6 +198,22 @@ namespace HockeyCoach.Replay.Core
             return Math.Max(timing.FaceoffApproachMinSeconds, Math.Min(timing.FaceoffApproachMaxSeconds, seconds));
         }
 
+        /// <summary>
+        /// Duration of the frozen change phase of a stoppage series (D-089 A1): the outgoing players' largest distance to
+        /// their bench exit over <c>stoppageChangeSpeed</c>, clamped to [<c>stoppageChangeMinSeconds</c>,
+        /// <c>stoppageChangeMaxSeconds</c>].
+        /// </summary>
+        public static double ChangeSeconds(double maxDisplacementMetres, TimingSettings timing)
+        {
+            if (timing == null)
+            {
+                throw new ArgumentNullException(nameof(timing));
+            }
+
+            double seconds = Math.Max(0, maxDisplacementMetres) / timing.StoppageChangeSpeed;
+            return Math.Max(timing.StoppageChangeMinSeconds, Math.Min(timing.StoppageChangeMaxSeconds, seconds));
+        }
+
         /// <summary>A goal's action window in slow motion: window / <c>slowMoRate</c>, at least <c>slowMoMinSeconds</c>.</summary>
         public static double GoalWindow(double window, GoalSettings goal)
         {

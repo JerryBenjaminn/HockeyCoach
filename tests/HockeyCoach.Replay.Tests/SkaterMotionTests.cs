@@ -46,15 +46,17 @@ public sealed class SkaterMotionTests
     }
 
     [Fact]
-    public void EveryTarget_IsTheNodePlusOffset_OrABenchGate()
+    public void EveryTarget_IsTheNodePlusOffset_OrABenchDoor()
     {
         RinkMapping map = P.Timeline.Mapping;
-        var gates = new[] { ReplayTeam.Home, ReplayTeam.Away }.Select(t => PresentationTimeline.Gate(map, _m.Config.Bench, t)).ToHashSet();
+        var gates = new[] { ReplayTeam.Home, ReplayTeam.Away }
+            .SelectMany(t => new[] { PresentationTimeline.BenchExit(map, _m.Config.Bench, t), PresentationTimeline.BenchEntry(map, _m.Config.Bench, t) })
+            .ToHashSet();
         var nodes = Enumerable.Range(0, map.NodeCount).Select(map.NodePosition).ToList();
         foreach (SkaterTrack track in Skaters.Tracks.Values)
         {
             RinkPoint o = Skaters.OffsetOf(track.Id);
-            foreach (RinkPoint point in track.Stints.SelectMany(s => s.Chains).SelectMany(c => c.Points))
+            foreach (RinkPoint point in track.Stints.SelectMany(s => s.Chains).SelectMany(c => c.IsApproach ? c.Points.Skip(1) : c.Points))
             {
                 bool onNode = nodes.Any(n => Math.Abs(n.X + o.X - point.X) < 1e-9 && Math.Abs(n.Y + o.Y - point.Y) < 1e-9);
                 Assert.True(onNode || gates.Contains(point), "player " + track.Id + " target " + point);
@@ -171,8 +173,11 @@ public sealed class SkaterMotionTests
                     Assert.Equal(0, chain.Profiles[0].SpeedAt(0), 9);
                     Assert.Equal(0, chain.Profiles[0].SpeedAt(chain.Profiles[0].Duration), 9);
                     Assert.Equal(chain.Points[1], chain.StateAt(chain.End).Position);
-                    SegmentTiming tm = P.Segments.First(s => Math.Abs(s.Start - chain.Start) < Eps && s.ApproachSeconds > 0);
-                    Assert.Equal(tm.GapStart, chain.End, 9);
+                    // Outgoing players of a stoppage change skate to their bench in the change phase (D-089 A1), everybody
+                    // else to the faceoff in the approach after it.
+                    SegmentTiming? change = P.Segments.FirstOrDefault(s => s.ChangeSeconds > 0 && Math.Abs(s.Start - chain.Start) < Eps && Math.Abs(s.ApproachStart - chain.End) < Eps);
+                    SegmentTiming? tm = P.Segments.FirstOrDefault(s => Math.Abs(s.ApproachStart - chain.Start) < Eps && s.ApproachSeconds > 0);
+                    Assert.True(change != null || (tm != null && Math.Abs(tm.GapStart - chain.End) < 1e-9), "approach of " + track.Id + " at " + chain.Start);
                 }
             }
         }
@@ -222,8 +227,9 @@ public sealed class SkaterMotionTests
     public void Separation_KeepsPairsApart_WithTheMeasuredResidual()
     {
         // Three passes over the pairs do not resolve every crowd (and the clamp at the boards can push players back
-        // together), so the spec's minimum is a goal, not a guarantee (Q-084). Asserted: pairs closer than
-        // separationMin are under 1 % of all pair samples.
+        // together), so the spec's minimum is a goal, not a guarantee (Q-084). Changing players are left out of the
+        // separation (D-089 A1), so only pairs of settled players count. Asserted: such pairs closer than
+        // separationMin are under 1 % of all their samples.
         long pairs = 0;
         long close = 0;
         foreach (SweepFrame f in Sweep.Frames)
@@ -232,6 +238,11 @@ public sealed class SkaterMotionTests
             {
                 for (int b = a + 1; b < f.Skaters.Length; b++)
                 {
+                    if (f.Skaters[a].IsChanging || f.Skaters[b].IsChanging)
+                    {
+                        continue;
+                    }
+
                     pairs++;
                     if (RinkPoint.Distance(f.Skaters[a].Position, f.Skaters[b].Position) < Sk.SeparationMinMetres - 1e-6)
                     {
@@ -250,14 +261,14 @@ public sealed class SkaterMotionTests
         var x = new[] { 10.0, 11.0, 30.0 };
         var y = new[] { 5.0, 5.0, 5.0 };
         int[] ids = Skaters.Tracks.Keys.Take(3).ToArray();
-        Skaters.Separate(x, y, ids, 2, 1);
+        Skaters.Separate(x, y, ids, new[] { 0, 1, 2 }, 2, 1);
         Assert.Equal(9.5, x[0], 12);
         Assert.Equal(11.5, x[1], 12);
         Assert.Equal(30, x[2]);
 
         var cx = new[] { 10.0, 10.0 };
         var cy = new[] { 5.0, 5.0 };
-        Skaters.Separate(cx, cy, ids.Take(2).ToArray(), 2, 1);
+        Skaters.Separate(cx, cy, ids.Take(2).ToArray(), new[] { 0, 1 }, 2, 1);
         double a = SkaterOffsets.Angle(_m.Match.Seed, ids[0]);
         Assert.Equal(10 + Math.Cos(a), cx[0], 12);
         Assert.Equal(5 + Math.Sin(a), cy[0], 12);
@@ -305,24 +316,26 @@ public sealed class SkaterMotionTests
     }
 
     [Fact]
-    public void LineChanges_LeavingPlayersSkateToTheGate_AndIncomingStartThere()
+    public void LineChanges_LeavingPlayersSkateToTheirBenchExit_AndIncomingStartAtTheEntry()
     {
         RinkMapping map = P.Timeline.Mapping;
         int leaves = 0;
         int entries = 0;
         foreach (SkaterTrack track in Skaters.Tracks.Values)
         {
-            RinkPoint gate = PresentationTimeline.Gate(map, _m.Config.Bench, track.Team);
+            RinkPoint exit = PresentationTimeline.BenchExit(map, _m.Config.Bench, track.Team);
+            RinkPoint entry = PresentationTimeline.BenchEntry(map, _m.Config.Bench, track.Team);
             foreach (SkaterStint stint in track.Stints)
             {
-                if (!double.IsPositiveInfinity(stint.Vanish) && stint.Chains[^1].Points[^1] == gate)
+                if (!double.IsPositiveInfinity(stint.Vanish) && stint.Chains[^1].Points[^1] == exit)
                 {
-                    Assert.True(RinkPoint.Distance(gate, stint.StateAt(stint.Vanish - 1e-9).Position) < 1e-6);
+                    Assert.True(RinkPoint.Distance(exit, stint.StateAt(stint.Vanish - 1e-9).Position) < 1e-6);
                     leaves++;
                 }
 
-                if (stint.Chains[0].Points[0] == gate)
+                if (stint.Chains[0].Points[0] == entry)
                 {
+                    Assert.Equal(entry, stint.EntryPoint);
                     entries++;
                 }
             }
@@ -331,6 +344,91 @@ public sealed class SkaterMotionTests
         int changes = P.Timeline.Segments.Where(s => s.Type == ReplayEventType.LineChange).Sum(s => s.Leaving.Count);
         Assert.True(leaves > changes / 2, leaves + " gate exits for " + changes + " outgoing");
         Assert.True(entries > changes / 2, entries + " gate entries for " + changes + " incoming");
+    }
+
+    [Fact]
+    public void IncomingPlayers_EnterOnlyWhenTheirOutgoingPartnerIsNearTheBench()
+    {
+        RinkMapping map = P.Timeline.Mapping;
+        double within = _m.Config.Bench.EnterWithinMetres;
+        int checkedEntries = 0;
+        for (int i = 0; i < P.Segments.Count; i++)
+        {
+            TimelineSegment seg = P.Timeline.Segments[i];
+            if (seg.Type != ReplayEventType.LineChange || (P.Segments[i].Flags & SegmentTimingFlags.PeriodStart) != 0)
+            {
+                continue;
+            }
+
+            List<int> outgoing = seg.Event.OutgoingIds!.OrderBy(x => x).ToList();
+            List<int> incoming = seg.Event.IncomingIds!.OrderBy(x => x).ToList();
+            for (int k = 0; k < Math.Min(outgoing.Count, incoming.Count); k++)
+            {
+                SkaterStint? enter = Skaters.Tracks[incoming[k]].Stints.FirstOrDefault(s => s.EntryPoint.HasValue && s.Appear >= P.Segments[i].Start - 1e-9);
+                SkaterStint? leave = Skaters.Tracks[outgoing[k]].Stints.FirstOrDefault(s => s.Appear < P.Segments[i].Start && s.Vanish >= P.Segments[i].Start - 1e-9);
+                if (enter == null || leave == null || enter.Appear > leave.Vanish + 1e-9)
+                {
+                    continue;
+                }
+
+                RinkPoint exit = PresentationTimeline.BenchExit(map, _m.Config.Bench, Skaters.Tracks[outgoing[k]].Team);
+                double gap = RinkPoint.Distance(leave.StateAt(Math.Min(enter.Appear, leave.Vanish - 1e-9)).Position, exit);
+                Assert.True(gap <= within + 1e-3, "player " + incoming[k] + " entered while " + outgoing[k] + " was " + gap + " m from the bench");
+                checkedEntries++;
+            }
+        }
+
+        Assert.True(checkedEntries > 100, "entries checked " + checkedEntries);
+    }
+
+    [Fact]
+    public void StoppageChanges_HappenBeforeTheApproach_OutgoingLeaveByItsStart()
+    {
+        int changed = 0;
+        foreach (SegmentTiming tm in P.Segments.Where(s => s.ChangeSeconds > 0))
+        {
+            foreach (SkaterTrack track in Skaters.Tracks.Values)
+            {
+                foreach (SkaterStint stint in track.Stints)
+                {
+                    if (Math.Abs(stint.Vanish - tm.ApproachStart) < 1e-9)
+                    {
+                        changed++;
+                    }
+
+                    if (stint.EntryPoint.HasValue && stint.Appear >= tm.Start - 1e-9 && stint.Appear <= tm.ApproachStart + 1e-9)
+                    {
+                        // Entered during the change phase: stands at the entry until the approach starts.
+                        Assert.Equal(stint.EntryPoint.Value, stint.StateAt(tm.ApproachStart).Position);
+                        changed++;
+                    }
+                }
+            }
+        }
+
+        Assert.True(changed > 50, "changes " + changed);
+    }
+
+    [Fact]
+    public void EveryFrame_DrawsAtLeastTwelve_AndChangingPlayersAreNotSeparated()
+    {
+        SkaterSettings sk = Sk;
+        double w = 2 * Math.PI * sk.IdleFrequencyHz;
+        RinkMapping map = P.Timeline.Mapping;
+        foreach (SweepFrame f in Sweep.Frames)
+        {
+            int drawn = f.Sample.Players.Count(p => !p.IsWaiting) + f.Sample.Leaving.Count;
+            Assert.True(drawn >= 12, drawn + " players drawn at " + f.Time);
+            foreach (SkaterPose pose in f.Skaters.Where(x => x.IsChanging))
+            {
+                double amplitude = pose.IsWaiting ? 0 : sk.IdleAmplitudeMetres * (1 - Math.Min(1, pose.Path.Speed / sk.TopSpeed));
+                double phi = SkaterOffsets.Phase(_m.Match.Seed, pose.Id);
+                double x = Math.Max(0, Math.Min(map.LengthMetres, pose.Path.Position.X + (amplitude * Math.Sin((w * f.Time) + phi))));
+                double y = Math.Max(0, Math.Min(map.WidthMetres, pose.Path.Position.Y + (amplitude * Math.Sin((w * sk.IdleYFrequencyRatio * f.Time) + (2 * phi)))));
+                Assert.Equal(x, pose.Position.X, 9);
+                Assert.Equal(y, pose.Position.Y, 9);
+            }
+        }
     }
 
     [Fact]

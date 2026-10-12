@@ -47,8 +47,9 @@ public sealed class PresentationConfigReaderTests
         Assert.Equal((int)root["skaters"]!["separationIterations"]!, c.Skaters.SeparationIterations);
         Assert.Equal((double)root["skaters"]!["idleYFrequencyRatio"]!, c.Skaters.IdleYFrequencyRatio);
         Assert.Equal((double)root["goalies"]!["lateralMaxMetres"]!, c.Goalies.LateralMaxMetres);
-        Assert.Equal((double)root["bench"]!["homeGateFromCentreMetres"]!, c.Bench.HomeGateFromCentreMetres);
-        Assert.Equal((double)root["bench"]!["gateYMetres"]!, c.Bench.GateYMetres);
+        Assert.Equal((double)root["bench"]!["homeFromCentreMetres"]!, c.Bench.HomeFromCentreMetres);
+        Assert.Equal((double)root["bench"]!["frontYMetres"]!, c.Bench.FrontYMetres);
+        Assert.Equal((double)root["timing"]!["stoppageChangeSpeed"]!, c.Timing.StoppageChangeSpeed);
     }
 
     [Fact]
@@ -195,6 +196,16 @@ public sealed class PresentationConfigReaderTests
     [InlineData("timing.faceoffApproachMinSeconds", -1)]
     [InlineData("timing.faceoffApproachMaxSeconds", 0)]
     [InlineData("timing.faceoffApproachMaxSeconds", 11)]
+    [InlineData("timing.stoppageChangeSpeed", 0)]
+    [InlineData("timing.stoppageChangeSpeed", 16)]
+    [InlineData("timing.stoppageChangeMinSeconds", 3)]
+    [InlineData("timing.stoppageChangeMinSeconds", -0.1)]
+    [InlineData("timing.stoppageChangeMaxSeconds", 0)]
+    [InlineData("timing.stoppageChangeMaxSeconds", 11)]
+    [InlineData("bench.doorSpacingMetres", -0.1)]
+    [InlineData("bench.doorSpacingMetres", 10.1)]
+    [InlineData("bench.enterWithinMetres", -0.1)]
+    [InlineData("bench.enterWithinMetres", 20.1)]
     [InlineData("goal.slowMoRate", 0)]
     [InlineData("goal.slowMoRate", 1.01)]
     [InlineData("goal.slowMoMinSeconds", 11)]
@@ -290,10 +301,10 @@ public sealed class PresentationConfigReaderTests
     }
 
     [Theory]
-    [InlineData("homeGateFromCentreMetres", -30.6)]
-    [InlineData("awayGateFromCentreMetres", 30.6)]
-    [InlineData("gateYMetres", -3.1)]
-    [InlineData("gateYMetres", 29.0)]
+    [InlineData("homeFromCentreMetres", -29.5)]
+    [InlineData("awayFromCentreMetres", 29.5)]
+    [InlineData("frontYMetres", -0.1)]
+    [InlineData("frontYMetres", 26.0)]
     public void CheckRink_RejectsBenchValuesOutsideTheRink(string key, double value)
     {
         JObject root = Real();
@@ -304,9 +315,9 @@ public sealed class PresentationConfigReaderTests
     }
 
     [Theory]
-    [InlineData("homeGateFromCentreMetres", -30.48)]
-    [InlineData("gateYMetres", -3)]
-    [InlineData("gateYMetres", 28.91)]
+    [InlineData("homeFromCentreMetres", -28.98)]
+    [InlineData("frontYMetres", 0)]
+    [InlineData("frontYMetres", 25.91)]
     public void CheckRink_AcceptsBenchValuesOnTheLimit(string key, double value)
     {
         JObject root = Real();

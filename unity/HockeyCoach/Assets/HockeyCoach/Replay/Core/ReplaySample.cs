@@ -6,12 +6,13 @@ namespace HockeyCoach.Replay.Core
     public sealed class PlayerSample
     {
         /// <summary>Creates a player sample.</summary>
-        public PlayerSample(int id, ReplayTeam team, bool isGoalie, RinkPoint position)
+        public PlayerSample(int id, ReplayTeam team, bool isGoalie, RinkPoint position, bool isWaiting = false)
         {
             Id = id;
             Team = team;
             IsGoalie = isGoalie;
             Position = position;
+            IsWaiting = isWaiting;
         }
 
         /// <summary>Player id.</summary>
@@ -25,6 +26,12 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>Position in metres.</summary>
         public RinkPoint Position { get; }
+
+        /// <summary>
+        /// True for an incoming player of the segment who waits at his bench until his outgoing partner is near it
+        /// (D-089 A1); the view does not draw him yet.
+        /// </summary>
+        public bool IsWaiting { get; }
     }
 
     /// <summary>The replay state at the cursor's position: what the view draws.</summary>

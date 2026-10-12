@@ -179,8 +179,8 @@ namespace HockeyCoach.Replay.View
 
         /// <summary>
         /// Draws the cursor's current sample from the presentation layer (D-088): the on-ice discs and the players still
-        /// skating off to their bench gate at their drawn positions, bench players hidden, the puck and the HUD (true game
-        /// clock and speed).
+        /// skating off to their bench at their drawn positions; bench players and incoming players still waiting for their
+        /// outgoing partner (D-089 A1) hidden; the puck and the HUD (true game clock and speed).
         /// </summary>
         public void Refresh()
         {
@@ -210,6 +210,11 @@ namespace HockeyCoach.Replay.View
         {
             foreach (PlayerSample p in players)
             {
+                if (p.IsWaiting)
+                {
+                    continue;
+                }
+
                 PlayerDiscView disc;
                 if (!_discs.TryGetValue(p.Id, out disc))
                 {

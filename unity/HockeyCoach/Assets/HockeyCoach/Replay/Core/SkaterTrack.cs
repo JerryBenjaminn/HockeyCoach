@@ -220,6 +220,15 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Presentation time the skater appears (at his first point).</summary>
         public double Appear { get; }
 
+        /// <summary>The bench entry point for a stint that starts by entering the ice, null at a period start.</summary>
+        public RinkPoint? EntryPoint { get; internal set; }
+
+        /// <summary>
+        /// Presentation time the skater has finished entering: the arrival at his first target away from the bench entry
+        /// (= <see cref="Appear"/> at a period start). Until then he is changing (D-089 A1).
+        /// </summary>
+        public double SettledFrom { get; private set; }
+
         /// <summary>Presentation time the skater disappears (reaches the bench gate, or the period ends).</summary>
         public double Vanish { get; internal set; }
 
@@ -229,6 +238,29 @@ namespace HockeyCoach.Replay.Core
         internal void Add(TrackChain chain)
         {
             _chains.Add(chain);
+        }
+
+        internal void Settle()
+        {
+            SettledFrom = Appear;
+            if (!EntryPoint.HasValue)
+            {
+                return;
+            }
+
+            foreach (TrackChain chain in _chains)
+            {
+                for (int k = 0; k < chain.Points.Count; k++)
+                {
+                    if (chain.Points[k] != EntryPoint.Value)
+                    {
+                        SettledFrom = chain.Arrivals[k];
+                        return;
+                    }
+                }
+            }
+
+            SettledFrom = Vanish;
         }
 
         /// <summary>The state at time <paramref name="t"/>: the last chain that has started, or the first one before it starts.</summary>
@@ -290,6 +322,20 @@ namespace HockeyCoach.Replay.Core
                 if (s.Appear <= t && t < s.Vanish)
                 {
                     return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>True while the active stint at <paramref name="t"/> is still entering from the bench.</summary>
+        public bool IsEntering(double t)
+        {
+            foreach (SkaterStint s in _stints)
+            {
+                if (s.Appear <= t && t < s.Vanish)
+                {
+                    return t < s.SettledFrom;
                 }
             }
 

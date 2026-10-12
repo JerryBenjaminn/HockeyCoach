@@ -223,15 +223,24 @@ public sealed class PresentationTimelineTests
 
         SegmentTiming faceoff = p.Segments[5];
         Assert.True((faceoff.Flags & SegmentTimingFlags.FaceoffApproach) != 0);
-        PresentationPhase approach = faceoff.Phases[0];
+
+        // D-089 A1: hold, then the changes (out to the bench, then in), then the approach to the faceoff positions.
+        PresentationPhase changing = faceoff.Phases[0];
+        Assert.Equal(PresentationPhaseKind.StoppageChange, changing.Kind);
+        Assert.True(changing.IsFrozen);
+        Assert.Equal(12, changing.ClockStart);
+        PresentationPhase approach = faceoff.Phases[1];
         Assert.Equal(PresentationPhaseKind.FaceoffApproach, approach.Kind);
         Assert.True(approach.IsFrozen);
         Assert.Equal(12, approach.ClockStart);
+        Assert.Equal(faceoff.ApproachStart, approach.Start);
 
-        // Outgoing 1 skates from the centre spot to the home gate, incoming 4 from the gate to the centre spot.
+        // Outgoing 1 skates from the centre spot to the home bench exit; incoming 4 from the bench entry to the centre spot.
         RinkMapping map = p.Timeline.Mapping;
-        double toGate = RinkPoint.Distance(map.NodePosition(Centre), PresentationTimeline.Gate(map, Config.Bench, ReplayTeam.Home));
-        Assert.Equal(PresentationTiming.ApproachSeconds(toGate, T), faceoff.ApproachSeconds, 12);
+        double toExit = RinkPoint.Distance(map.NodePosition(Centre), PresentationTimeline.BenchExit(map, Config.Bench, ReplayTeam.Home));
+        double fromEntry = RinkPoint.Distance(PresentationTimeline.BenchEntry(map, Config.Bench, ReplayTeam.Home), map.NodePosition(Centre));
+        Assert.Equal(PresentationTiming.ChangeSeconds(toExit, T), faceoff.ChangeSeconds, 12);
+        Assert.Equal(PresentationTiming.ApproachSeconds(fromEntry, T), faceoff.ApproachSeconds, 12);
         Assert.Equal(12, faceoff.ClockStart);
         Assert.Equal(14, p.ClockAt(5, faceoff.EventEnd));
         Assert.Equal(0, faceoff.SkaterFloorSeconds);
@@ -324,7 +333,7 @@ public sealed class PresentationTimelineTests
     public void Build_RejectsBenchGatesOutsideTheRink()
     {
         JObject root = JObject.Parse(ReplayConfigFile.Text);
-        root["bench"]!["awayGateFromCentreMetres"] = 40;
+        root["bench"]!["awayFromCentreMetres"] = 40;
         PresentationConfig config = PresentationConfigReader.Read(root.ToString());
         ReplayTimeline t = Start().Build();
         Assert.Throws<PresentationConfigException>(() => PresentationTimeline.Build(t, config));
