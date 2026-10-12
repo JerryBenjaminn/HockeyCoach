@@ -14,6 +14,26 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-083 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** esitysajan pienet tulkinnat (D-088, `data-schema.md` replay.json, Esitysaika ja katkon sarja). Ovatko nämä oikein?
+1. **Luistelijan alaraja katkon sarjan päättävässä `Faceoff`-välissä.** Speksi: "Rajaa ei sovelleta katkon sarjan sisällä" ja sarja "päättyy seuraavaan `Faceoff`-tapahtumaan". Lähestyminen vie pelaajat jo aloitussijainteihin, joten rajaa ei sovelleta tähän väliin. Kirjaimellisesti edellisen tapahtuman (vaihdon) solmuista mitattu siirtymä venyttäisi aloitusväliä.
+2. **Lähestymisen suurin siirtymä.** Siihen lasketaan kentällä pysyvät (katkon solmu → aloitussolmu), tulevat (vaihtoaukko → aloitussolmu) ja lähtevät pelaajat (katkon solmu → vaihtoaukko), maalivahdit pois. Sijainnit ovat solmuja ilman poikkeamia, koska esityssijainnit tulevat vasta luistelijavaiheessa.
+3. **Tyhjä väli.** Jos välin kaikki vaiheet ovat 0 (samalla sekunnilla oleva tapahtuma), alarajaa ei voi venyttää suhteessa. Toteutus antaa koko keston toimintaikkunalle, ja kello pysyy paikallaan. Sama pätee, jos toimintaikkuna on 0 mutta kiekon reitillä on kesto.
+4. **Viimeisen erän `PeriodEnd`.** Ottelun viimeisen katkon perään tulee myös `periodBreakSeconds`. Lisäksi `SeekEvent` vie toimintaikkunan loppuun eli pitojen alkuun.
+5. **Vaihtoaukon rajat** (`bench.*`, riippuvat kaukalon mitoista) tarkistetaan, kun esitysaikajana rakennetaan ottelulle (`PresentationConfigReader.CheckRink`), koska `replay.json` luetaan ilman ottelua.
+**Konteksti:** toiston esityskerroksen osa 1 (otsake v2, asetukset, esitysaika).
+**Ehdotettu oletus (toteutettu):** kuten yllä.
+**Vastaus:**
+
+### Q-082 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** miten kiekon alaraja lasketaan, kun reitin päätepisteet ovat speksin mukaan pelaajien *esityssijainteja sillä hetkellä*, mutta ajoitus pitää lukita ennen liikettä? Ja kuuluuko torjunnan, blokin ja ohilaukauksen jälkimmäinen osuus (`reboundSpeed`, `blockDeflectSpeed`) alarajaan?
+**Konteksti:** `data-schema.md` replay.json, Esitysaika 5 ("toimintaikkuna ≥ kiekon reitin kesto") ja Kiekko ("Kiekon reitin kesto on osuuksien pituudet jaettuna kunkin osuuden nopeudella"). Mitoitus-taulukon luvut eivät täsmää tähän tekstiin. Mittaukset oletusarvoilla (vaihto 45 s, 1×):
+- **Toteutettu (teksti kirjaimellisesti, kaikki osuudet; lähtö toimijan solmusta tämän tapahtuman placementissa):** siemen 42 17,1 s / ottelu 22,8 min / 8× 2,84 min; siemenet 1 ja 7 (`rulebased` vs `rulebased`) 22,5 ja 22,4 s / 30,0 ja 29,9 min / 8× 3,75 ja 3,73 min. Siemenet 1 ja 7 ovat yli 15–20 s:n tavoitteen.
+- **Vain ensimmäinen osuus (ampuja → torjuja, maali tai ohipiste), sama lähtö:** siemen 42 15,6 s / 20,8 min / 2,60 min; siemenet 1 ja 7 20,2 ja 20,1 s / 27,0 ja 26,7 min. Tämä vastaa Mitoitus-taulukkoa (15,5 s / 20,6 min / 2,6 min ja 19,6 s / 26,1 min / 3,3 min).
+- Lähtö toimijan *edellisestä* solmusta (kaikki osuudet): siemen 42 18,2 s / 24,3 min.
+**Ehdotettu oletus (toteutettu):** reitin pituus solmusijainneista ilman poikkeamia. Syöttäjän, ampujan ja edellisen kiekonhaltijan solmu otetaan tämän tapahtuman placementista, koska toimintaikkuna on välin lopussa ja toimija on silloin lähellä kohdettaan. Torjujan solmu, maalin piste (`netInsideMetres`) ja ohipiste kuten Kiekko-osiossa. Kaikki osuudet lasketaan mukaan. Jos Mitoitus-taulukko on tarkoitettu oikeaksi, muutos on pieni: alarajaan otetaan vain ensimmäinen osuus.
+**Vastaus:**
+
 ### Q-081 · 2026-10-12 · kirjaaja: Jerry (kirjannut koordinaattori) · virstanpylväs 5
 **Kysymys:** onko simulaation tapahtumatiheys (tapahtumia minuutissa) realistinen verrattuna Wisehockeyn aikajanaan?
 **Konteksti:** toiston esityskerroksen suunnittelu (D-088). Designerin mittauksen mukaan (siemen 42, 874 tapahtumaa, 3596 s) lähes puolet pelikellosta (45–49 %) on kokoamista (`setup` 6 s, `regroup` 8 s) ja järjestelmän askeleita (2 s), ja toiminta-ajat ovat oikeaa kiekkoa pidempiä: 1×-nopeudella luistelijat liikkuvat vain 2,8–4,2 m/s. Tapahtumatiheys vaikuttaa vaihtojen pituuteen, energiaan ja katkoihin.
