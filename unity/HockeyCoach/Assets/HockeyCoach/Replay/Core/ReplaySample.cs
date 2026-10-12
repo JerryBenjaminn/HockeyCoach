@@ -1,0 +1,88 @@
+using System.Collections.Generic;
+
+namespace HockeyCoach.Replay.Core
+{
+    /// <summary>One player's interpolated position in a <see cref="ReplaySample"/>.</summary>
+    public sealed class PlayerSample
+    {
+        /// <summary>Creates a player sample.</summary>
+        public PlayerSample(int id, ReplayTeam team, bool isGoalie, RinkPoint position)
+        {
+            Id = id;
+            Team = team;
+            IsGoalie = isGoalie;
+            Position = position;
+        }
+
+        /// <summary>Player id.</summary>
+        public int Id { get; }
+
+        /// <summary>Team.</summary>
+        public ReplayTeam Team { get; }
+
+        /// <summary>True for goalies.</summary>
+        public bool IsGoalie { get; }
+
+        /// <summary>Position in metres.</summary>
+        public RinkPoint Position { get; }
+    }
+
+    /// <summary>The replay state at the cursor's position: what the view draws.</summary>
+    public sealed class ReplaySample
+    {
+        /// <summary>Creates a sample.</summary>
+        public ReplaySample(
+            int segmentIndex,
+            double fraction,
+            double clock,
+            int period,
+            double periodTime,
+            int homeScore,
+            int awayScore,
+            IReadOnlyList<PlayerSample> players,
+            RinkPoint puck,
+            int? puckCarrierId)
+        {
+            SegmentIndex = segmentIndex;
+            Fraction = fraction;
+            Clock = clock;
+            Period = period;
+            PeriodTime = periodTime;
+            HomeScore = homeScore;
+            AwayScore = awayScore;
+            Players = players;
+            Puck = puck;
+            PuckCarrierId = puckCarrierId;
+        }
+
+        /// <summary>Index of the current segment (event).</summary>
+        public int SegmentIndex { get; }
+
+        /// <summary>Progress through the current segment, 0–1 (1 for zero-length segments).</summary>
+        public double Fraction { get; }
+
+        /// <summary>Match clock in seconds from the start of the match.</summary>
+        public double Clock { get; }
+
+        /// <summary>Period shown on the clock.</summary>
+        public int Period { get; }
+
+        /// <summary>Seconds into <see cref="Period"/>.</summary>
+        public double PeriodTime { get; }
+
+        /// <summary>Home score shown.</summary>
+        public int HomeScore { get; }
+
+        /// <summary>Away score shown.</summary>
+        public int AwayScore { get; }
+
+        /// <summary>On-ice players ordered by id.</summary>
+        public IReadOnlyList<PlayerSample> Players { get; }
+
+        /// <summary>Puck position in metres.</summary>
+        public RinkPoint Puck { get; }
+
+        /// <summary>Puck carrier, null while the puck is loose or moving between players.</summary>
+        public int? PuckCarrierId { get; }
+    }
+}
