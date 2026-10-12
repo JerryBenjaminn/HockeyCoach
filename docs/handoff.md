@@ -1,6 +1,6 @@
 # Handoff
 
-Tilanne 2026-10-12 (paluukarvaus pois, Unity-toiston vaiheet 2–5 valmiit). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
+Tilanne 2026-10-12 (paluukarvaus pois, Unity-toiston vaiheet 2–5 ja esityskerros D-088 valmiit). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
 
 ## Missä ollaan
 
@@ -128,8 +128,12 @@ Vaiheet:
    - JSON: `dotnet run --project tools/HockeyCoach.Harness -- match --home rulebased --away random --seed 42 --json > E:/Temp/m42.json`. Polku kenttään "Match Json Path".
    - Ohjaimet: välilyönti toisto/tauko, nuolet vasen/oikea edellinen/seuraava tapahtuma, ylös/alas nopeus 1–16×, Home alkuun.
    - Test Runner ja silmämääräinen tarkistus. Commitoi scene, .meta-tiedostot ja `packages-lock.json`.
-4. Agentit korjaavat Jerryn havainnot (vaihe 7). Avoimet: Q-078 (nopeus ja saman sekunnin tapahtumat), Q-079 (maalin kiekko), Q-080 (samalla solmulla olevat).
-5. **Myöhemmin:**
+4. ✅ **Esityskerros (D-088):** spec ja `data/replay.json` (c9c1905), otsake v2 aikakustannuksineen (2f836fb), asetusten lukija (118d405), esitysaika ja toisto-ohjain (70a86cc), luistelijat (2350034), kiekko ja maali verkossa (c7ff26b), View (d4353b4). Testejä: Replay 340, Sim 890, EditMode 10/10.
+   - 45 s vaihto 1×-nopeudella: siemen 42 17,1 s; `rulebased` vs `rulebased` (siemenet 1 ja 7) 22,5 s, yli tavoitteen 15–20 s (Q-082).
+   - Avoimet Jerrylle: Q-082 (kiekon alaraja), Q-083 (ajoituksen tulkinnat), Q-084 (liikekerroksen havainnot: erottelun hypyt, myöhästyvät toimijat), Q-081 (tapahtumatiheys vs Wisehockey, virstanpylväs 5).
+   - Toisto vaatii `formatVersion` 2 -viennin: vanha JSON näyttää uudelleenvientivirheen.
+5. Agentit korjaavat Jerryn havainnot (vaihe 7). Avoimet: Q-078 (nopeus ja saman sekunnin tapahtumat), Q-079 (maalin kiekko), Q-080 (samalla solmulla olevat).
+6. **Myöhemmin:**
    - Q-071: ansaitut ylivoimat. Paluukarvaus palataan säätämään samassa yhteydessä.
    - Muut virstanpylvään 5 kalibroinnit.
    - Pitkä kiekko (Q-042).
