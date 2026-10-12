@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HockeyCoach.Sim.Config;
 using HockeyCoach.Sim.Events;
 using HockeyCoach.Sim.Match;
 using HockeyCoach.Sim.Model;
@@ -12,6 +13,9 @@ namespace HockeyCoach.Harness.Simulation;
 /// <item><c>formatVersion</c>: <see cref="FormatVersion"/>.</item>
 /// <item><c>periodSeconds</c> and <c>periodCount</c>: <c>time.periodSeconds</c> and <c>time.periods</c> of the tuning
 /// (<c>periodCount</c> so it does not clash with the existing <c>periods</c> snapshot array).</item>
+/// <item><c>time</c> (<c>formatVersion</c> 2, D-088 C): the tuning time costs with the same structure as in
+/// <c>tuning.json</c>, i.e. the whole <c>secondsPerAction</c> object (ordinal key order), <c>setupSeconds</c> and
+/// <c>regroupSeconds</c>. The replay splits each gap into action and dead time with them.</item>
 /// <item><c>roster</c>: every player of both teams, Home first, then by id. Each entry is
 /// <c>{id, team, position, line, pair, goalie, starter}</c>: <c>team</c> is <c>Home</c> / <c>Away</c> as in the events;
 /// <c>position</c> is the slot the player fills in his forward line or defence pair (C, LW, RW, LD, RD; the primary
@@ -29,7 +33,7 @@ namespace HockeyCoach.Harness.Simulation;
 public static class ReplayHeader
 {
     /// <summary>Version of the <c>match --json</c> format; bump when the header or layout changes.</summary>
-    public const int FormatVersion = 1;
+    public const int FormatVersion = 2;
 
     /// <summary>Goalie position name in the roster.</summary>
     public const string GoaliePosition = "G";
@@ -40,8 +44,24 @@ public static class ReplayHeader
         w.WriteNumber("formatVersion", FormatVersion);
         w.WriteNumber("periodSeconds", setup.Tuning.Time.PeriodSeconds);
         w.WriteNumber("periodCount", setup.Tuning.Time.Periods);
+        WriteTime(w, setup.Tuning.Time);
         WriteRoster(w, setup);
         WriteRink(w, setup.Rink);
+    }
+
+    private static void WriteTime(Utf8JsonWriter w, TimeConfig time)
+    {
+        w.WriteStartObject("time");
+        w.WriteStartObject("secondsPerAction");
+        foreach (KeyValuePair<string, double> action in time.SecondsPerAction)
+        {
+            w.WriteNumber(action.Key, action.Value);
+        }
+
+        w.WriteEndObject();
+        w.WriteNumber("setupSeconds", time.SetupSeconds);
+        w.WriteNumber("regroupSeconds", time.RegroupSeconds);
+        w.WriteEndObject();
     }
 
     private static void WriteRoster(Utf8JsonWriter w, MatchSetup setup)

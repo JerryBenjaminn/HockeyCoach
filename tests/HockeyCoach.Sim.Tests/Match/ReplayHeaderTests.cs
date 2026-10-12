@@ -19,11 +19,11 @@ public class ReplayHeaderTests
     private static JsonElement Root(string json) => JsonDocument.Parse(json).RootElement;
 
     [Fact]
-    public void Header_HasFormatVersionOneAndPeriodLengthFromTuning()
+    public void Header_HasFormatVersionTwoAndPeriodLengthFromTuning()
     {
         JsonElement root = Root(Json());
 
-        Assert.Equal(1, root.GetProperty("formatVersion").GetInt32());
+        Assert.Equal(2, root.GetProperty("formatVersion").GetInt32());
         Assert.Equal(Setup.Tuning.Time.PeriodSeconds, root.GetProperty("periodSeconds").GetDouble());
         Assert.Equal(Setup.Tuning.Time.Periods, root.GetProperty("periodCount").GetInt32());
     }
@@ -34,8 +34,37 @@ public class ReplayHeaderTests
         string[] names = Root(Json()).EnumerateObject().Select(p => p.Name).ToArray();
 
         Assert.Equal(
-            new[] { "seed", "homeGoals", "awayGoals", "stalled", "formatVersion", "periodSeconds", "periodCount", "roster", "rink", "events", "goals", "periods" },
+            new[] { "seed", "homeGoals", "awayGoals", "stalled", "formatVersion", "periodSeconds", "periodCount", "time", "roster", "rink", "events", "goals", "periods" },
             names);
+    }
+
+    [Fact]
+    public void Time_ExportsExactlyTheTuningTimeCosts_WithTheTuningStructure()
+    {
+        JsonElement time = Root(Json()).GetProperty("time");
+
+        Assert.Equal(new[] { "secondsPerAction", "setupSeconds", "regroupSeconds" }, time.EnumerateObject().Select(p => p.Name).ToArray());
+        JsonElement actions = time.GetProperty("secondsPerAction");
+        Assert.Equal(Setup.Tuning.Time.SecondsPerAction.Keys.ToArray(), actions.EnumerateObject().Select(p => p.Name).ToArray());
+        foreach (KeyValuePair<string, double> action in Setup.Tuning.Time.SecondsPerAction)
+        {
+            Assert.Equal(action.Value, actions.GetProperty(action.Key).GetDouble());
+        }
+
+        Assert.Equal(Setup.Tuning.Time.SetupSeconds, time.GetProperty("setupSeconds").GetDouble());
+        Assert.Equal(Setup.Tuning.Time.RegroupSeconds, time.GetProperty("regroupSeconds").GetDouble());
+    }
+
+    [Fact]
+    public void Time_ContainsEveryCostTheReplayUses()
+    {
+        JsonElement actions = Root(Json()).GetProperty("time").GetProperty("secondsPerAction");
+
+        foreach (string key in new[] { "faceoff", "skate", "pass", "shoot", "dumpIn", "loosePuck", "rebound", "systemStep" })
+        {
+            Assert.True(actions.TryGetProperty(key, out JsonElement value), key);
+            Assert.True(value.GetDouble() >= 0, key);
+        }
     }
 
     [Fact]
@@ -205,7 +234,7 @@ public class ReplayHeaderTests
         string second = MatchCommand.Run(ShiftTestData.Data, options);
 
         Assert.Equal(first, second);
-        Assert.Equal(1, Root(first).GetProperty("formatVersion").GetInt32());
+        Assert.Equal(2, Root(first).GetProperty("formatVersion").GetInt32());
     }
 
     private static void AssertSkater(JsonElement entry, string position, int? line, int? pair)

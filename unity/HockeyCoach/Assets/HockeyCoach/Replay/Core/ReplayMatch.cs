@@ -29,6 +29,9 @@ namespace HockeyCoach.Replay.Core
         /// <summary>Number of periods.</summary>
         public int PeriodCount { get; set; }
 
+        /// <summary>Tuning time costs of the header (<c>formatVersion</c> 2, D-088 C), in game seconds.</summary>
+        public TimeCostsData Time { get; set; }
+
         /// <summary>Every player of both teams, home first, then by id.</summary>
         public List<RosterEntry> Roster { get; set; }
 
@@ -40,6 +43,35 @@ namespace HockeyCoach.Replay.Core
 
         /// <summary>Goal notes of the export (one per goal, in order).</summary>
         public List<GoalNoteData> Goals { get; set; }
+    }
+
+    /// <summary>
+    /// The header's <c>time</c> object (D-088 C): <c>tuning.json</c> time costs in game seconds, same structure as in
+    /// the tuning. <see cref="ReplayJsonReader"/> guarantees that every key of <see cref="ReplayJsonReader.RequiredActionCosts"/>
+    /// is present and that the values the replay uses are finite and not negative.
+    /// </summary>
+    public sealed class TimeCostsData
+    {
+        /// <summary><c>time.secondsPerAction</c>: time cost per action name.</summary>
+        public Dictionary<string, double> SecondsPerAction { get; set; }
+
+        /// <summary><c>time.setupSeconds</c>.</summary>
+        public double SetupSeconds { get; set; }
+
+        /// <summary><c>time.regroupSeconds</c>.</summary>
+        public double RegroupSeconds { get; set; }
+
+        /// <summary>Cost of one action; throws when the key is not in the header.</summary>
+        public double Action(string name)
+        {
+            double value;
+            if (SecondsPerAction != null && SecondsPerAction.TryGetValue(name, out value))
+            {
+                return value;
+            }
+
+            throw new ReplayFormatException("Match JSON header has no time.secondsPerAction." + name + ".");
+        }
     }
 
     /// <summary>One roster entry of the header.</summary>

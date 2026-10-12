@@ -13,7 +13,16 @@ namespace HockeyCoach.Replay.Core
     public static class ReplayJsonReader
     {
         /// <summary>The only <c>formatVersion</c> this reader understands.</summary>
-        public const int SupportedFormatVersion = 1;
+        public const int SupportedFormatVersion = 2;
+
+        /// <summary>
+        /// The <c>time.secondsPerAction</c> keys the replay uses (data-schema.md, replay.json, D-088 C); with
+        /// <c>time.setupSeconds</c> and <c>time.regroupSeconds</c> they must be present and not negative.
+        /// </summary>
+        public static readonly IReadOnlyList<string> RequiredActionCosts = new[]
+        {
+            "faceoff", "skate", "pass", "shoot", "dumpIn", "loosePuck", "rebound", "systemStep",
+        };
 
         /// <summary>Parses and validates the JSON text.</summary>
         /// <exception cref="ReplayFormatException">The text is not a replayable match export.</exception>
@@ -35,6 +44,7 @@ namespace HockeyCoach.Replay.Core
             }
 
             CheckFormatVersion(root);
+            CheckTimeCosts(root);
             ReplayMatch match;
             try
             {
@@ -65,10 +75,59 @@ namespace HockeyCoach.Replay.Core
                     "Match JSON has no formatVersion: it is not a 'match --json' export with a replay header (D-087). Re-export the match with the current Harness.");
             }
 
+            if (token.Type == JTokenType.Integer && token.Value<long>() == 1)
+            {
+                throw new ReplayFormatException(
+                    "Match JSON formatVersion 1 has no time costs in its header; this replay reads formatVersion " + SupportedFormatVersion
+                    + " (D-088). Re-export the match with the current Harness ('match --json').");
+            }
+
             if (token.Type != JTokenType.Integer || token.Value<long>() != SupportedFormatVersion)
             {
                 throw new ReplayFormatException(
                     "Unsupported match JSON formatVersion " + token.ToString(Formatting.None) + "; this replay reads formatVersion " + SupportedFormatVersion + ".");
+            }
+        }
+
+        private static void CheckTimeCosts(JObject root)
+        {
+            JObject time = root["time"] as JObject;
+            if (time == null)
+            {
+                throw new ReplayFormatException("Match JSON header has no time object (formatVersion " + SupportedFormatVersion + ", D-088). Re-export the match with the current Harness.");
+            }
+
+            JObject actions = time["secondsPerAction"] as JObject;
+            if (actions == null)
+            {
+                throw new ReplayFormatException("Match JSON header has no time.secondsPerAction object.");
+            }
+
+            foreach (string key in RequiredActionCosts)
+            {
+                CheckCost(actions[key], "time.secondsPerAction." + key);
+            }
+
+            CheckCost(time["setupSeconds"], "time.setupSeconds");
+            CheckCost(time["regroupSeconds"], "time.regroupSeconds");
+        }
+
+        private static void CheckCost(JToken token, string path)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                throw new ReplayFormatException("Match JSON header has no " + path + ".");
+            }
+
+            if (token.Type != JTokenType.Integer && token.Type != JTokenType.Float)
+            {
+                throw new ReplayFormatException("Match JSON header " + path + " is not a number: " + token.ToString(Formatting.None) + ".");
+            }
+
+            double value = token.Value<double>();
+            if (double.IsNaN(value) || double.IsInfinity(value) || value < 0)
+            {
+                throw new ReplayFormatException("Match JSON header " + path + " must be a finite number of at least 0, got " + token.ToString(Formatting.None) + ".");
             }
         }
 

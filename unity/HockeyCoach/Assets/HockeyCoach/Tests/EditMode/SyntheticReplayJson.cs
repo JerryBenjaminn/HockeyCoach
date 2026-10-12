@@ -65,7 +65,9 @@ namespace HockeyCoach.Replay.Tests.EditMode
             }
 
             var json = new StringBuilder();
-            json.Append("{\"seed\": 1, \"homeGoals\": 0, \"awayGoals\": 0, \"stalled\": false, \"formatVersion\": 1, \"periodSeconds\": 1200, \"periodCount\": 3, ");
+            json.Append("{\"seed\": 1, \"homeGoals\": 0, \"awayGoals\": 0, \"stalled\": false, \"formatVersion\": 2, \"periodSeconds\": 1200, \"periodCount\": 3, ");
+            json.Append("\"time\": {\"secondsPerAction\": {\"breakout\": 4, \"deke\": 2, \"driveNet\": 2, \"dumpIn\": 2, \"faceoff\": 2, \"hit\": 2, \"loosePuck\": 3, ");
+            json.Append("\"pass\": 2, \"rebound\": 1, \"shoot\": 1, \"skate\": 3, \"systemStep\": 2, \"zoneEntry\": 3}, \"setupSeconds\": 6, \"regroupSeconds\": 8}, ");
             json.Append("\"roster\": [").Append(string.Join(", ", roster)).Append("], ");
             json.Append("\"rink\": {\"length\": 11, \"width\": 5, \"ownGoal\": {\"x\": 1, \"y\": 2}, \"opponentGoal\": {\"x\": 9, \"y\": 2}, ");
             json.Append("\"faceoffSpots\": [{\"id\": \"defensiveLeft\", \"x\": 2, \"y\": 1, \"nodeId\": 11}, {\"id\": \"center\", \"x\": 5, \"y\": 2, \"nodeId\": 27}, {\"id\": \"offensiveRight\", \"x\": 8, \"y\": 3, \"nodeId\": 43}], ");

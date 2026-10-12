@@ -23,7 +23,11 @@ public sealed class ReplayJsonReaderTests
     public void Read_ParsesHeaderAndEvents()
     {
         ReplayMatch m = ReplayJsonReader.Read(OneEvent().Json);
-        Assert.Equal(1, m.FormatVersion);
+        Assert.Equal(2, m.FormatVersion);
+        Assert.Equal(2, m.Time.Action("faceoff"));
+        Assert.Equal(1, m.Time.Action("rebound"));
+        Assert.Equal(6, m.Time.SetupSeconds);
+        Assert.Equal(8, m.Time.RegroupSeconds);
         Assert.Equal(1200, m.PeriodSeconds);
         Assert.Equal(3, m.PeriodCount);
         Assert.Equal(8, m.Roster.Count);
@@ -40,13 +44,78 @@ public sealed class ReplayJsonReaderTests
     }
 
     [Theory]
-    [InlineData(2)]
+    [InlineData(3)]
     [InlineData(0)]
     public void Read_RejectsUnknownFormatVersion_WithAClearMessage(int version)
     {
         ReplayFormatException e = Fails(r => r["formatVersion"] = version);
         Assert.Contains("Unsupported match JSON formatVersion " + version, e.Message);
-        Assert.Contains("reads formatVersion 1", e.Message);
+        Assert.Contains("reads formatVersion 2", e.Message);
+    }
+
+    [Fact]
+    public void Read_RejectsFormatVersionOne_AskingForAReExport()
+    {
+        ReplayFormatException e = Fails(r => r["formatVersion"] = 1);
+        Assert.Contains("formatVersion 1", e.Message);
+        Assert.Contains("Re-export the match", e.Message);
+    }
+
+    [Fact]
+    public void Read_RejectsMissingTimeObject()
+    {
+        Assert.Contains("no time object", Fails(r => r.Remove("time")).Message);
+    }
+
+    [Theory]
+    [InlineData("faceoff")]
+    [InlineData("skate")]
+    [InlineData("pass")]
+    [InlineData("shoot")]
+    [InlineData("dumpIn")]
+    [InlineData("loosePuck")]
+    [InlineData("rebound")]
+    [InlineData("systemStep")]
+    public void Read_RejectsMissingActionCost_NamingThePath(string key)
+    {
+        ReplayFormatException e = Fails(r => ((JObject)r["time"]!["secondsPerAction"]!).Remove(key));
+        Assert.Contains("time.secondsPerAction." + key, e.Message);
+    }
+
+    [Theory]
+    [InlineData("setupSeconds")]
+    [InlineData("regroupSeconds")]
+    public void Read_RejectsMissingDeadTimeCost_NamingThePath(string key)
+    {
+        Assert.Contains("time." + key, Fails(r => ((JObject)r["time"]!).Remove(key)).Message);
+    }
+
+    [Theory]
+    [InlineData("secondsPerAction.pass")]
+    [InlineData("secondsPerAction.systemStep")]
+    [InlineData("setupSeconds")]
+    [InlineData("regroupSeconds")]
+    public void Read_RejectsNegativeTimeCost_NamingThePath(string path)
+    {
+        ReplayFormatException e = Fails(r => r["time"]!.SelectToken(path)!.Replace(-1));
+        Assert.Contains("time." + path, e.Message);
+        Assert.Contains("at least 0", e.Message);
+    }
+
+    [Fact]
+    public void Read_RejectsNonNumericTimeCost()
+    {
+        Assert.Contains("time.secondsPerAction.shoot", Fails(r => r["time"]!["secondsPerAction"]!["shoot"] = "one").Message);
+    }
+
+    [Fact]
+    public void Read_AcceptsZeroTimeCosts_AndIgnoresCostsTheReplayDoesNotUse()
+    {
+        SyntheticMatch m = OneEvent();
+        m.Root["time"]!["secondsPerAction"]!["pass"] = 0;
+        ((JObject)m.Root["time"]!["secondsPerAction"]!).Remove("deke");
+        ReplayMatch read = ReplayJsonReader.Read(m.Json);
+        Assert.Equal(0, read.Time.Action("pass"));
     }
 
     [Fact]

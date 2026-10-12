@@ -19,9 +19,22 @@ public sealed class SyntheticMatch
         ["homeGoals"] = 0,
         ["awayGoals"] = 0,
         ["stalled"] = false,
-        ["formatVersion"] = 1,
+        ["formatVersion"] = 2,
         ["periodSeconds"] = PeriodSeconds,
         ["periodCount"] = 3,
+        ["time"] = TimeCosts(),
+    };
+
+    /// <summary>The default <c>tuning.json</c> time costs as exported in the header (formatVersion 2, D-088 C).</summary>
+    public static JObject TimeCosts() => new()
+    {
+        ["secondsPerAction"] = new JObject
+        {
+            ["breakout"] = 4, ["deke"] = 2, ["driveNet"] = 2, ["dumpIn"] = 2, ["faceoff"] = 2, ["hit"] = 2, ["loosePuck"] = 3,
+            ["pass"] = 2, ["rebound"] = 1, ["shoot"] = 1, ["skate"] = 3, ["systemStep"] = 2, ["zoneEntry"] = 3,
+        },
+        ["setupSeconds"] = 6,
+        ["regroupSeconds"] = 8,
     };
 
     public SyntheticMatch()
