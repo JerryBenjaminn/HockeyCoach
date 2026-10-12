@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "_notes": "Replay presentation layer (D-088), read only by the replay (Unity Replay/Core and its dotnet tests), never by the Sim. The Sim decides where things are; this file decides how they look. Speeds are metres per presentation second at 1x; times are presentation seconds at 1x unless the key says game seconds. Gap split (action vs dead time) uses the time costs exported in the match json header (formatVersion 2). Rules, units and valid ranges: docs/data-schema.md, replay.json. Defaults measured on seed 42 (rulebased vs random) and seeds 1 and 7 (rulebased vs rulebased): a 45 s shift lasts about 15.5-19.6 s at 1x.",
+  "timing": {
+    "actionCompression": 3.0,
+    "deadCompression": 6.0,
+    "minEventSeconds": 0.4,
+    "lineChangeSeconds": 0.4,
+    "stoppageHoldSeconds": 0.75,
+    "timeoutHoldSeconds": 1.5,
+    "periodBreakSeconds": 2.0,
+    "faceoffApproachSpeed": 6.0,
+    "faceoffApproachMinSeconds": 1.0,
+    "faceoffApproachMaxSeconds": 2.0
+  },
+  "goal": {
+    "slowMoRate": 0.35,
+    "slowMoMinSeconds": 1.5,
+    "holdSeconds": 2.0,
+    "netInsideMetres": 0.5
+  },
+  "puck": {
+    "passSpeed": 20.0,
+    "longPassSpeed": 24.0,
+    "longPassMinMetres": 25.0,
+    "shotSpeed": 32.0,
+    "dumpInSpeed": 20.0,
+    "reboundSpeed": 10.0,
+    "blockDeflectSpeed": 8.0,
+    "loosePuckSpeed": 6.0,
+    "faceoffDrawSpeed": 8.0,
+    "faceoffDrawDelaySeconds": 0.3,
+    "missWideMetres": 1.5,
+    "carriedLeadMetres": 0.6,
+    "carriedHeadingMinSpeed": 0.5
+  },
+  "skaters": {
+    "topSpeed": 8.5,
+    "acceleration": 4.0,
+    "deceleration": 6.0,
+    "pathAlpha": 0.5,
+    "pathTension": 0.0,
+    "stopTurnDegrees": 120.0,
+    "anticipationSeconds": 0.3,
+    "nodeOffsetRadiusMetres": 1.0,
+    "separationMinMetres": 2.0,
+    "separationIterations": 3,
+    "idleAmplitudeMetres": 0.3,
+    "idleFrequencyHz": 0.4,
+    "idleYFrequencyRatio": 0.7
+  },
+  "goalies": {
+    "depthMetres": 0.6,
+    "lateralTrackFactor": 0.15,
+    "lateralMaxMetres": 0.9
+  },
+  "bench": {
+    "homeGateFromCentreMetres": -6.0,
+    "awayGateFromCentreMetres": 6.0,
+    "gateYMetres": 0.0
+  }
+}

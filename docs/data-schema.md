@@ -11,6 +11,7 @@ Tämä dokumentti on datatiedostojen skeemojen ainoa totuus (D-013). Designer om
 | `data/targets.json` | käytössä | Harness (raportin tavoitevertailu) |
 | `data/plays/*.json` | käytössä (skeema D-034) | Sim (`Sim.Tactics`) |
 | `data/systems/*.json` | käytössä (skeema D-034) | Sim (`Sim.Tactics`) |
+| `data/replay.json` | käytössä (D-088) | Toisto (`Replay/Core`) ja sen testit, ei Sim eikä Harness |
 | `data/roles.json` | myöhemmin (D-018) | – |
 
 ## Yleiset käytännöt
@@ -1448,3 +1449,214 @@ Vaihe 3 (`ai.rulebased`-osioon `playBonusBySystem`-avaimen jälkeen; järjestelm
 ```
 
 `modes.normal.transition` pysyy `rush`-arvossa. E-005 ei ehdota sen vaihtamista, koska se lukitsisi tasapainovirheen tekoälyyn.
+
+## replay.json (toiston esityskerros, D-088)
+
+Toiston esitysarvot. Simulaatio päättää, mihin pelaajat ja kiekko menevät, ja toisto päättää, miltä se näyttää. Tiedostoa lukevat vain toisto (`Replay/Core`) ja sen testit (`tests/HockeyCoach.Replay.Tests`), eivät Sim, Harness eikä `validate`. Designer omistaa tiedoston.
+
+**Lataus (D-088 B).** Unity ja `dotnet test` lukevat saman tiedoston `data/replay.json`. Jos tiedosto puuttuu tai on virheellinen, lataus epäonnistuu näkyvästi (Unityssa virheteksti ruudulla ja konsolissa, testeissä poikkeus). Hiljaisia oletuksia ei ole, eikä koodissa saa olla näiden avainten arvoja. Lataaja hylkää tiedoston myös, jos `schemaVersion` ei ole 1, jos jokin alla oleva avain puuttuu tai jos jossain osiossa on tuntematon avain (`_`-alkuisia meta-avaimia lukuun ottamatta). Ylimmän tason sallitut avaimet ovat `schemaVersion`, `timing`, `goal`, `puck`, `skaters`, `goalies` ja `bench`. Kaikkien lukujen pitää olla äärellisiä.
+
+**Yksiköt.** *Esitysaika* tarkoittaa sekunteja ruudulla 1×-nopeudella. Nopeuskerroin (`SpeedLadder`) jakaa koko esitysajan. *Peliaika* tarkoittaa ottelukellon sekunteja, ja tapahtumien `time` on peliaikaa. Kaikki nopeudet ovat metrejä per esityssekunti ja kaikki matkat metrejä kaukalon metrikoordinaatistossa (`RinkMapping`, Q-077). Kestot ovat esityssekunteja, ellei avaimen nimessä ole mainittu muuta.
+
+### Otsakkeen aikakustannukset (`formatVersion` 2)
+
+Harness vie `match --json` -otsakkeeseen `tuning.json`:n aikakustannukset objektina `time`. Rakenne on sama kuin `tuning.json`:ssa. Tapahtumaskeema ei muutu.
+
+```json
+"time": {
+  "secondsPerAction": { "faceoff": 2, "skate": 3, "pass": 2, "shoot": 1, "driveNet": 2, "dumpIn": 2, "zoneEntry": 3, "breakout": 4, "deke": 2, "hit": 2, "loosePuck": 3, "rebound": 1, "systemStep": 2 },
+  "setupSeconds": 6,
+  "regroupSeconds": 8
+}
+```
+
+- Harness vie koko `time.secondsPerAction`-objektin sekä arvot `time.setupSeconds` ja `time.regroupSeconds`.
+- Toisto käyttää näitä polkuja: `time.secondsPerAction.faceoff`, `.skate`, `.pass`, `.shoot`, `.dumpIn`, `.loosePuck`, `.rebound` ja `.systemStep` sekä `time.setupSeconds` ja `time.regroupSeconds`.
+- Lukija hylkää `formatVersion` 2 -tiedoston, josta jokin näistä puuttuu tai jossa arvo on negatiivinen. `formatVersion` 1 hylätään selkeällä viestillä, jossa pyydetään viemään ottelu uudelleen.
+
+### Esitysaika: välin jako toimintaan ja kuolleeseen aikaan
+
+Tapahtuman `time` on hetki, jolloin sen toiminto päättyy. Väli g = edellisen tapahtuman ja tämän tapahtuman pelikellojen erotus (erän ensimmäiselle tapahtumalle g = `time`). Väli koostuu lokiin kirjaamattomista vaiheista (kokoaminen, uudelleenryhmittyminen, järjestelmän askel, kirjaamaton luistelu tai maalille ajo) ja niiden perässä tapahtuman omasta toiminnosta.
+
+1. **Toiminnon kustannus a** (peliaikaa, otsakkeesta), aina enintään g:
+   - `Faceoff`: `faceoff`.
+   - `Pass`: `pass`.
+   - `Shot`: `shoot`.
+   - `DumpIn`: `dumpIn`.
+   - `PuckBattle`: `loosePuck`. Jos edellinen tapahtuma on `Shot`, lisätään `rebound`. Jos edellinen tapahtuma on `PuckBattle`, lisätään `systemStep`.
+   - `ControlledZoneEntry`: `skate`, jos `method` on `Carry`, ja 0, jos `method` on `Pass` (syöttö on samalla sekunnilla oma tapahtumansa).
+   - `Turnover`: `skate`.
+   - `Stoppage`, `LineChange`, `Timeout`: 0.
+2. **Jäännös** r = g − a.
+3. **Kuollut aika** k:
+   - k = `setupSeconds` + `regroupSeconds`, jos r ≥ `setupSeconds` + `regroupSeconds`.
+   - Muuten k = `setupSeconds`, jos r ≥ `setupSeconds`.
+   - Muuten k = 0.
+
+   Loput, eli g − k, on toimintaa. Järjestelmän askel (2 s) jää toiminnaksi, koska se ei erotu maalille ajosta. Siemenellä 42 kuollutta aikaa on n. 40 % ottelukellosta.
+4. **Vaiheet välin sisällä** järjestyksessä:
+   1. kuollut aika k, kesto k / `timing.deadCompression`
+   2. muu toiminta (r − k), kesto (r − k) / `timing.actionCompression`
+   3. **toimintaikkuna** a, kesto a / `timing.actionCompression`
+
+   Kiekko lähtee toimintaikkunan alussa, eli kohdassa, jossa pelikello on `time` − a.
+5. **Alarajat.** Jokainen alaraja venyttää välin kaikkia vaiheita samassa suhteessa:
+   - **Kiekon alaraja:** toimintaikkuna ≥ kiekon reitin kesto (ks. Kiekko). Venytys tehdään ennen hidastusta.
+   - **Luistelijan alaraja:** välin kesto ≥ suurin toimijan siirtymä / `skaters.topSpeed`. Siirtymä on edellisen ja tämän tapahtuman solmujen välinen matka metreinä ilman poikkeamia. Toimijat ovat tapahtuman kentissä nimetyt pelaajat (`passerId`, `receiverId`, `shooterId`, `loserId`, `takerId`, `carrierId`, `homeCentreId`, `awayCentreId`, `attackerIds`, `defenderIds`) sekä `placement.puckCarrierId` ennen ja jälkeen tapahtuman.
+     - Muut pelaajat eivät venytä väliä, vaan voivat jäädä jälkeen (ks. Luistelijat).
+     - Rajaa ei sovelleta katkon sarjan sisällä.
+   - **Vähimmäiskesto (Q-078):** välin kesto ≥ `timing.minEventSeconds`. Lentävässä vaihdossa (`LineChange`, joka ei kuulu katkon sarjaan) raja on `timing.lineChangeSeconds`. Samalla sekunnilla olevat tapahtumat näkyvät näin jatkuvassa toistossa.
+6. **Pelikello** etenee kunkin vaiheen sisällä lineaarisesti esitysajan suhteen. Jäädytetyissä vaiheissa (alla) kello pysyy paikallaan. Kello ei koskaan kulje taaksepäin, ja se näyttää aina oikeaa peliaikaa.
+
+**Maali.** Kun `Shot` päättyy maaliin (`outcome` `Goal`), sen toimintaikkunan kesto (kiekon alarajan jälkeen) jaetaan luvulla `goal.slowMoRate`, ja tulos on vähintään `goal.slowMoMinSeconds`. Perään tulee jäädytetty pito `goal.holdSeconds`. Kiekko pysyy verkossa koko ajan (Q-079).
+
+**Katkon sarja.** Sarja alkaa `Stoppage`-tapahtumasta. Siihen kuuluvat kaikki seuraavat tapahtumat, joilla on sama pelikello (`LineChange`, `Timeout`), ja sarja päättyy seuraavaan `Faceoff`-tapahtumaan.
+
+1. `Stoppage`-väli lasketaan tavalliseen tapaan. Perään tulee jäädytetty pito `timing.stoppageHoldSeconds`.
+2. `LineChange` sarjan sisällä kestää 0 s. Sen vaihdot näytetään lähestymisessä (kohta 4).
+3. `Timeout` kestää `timing.timeoutHoldSeconds` jäädytettynä.
+4. **Aloitusta edeltävä lähestyminen** on jäädytetty vaihe ennen `Faceoff`-väliä.
+   - Kaikki kenttäpelaajat luistelevat nykyisistä esityssijainneistaan `Faceoff`-tapahtuman sijainteihin. Välissä olevat sijainnit eivät ole kohteita.
+   - Kesto = suurin siirtymä / `timing.faceoffApproachSpeed`, rajattuna välille [`faceoffApproachMinSeconds`, `faceoffApproachMaxSeconds`]. Kaikki pelaajat saapuvat samaan aikaan, ja nopeusprofiili alkaa ja päättyy lepoon.
+   - Lähtevät pelaajat luistelevat vaihtoaukolle ja poistuvat. Tulevat pelaajat ilmestyvät vaihtoaukolle ja luistelevat sijaintiinsa.
+5. Sitten `Faceoff`-väli lasketaan tavalliseen tapaan (a = `faceoff`).
+
+**Erät.** Kun `Stoppage`-tapahtuman syy on `PeriodEnd`, pidon jälkeen tulee jäädytetty tauko `timing.periodBreakSeconds`. Erän alussa pelaajat ovat suoraan ensimmäisen tapahtuman sijainneissa, eikä lähestymistä ole. Erän alun `LineChange` (kello 0) kestää 0 s.
+
+**Mitoitus.** Oletusarvoilla 45 s vaihto kestää 1×-nopeudella:
+
+| Ottelu | Vaihto 1× | Ottelu 1× | Ottelu 8× |
+| --- | --- | --- | --- |
+| Siemen 42, `rulebased` vs `random` | 15,5 s | 20,6 min | 2,6 min |
+| Siemenet 1 ja 7, `rulebased` vs `rulebased` | 19,6 s | 26,1 min | 3,3 min |
+
+Tavoite on 15–20 s (D-088 A). Suurin säätövara on `actionCompression`. Kiekon ja luistelijan alarajat estävät tiivistämästä toimintaa paljon nopeammaksi kuin 3×.
+
+### Kiekko
+
+Kiekon reitti alkaa toimintaikkunan alussa ja kulkee alla olevilla nopeuksilla. Kun reitti on kuljettu, loppuväli on pelaajien liikettä: kiekko on haltijalla (kuljetettu kiekko) tai paikallaan loppusolmussa, jos kiekko on irti. Reitin päätepisteet ovat pelaajien **esityssijainteja** sillä hetkellä, eivät solmuja. Vastaanottajaan päättyvä reitti hakeutuu vastaanottajan liikkuvaan sijaintiin. Ennen toimintaikkunaa kiekko on edellisen tilan mukaan haltijalla tai paikallaan.
+
+| Tapahtuma | Reitti | Nopeus |
+| --- | --- | --- |
+| `Pass`, onnistunut | syöttäjä → vastaanottaja | `passSpeed`, tai `longPassSpeed`, jos suora matka ≥ `longPassMinMetres` |
+| `Pass`, epäonnistunut | syöttäjä → `placement.puckNodeId` (tai uusi haltija) | kuten yllä |
+| `Shot`, `Goal` | ampuja → verkko: maalisuun keskikohta, `goal.netInsideMetres` maaliviivan takana | `shotSpeed` |
+| `Shot`, `Saved` | ampuja → maalivahdin esityssijainti → `placement.puckNodeId` | `shotSpeed`, sitten `reboundSpeed` |
+| `Shot`, `Blocked` | ampuja → blokkaajan esityssijainti → `placement.puckNodeId` | `shotSpeed`, sitten `blockDeflectSpeed` |
+| `Shot`, `Missed` | ampuja → ohipiste → `placement.puckNodeId` | `shotSpeed`, sitten `reboundSpeed` |
+| `DumpIn` | ampuja → `placement.puckNodeId` | `dumpInSpeed` |
+| `Faceoff` | Kiekko on aloituspisteessä `faceoffDrawDelaySeconds` toimintaikkunan alusta, sitten aloituspiste → haltija tai `puckNodeId` | `faceoffDrawSpeed` |
+| `Turnover`, `PuckBattle` ja muut kiekon haltijan vaihdot | nykyinen esityssijainti → uusi haltija tai `puckNodeId` | `loosePuckSpeed` |
+| `ControlledZoneEntry` (`Carry`) | kuljetettu kiekko | – |
+
+- **Ohipiste.** Ohipiste on maaliviivalla, maalin sivussa: maalin keskikohdasta mitattuna maalin puolikas leveys (1,83 m / 2) + `missWideMetres`. Puoli valitaan `placement.puckNodeId`:n puolelta keskikaistaan nähden. Jos solmu on keskikaistalla, valitaan ampujan puoli. Jos ampujakin on keskikaistalla, valitaan vasen eli y = 0 -puoli.
+- **Kiekon reitin kesto** on osuuksien pituudet jaettuna kunkin osuuden nopeudella. `Faceoff`-tapahtumassa lisätään `faceoffDrawDelaySeconds`. Kiekon alaraja käyttää tätä kestoa.
+- **Kuljetettu kiekko** on haltijan esityssijainnissa + `carriedLeadMetres` liikesuuntaan. Jos haltijan nopeus on alle `carriedHeadingMinSpeed`, kiekko on kohti vastustajan maalia (kotijoukkue hyökkää +x).
+- **Maalin kiekko (Q-079).** Maalin jälkeen kiekko pysyy verkossa maalin pidon, katkon sarjan ja lähestymisen ajan. Se siirtyy aloituspisteeseen vasta `Faceoff`-välin toimintaikkunan alussa. Hyväksymiskriteeri 3: syötöt ja laukaukset päättyvät `placement`-sijaintiin, paitsi maalit, jotka päättyvät verkkoon.
+
+### Luistelijat
+
+**Solmukohteet.** Jokaisella kentällä olevalla pelaajalla on kohde jokaisen välin lopussa. Se on `placement`-solmun metrisijainti + pelaajan oma poikkeama. Lähestymisen kohteet ovat `Faceoff`-tapahtuman sijainnit. Kohdeaika on välin loppuhetki esitysajassa miinus `anticipationSeconds`. Ennakointia ei käytetä `Stoppage`-tapahtumaan päättyvässä välissä, katkon sarjassa, `Faceoff`-välissä eikä erän alussa.
+
+**Reitti.** Centripetal Catmull-Rom kohteiden P(i−1) → P(i) välillä, naapureina P(i−2) ja P(i+1). Reunoilla päätepiste kopioidaan naapuriksi. Parametri α on `pathAlpha` (0,5 = centripetal). Piste lasketaan kaavalla (1 − `pathTension`) × CR(u) + `pathTension` × suora(u). Jos P(i−1) = P(i), pelaaja seisoo.
+
+**Nopeusprofiili** määritellään kaarenpituuden mukaan.
+
+- Kohteessa nopeus on 0, jos pelaaja seisoo kohteen kummallakaan puolella tai jos reitti kääntyy kohteessa enemmän kuin `stopTurnDegrees`. Muuten nopeus on viereisten välien keskinopeuksien minimi.
+- Välin sisällä profiili on trapetsi: kiihdytys `acceleration`, matkanopeus enintään `topSpeed` ja jarrutus `deceleration`.
+- Jos trapetsi ei mahdu väliin, käytetään vakionopeutta pituus / aika.
+- **Myöhästyminen.** Jos vakionopeuskin ylittäisi `topSpeed`:n, pelaaja saapuu myöhässä. Saapumisaika T'(i) = max(kohdeaika(i), T'(i−1) + pituus / `topSpeed`), ja seuraava väli alkaa siitä. Saapumisajat lasketaan valmiiksi aikajanaa rakennettaessa, joten näytteistys ei riipu aiemmista ruuduista. Luistelijan alaraja takaa, että toimijat ehtivät.
+- Lähestymisessä myöhästyminen nollautuu.
+
+**Pelaajan oma poikkeama (Q-080)** riippuu vain ottelun siemenestä (`seed`) ja pelaajan id:stä, joten se on sama koko ottelun ajan. Maalivahdeilla poikkeamaa ei ole.
+
+- Hajautus on SplitMix64, kaikki laskut 64-bittisinä etumerkittöminä:
+  - s = `seed` + 0x9E3779B97F4A7C15 × (id + 1)
+  - hₖ = mix(s + k × 0x9E3779B97F4A7C15), kun k = 1, 2, 3
+  - mix(z): z ^= z >> 30; z *= 0xBF58476D1CE4E5B9; z ^= z >> 27; z *= 0x94D049BB133111EB; z ^= z >> 31
+  - uₖ = (hₖ >> 11) × 2⁻⁵³
+- Poikkeama = `nodeOffsetRadiusMetres` × √u₁ × (cos 2πu₂, sin 2πu₂).
+- Joustoliikkeen vaihe φ = 2πu₃.
+
+**Joustoliike** lasketaan esitysajan t funktiona (kello voi olla jäädytetty):
+
+`idleAmplitudeMetres` × (1 − min(1, v / `topSpeed`)) × (sin(2π f t + φ), sin(2π f `idleYFrequencyRatio` t + 2φ))
+
+- f = `idleFrequencyHz`.
+- v on pelaajan hetkellinen nopeus nopeusprofiilista.
+- Maalivahdeilla joustoliikettä ei ole.
+
+**Erottelu.** Erottelu tehdään jokaisessa näytteessä poikkeaman ja joustoliikkeen jälkeen, kaikille kentällä oleville kenttäpelaajille (molemmat joukkueet). Toistoja on `separationIterations`.
+
+- Parit käydään läpi id-järjestyksessä (i < j). Jos etäisyys d < `separationMinMetres`, kumpaakin siirretään (`separationMinMetres` − d) / 2 poispäin toisistaan.
+- Jos d < 10⁻⁶, suunta on pienemmän id:n kulma 2πu₂.
+- Maalivahteja ei siirretä, eivätkä ne siirrä muita.
+- Erottelu on tilaton: se riippuu vain saman näytteen sijainneista.
+- Kuljetettu kiekko lasketaan erottelun jälkeen. `ReplayViewStyle.teamShift` poistuu.
+
+**Vaihtoaukot.** Kotijoukkueen aukko on kohdassa x = keskiviiva + `bench.homeGateFromCentreMetres` ja vierasjoukkueen aukko kohdassa x = keskiviiva + `bench.awayGateFromCentreMetres`. Molemmissa y = `bench.gateYMetres`, mitattuna y = 0 -laidasta.
+
+- **Lentävä vaihto.** Lähtevät pelaajat luistelevat aukolle tavallisella profiililla ja häviävät saavuttaessaan sen. Tulevat pelaajat ilmestyvät aukolle `LineChange`-välin alussa, ja niiden ensimmäinen kohde on oma `placement`-solmu. Lähtevät pelaajat eivät kuulu hyväksymiskriteerin 1 kahteentoista pelaajaan.
+- **Katkon vaihto:** ks. lähestyminen.
+
+### Maalivahdit
+
+Maalivahdin sijainti määräytyy kiekon mukaan.
+
+- x on maaliviiva + `goalies.depthMetres` kohti keskiviivaa.
+- y = maalin keskikohta + clamp(`lateralTrackFactor` × (kiekon y − maalin keskikohdan y), −`lateralMaxMetres`, `lateralMaxMetres`).
+- Kiekon y luetaan samasta näytteestä.
+- Torjunnan reitti kulkee tämän sijainnin kautta.
+
+### Avaimet
+
+| Polku | Oletus | Yksikkö | Hylätään, jos |
+| --- | --- | --- | --- |
+| `timing.actionCompression` | 3,0 | peliaika / esitysaika | ≤ 0 tai > 20 |
+| `timing.deadCompression` | 6,0 | peliaika / esitysaika | < `actionCompression` tai > 50 |
+| `timing.minEventSeconds` | 0,4 | s | < 0 tai > 5 |
+| `timing.lineChangeSeconds` | 0,4 | s | < 0 tai > 5 |
+| `timing.stoppageHoldSeconds` | 0,75 | s | < 0 tai > 10 |
+| `timing.timeoutHoldSeconds` | 1,5 | s | < 0 tai > 10 |
+| `timing.periodBreakSeconds` | 2,0 | s | < 0 tai > 30 |
+| `timing.faceoffApproachSpeed` | 6,0 | m/s | ≤ 0 tai > 15 |
+| `timing.faceoffApproachMinSeconds` | 1,0 | s | < 0 tai > `faceoffApproachMaxSeconds` |
+| `timing.faceoffApproachMaxSeconds` | 2,0 | s | ≤ 0 tai > 10 |
+| `goal.slowMoRate` | 0,35 | esitysnopeuden kerroin | ≤ 0 tai > 1 |
+| `goal.slowMoMinSeconds` | 1,5 | s | < 0 tai > 10 |
+| `goal.holdSeconds` | 2,0 | s | < 0 tai > 10 |
+| `goal.netInsideMetres` | 0,5 | m | < 0 tai > 1,12 (maalin syvyys) |
+| `puck.passSpeed` | 20 | m/s | < 5 tai > 50 |
+| `puck.longPassSpeed` | 24 | m/s | < `passSpeed` tai > 50 |
+| `puck.longPassMinMetres` | 25 | m | ≤ 0 |
+| `puck.shotSpeed` | 32 | m/s | < 10 tai > 50 |
+| `puck.dumpInSpeed` | 20 | m/s | < 5 tai > 50 |
+| `puck.reboundSpeed` | 10 | m/s | ≤ 0 tai > 50 |
+| `puck.blockDeflectSpeed` | 8 | m/s | ≤ 0 tai > 50 |
+| `puck.loosePuckSpeed` | 6 | m/s | ≤ 0 tai > 50 |
+| `puck.faceoffDrawSpeed` | 8 | m/s | ≤ 0 tai > 50 |
+| `puck.faceoffDrawDelaySeconds` | 0,3 | s | < 0 tai > 2 |
+| `puck.missWideMetres` | 1,5 | m | < 0 tai > 5 |
+| `puck.carriedLeadMetres` | 0,6 | m | < 0 tai > 2 |
+| `puck.carriedHeadingMinSpeed` | 0,5 | m/s | < 0 |
+| `skaters.topSpeed` | 8,5 | m/s | < 3 tai > 12 |
+| `skaters.acceleration` | 4,0 | m/s² | ≤ 0 tai > 20 |
+| `skaters.deceleration` | 6,0 | m/s² | ≤ 0 tai > 20 |
+| `skaters.pathAlpha` | 0,5 | – | < 0 tai > 1 |
+| `skaters.pathTension` | 0,0 | – | < 0 tai > 1 |
+| `skaters.stopTurnDegrees` | 120 | astetta | < 0 tai > 180 |
+| `skaters.anticipationSeconds` | 0,3 | s | < 0 tai > 2 |
+| `skaters.nodeOffsetRadiusMetres` | 1,0 | m | < 0 tai > 2,5 |
+| `skaters.separationMinMetres` | 2,0 | m | < 0 tai > 4 |
+| `skaters.separationIterations` | 3 | kpl | ei kokonaisluku, < 0 tai > 10 |
+| `skaters.idleAmplitudeMetres` | 0,3 | m | < 0 tai > 1 |
+| `skaters.idleFrequencyHz` | 0,4 | Hz | < 0 tai > 3 |
+| `skaters.idleYFrequencyRatio` | 0,7 | – | ≤ 0 tai > 3 |
+| `goalies.depthMetres` | 0,6 | m | < 0 tai > 3 |
+| `goalies.lateralTrackFactor` | 0,15 | – | < 0 tai > 1 |
+| `goalies.lateralMaxMetres` | 0,9 | m | < 0 tai > 2 |
+| `bench.homeGateFromCentreMetres` | −6,0 | m keskiviivasta +x-suuntaan | itseisarvo > kaukalon puolikas pituus |
+| `bench.awayGateFromCentreMetres` | 6,0 | m keskiviivasta +x-suuntaan | itseisarvo > kaukalon puolikas pituus |
+| `bench.gateYMetres` | 0,0 | m y = 0 -laidasta | < −3 tai > kaukalon leveys + 3 |
+
+Arvo 0 poistaa vaikutuksen niissä avaimissa, jotka sen sallivat. Esimerkiksi `anticipationSeconds` 0 poistaa ennakoinnin, `nodeOffsetRadiusMetres` 0 poikkeamat, `separationIterations` 0 erottelun ja `idleAmplitudeMetres` 0 joustoliikkeen. Levykkeiden koot ja värit eivät kuulu tähän tiedostoon, vaan ne ovat edelleen Viewn `ReplayViewStyle`-asetuksia Inspectorissa. Erottelu ei tarvitse niitä.
