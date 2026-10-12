@@ -1,6 +1,6 @@
 # Handoff
 
-Tilanne 2026-10-11 (päivitetty kalibrointikierroksen ja Unity-suunnitelman hyväksynnän jälkeen). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
+Tilanne 2026-10-12 (paluukarvaus pois, Unity-toiston vaiheet 2–5 valmiit). Tämä tiedosto auttaa jatkamaan työtä uudessa istunnossa. Päätökset ovat tiedostossa `docs/decisions-log.md` ja kysymykset tiedostossa `docs/questions.md`. Tämä tiedosto ei korvaa niitä.
 
 ## Missä ollaan
 
@@ -116,13 +116,21 @@ Vaiheet:
 
 ## Seuraavat askeleet järjestyksessä
 
-1. **Paluukarvaus pois päältä.** Vaihtoehto 1 (kohde kiekon tasalla, k = 2) on jo toteutettu ja mitattu (4530105). Voimasuhteet eivät ole haarukoissa (54,2 / 13,0 / 32,8 %), joten D-087:n mukaan se kytketään pois.
-   - Toimenpide: `transitions.backcheckNodesPerBeat` = 0 (`data:`-commit).
-   - Sen jälkeen batch 1000. Odotettu tulos on E-006:n taso 66,4 / 33,6 / 0,0 %, `rulebased` vs `random` vähintään 75 % ja maaleja 4–7.
-   - Jos jakauma on haarukoissa, taktiikkamatriisia ei tarvitse ajaa.
-2. **Unity-toiston vaiheet 2–5** yllä olevan suunnitelman mukaan, yksi vaihe ja commit kerrallaan. Vaihe 4 vaatii Jerryn hyväksynnän.
-3. **Myöhemmin:**
-   - Q-071: ansaitut ylivoimat. Laiturit kiekollisen edelle, ja nopeusero tai nopea siirtymä ratkaisee. Paluukarvaus palataan säätämään samassa yhteydessä.
+1. ✅ **Paluukarvaus pois** (334bc7c): `backcheckNodesPerBeat` = 0. Batch 1000 (`reports/d087-backcheck-off`): voimasuhteet 66,5 / 33,5 / 0,0 % ✅, `rulebased` vs `random` 78,3 % (76,0–80,6) ✅, maalit 6,46 ✅. Paluukarvaustestit asettavat k = 2 itse.
+2. ✅ **Unity-toiston vaiheet 2–5:**
+   - Vaihe 2 (607a96d): `match --json` -otsake (`formatVersion` 1, erät, kokoonpano, kaukalo ja metrit Q-077:n oletuksella).
+   - Vaihe 3 (99fb29f, 4da6b99): Core ja `tests/HockeyCoach.Replay.Tests`. C# 9 pakotetaan projektilla `tests/HockeyCoach.Replay.Core` (netstandard2.1). Kriteerit 1–9 menevät läpi siemenellä 42.
+   - Vaihe 4 (fd5a547): Newtonsoft 3.2.2 `manifest.json`:iin. `packages-lock.json` on Jerryn commitoitava.
+   - Vaihe 5 (605b0b6, a73f8b5, ddbfe60): View ja EditMode-savutestit, 10/10 batchmodessa. Testejä: Sim 888, Replay 93.
+3. **Jerry Editorissa (vaihe 6):**
+   - Import. Unity on jo luonut .meta-tiedostot batchmode-ajossa (commitoimatta).
+   - Scene `Assets/HockeyCoach/Scenes/Replay.unity`: tyhjä GameObject ja `ReplayBootstrap`.
+   - JSON: `dotnet run --project tools/HockeyCoach.Harness -- match --home rulebased --away random --seed 42 --json > E:/Temp/m42.json`. Polku kenttään "Match Json Path".
+   - Ohjaimet: välilyönti toisto/tauko, nuolet vasen/oikea edellinen/seuraava tapahtuma, ylös/alas nopeus 1–16×, Home alkuun.
+   - Test Runner ja silmämääräinen tarkistus. Commitoi scene, .meta-tiedostot ja `packages-lock.json`.
+4. Agentit korjaavat Jerryn havainnot (vaihe 7). Avoimet: Q-078 (nopeus ja saman sekunnin tapahtumat), Q-079 (maalin kiekko), Q-080 (samalla solmulla olevat).
+5. **Myöhemmin:**
+   - Q-071: ansaitut ylivoimat. Paluukarvaus palataan säätämään samassa yhteydessä.
    - Muut virstanpylvään 5 kalibroinnit.
    - Pitkä kiekko (Q-042).
    - `compare`-komento.

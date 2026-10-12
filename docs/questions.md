@@ -14,6 +14,12 @@ Kirjaa uusin ylimmäksi. Muoto:
 
 ## Avoimet
 
+### Q-080 · 2026-10-12 · kirjaaja: programmer
+**Kysymys:** miten toisto näyttää pelaajat, jotka ovat samassa solmussa? Placementit ovat ruudukon solmuja, joten esim. aloituksessa molemmat sentterit ja vastakkaiset laiturit ovat samassa solmussa, ja kiekkokiistoissa ja vaihdoissa saman joukkueen pelaajiakin voi osua samaan solmuun. Päällekkäin piirretyt kiekot rikkovat hyväksymiskriteerin 1 ("kaikki 12 pelaajaa näkyvät").
+**Konteksti:** Unity-toisto, vaihe 5 (View, `PlayerDiscView`). Core ja testit käyttävät tarkkoja solmusijainteja, joten kyse on vain piirrosta.
+**Ehdotettu oletus (toteutettu):** pelaajan GameObject on tarkalleen solmun kohdalla, mutta piirretty kiekko ja tunniste siirretään 0,9 m (`ReplayViewStyle.teamShift`, Inspectorissa) kohti joukkueen omaa päätyä. Vastustajat samassa solmussa näkyvät siis vierekkäin kuin aloituksessa. Saman joukkueen pelaajat samassa solmussa menevät yhä päällekkäin. Vaihtoehto: pieni hajautus solmun sisällä kaikille samassa solmussa oleville (esim. ympyrälle id-järjestyksessä).
+**Vastaus:**
+
 ### Q-079 · 2026-10-12 · kirjaaja: programmer
 **Kysymys:** mihin maalin kiekko jää toistossa? Maalilaukauksen `placement.puckNodeId` on ampujan solmu (siemen 42: molemmat maalit), joten polku "ampuja → maalisuu → `placement.puckNodeId`" vie kiekon verkosta takaisin ampujalle saman laukaussegmentin aikana.
 **Konteksti:** Unity-toisto, vaihe 3 (Core, `TimelineBuilder`), hyväksymiskriteerit 3 ja 5. Torjutuissa laukauksissa `puckNodeId` on samoin ampujan solmu ja haltija on rebound-pelaaja, joten kiekko käy maalivahdissa ja palaa.
