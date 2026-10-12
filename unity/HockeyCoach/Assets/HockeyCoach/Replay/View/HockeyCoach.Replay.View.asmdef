@@ -1,0 +1,17 @@
+{
+    "name": "HockeyCoach.Replay.View",
+    "rootNamespace": "HockeyCoach.Replay.View",
+    "references": [
+        "HockeyCoach.Replay.Core",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
